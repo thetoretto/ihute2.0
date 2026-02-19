@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { formatRwf } from '@shared';
 
 export interface TrendDataPoint {
   period: string;
@@ -21,9 +22,6 @@ interface BarChartTrendProps {
   data: TrendDataPoint[];
   height?: number;
 }
-
-const formatRwf = (n: number) =>
-  `${Number(n).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF`;
 
 export default function BarChartTrend({ data, height = 280 }: BarChartTrendProps) {
   const chartData = data.map((d) => ({

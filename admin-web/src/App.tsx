@@ -15,7 +15,7 @@ import LoginPage       from './pages/LoginPage';
 import PageHeader      from './components/PageHeader';
 import { NavIcons }    from './components/NavIcons';
 import { AdminScopeProvider } from './context/AdminScopeContext';
-import type { User }   from './types';
+import type { AdminUser } from './types';
 
 const ROUTE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
@@ -73,15 +73,15 @@ const NAV_SECTIONS: {
   },
 ];
 
-function isLinkVisible(visibleFor: VisibleFor | undefined, adminType: User['adminType']): boolean {
+function isLinkVisible(visibleFor: VisibleFor | undefined, adminType: AdminUser['adminType']): boolean {
   if (!visibleFor || visibleFor === 'all') return true;
-  if (adminType === 'system') return visibleFor === 'system' || visibleFor === 'all';
-  if (adminType === 'agency') return visibleFor === 'agency' || visibleFor === 'all';
+  if (adminType === 'system') return visibleFor === 'system';
+  if (adminType === 'agency') return visibleFor === 'agency';
   return true;
 }
 
 interface LayoutProps {
-  user: User;
+  user: AdminUser;
   onLogout: () => void;
 }
 
@@ -156,7 +156,7 @@ function Layout({ user, onLogout }: LayoutProps) {
 }
 
 export default function App() {
-  const [authedUser, setAuthedUser] = useState<User | null>(null);
+  const [authedUser, setAuthedUser] = useState<AdminUser | null>(null);
 
   if (!authedUser) {
     return <LoginPage onLogin={setAuthedUser} />;

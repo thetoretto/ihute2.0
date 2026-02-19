@@ -40,7 +40,7 @@ export default function VehiclesPage() {
         <tbody>
           {vehicles.map((v) => (
             <tr key={v.id}>
-              <td>{getDriverName(v.driverId)}</td>
+              <td>{getDriverName(v.driverId ?? '')}</td>
               <td>{v.make} {v.model}</td>
               <td>{v.color}</td>
               <td>{v.licensePlate}</td>

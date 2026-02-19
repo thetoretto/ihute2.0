@@ -5,8 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { Input, Button, Screen } from '../../components';
 import { useThemeColors } from '../../context/ThemeContext';
-import { spacing, typography, radii, buttonHeights } from '../../utils/theme';
+import { colors, spacing, typography, radii, buttonHeights } from '../../utils/theme';
 import { strings } from '../../constants/strings';
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/e2426e2f-6eb8-4ea6-91af-e79e0dbac3a5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f694c9'},body:JSON.stringify({sessionId:'f694c9',location:'LoginScreen.tsx:module',message:'LoginScreen module loading',data:{},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+// #endregion
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();

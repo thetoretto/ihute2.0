@@ -6,7 +6,7 @@ import {
   mockBookings,
   mockVehicles,
   mockDisputes,
-} from '../../../shared/src/mocks';
+} from '@shared/mocks';
 
 export const hotpoints: Hotpoint[] = [...mockHotpoints];
 export const vehicles: Vehicle[]   = mockVehicles as unknown as Vehicle[];

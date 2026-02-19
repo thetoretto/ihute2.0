@@ -12,6 +12,7 @@ import BarChartTrend from '../components/BarChartTrend';
 import DonutChartBreakdown from '../components/DonutChartBreakdown';
 import type { TrendDataPoint } from '../components/BarChartTrend';
 import type { BreakdownItem } from '../components/DonutChartBreakdown';
+import { formatRwf } from '@shared';
 import type { Dispute } from '../types';
 
 function MetricCard({
@@ -76,9 +77,6 @@ export default function DashboardPage() {
   }, [disputes, disputeTab]);
 
   const tagClass = (i: number) => ['tag-a', 'tag-b', 'tag-c', 'tag-d'][i % 4];
-
-  const formatRwf = (n: number) =>
-    Number(n).toLocaleString('en-RW', { maximumFractionDigits: 0 }) + ' RWF';
 
   return (
     <section>

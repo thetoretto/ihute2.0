@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { mockAdminUsers } from '../../../shared/src/mocks';
-import type { User } from '../types';
+import { mockAdminUsers } from '@shared/mocks';
+import type { AdminUser } from '../types';
 
 interface LoginPageProps {
-  onLogin: (user: User) => void;
+  onLogin: (user: AdminUser) => void;
 }
 
 const TEST_CREDS = [
@@ -27,7 +27,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 500));
 
-    const user = mockAdminUsers.find((u) => u.email.toLowerCase() === email.trim().toLowerCase()) as User | undefined;
+    const user = mockAdminUsers.find((u) => u.email.toLowerCase() === email.trim().toLowerCase()) as AdminUser | undefined;
     if (!user) {
       setError('No account found with that email address.');
       setLoading(false);

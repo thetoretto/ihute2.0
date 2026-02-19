@@ -1,3 +1,6 @@
+// #region agent log
+if (typeof fetch !== 'undefined') { fetch('http://127.0.0.1:7242/ingest/e2426e2f-6eb8-4ea6-91af-e79e0dbac3a5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f694c9'},body:JSON.stringify({sessionId:'f694c9',location:'theme.ts:exports',message:'theme module loaded',data:{},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{}); }
+// #endregion
 export const colors = {
   background: '#FFFFFF',
   surface: '#FFFFFF',

@@ -5,7 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { EmptyState, Screen } from '../../components';
 import { useThemeColors } from '../../context/ThemeContext';
 import { mockUsers } from '../../services/mockData';
-import { spacing, typography } from '../../utils/theme';
+import { colors, spacing, typography } from '../../utils/theme';
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/e2426e2f-6eb8-4ea6-91af-e79e0dbac3a5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f694c9'},body:JSON.stringify({sessionId:'f694c9',location:'MessagesScreen.tsx:module',message:'MessagesScreen module loading',data:{},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+// #endregion
 
 type ConversationItem = {
   id: string;
