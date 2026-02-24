@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components';
+import { useAuth } from '../../context/AuthContext';
+import { getConversationMessages, sendConversationMessage } from '../../services/api';
 import { colors, spacing, typography } from '../../utils/theme';
 
 const TAB_BAR_HEIGHT = 66;
@@ -29,7 +31,8 @@ interface Message {
 
 export default function ChatScreen() {
   const route = useRoute<RouteProp<Params, 'Chat'>>();
-  const { otherUser } = route.params;
+  const { conversationId, otherUser } = route.params;
+  const { user } = useAuth();
   const listRef = React.useRef<FlatList<Message> | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', text: 'Hi! Is the ride still available?', senderId: otherUser.id, timestamp: new Date().toISOString() },
@@ -39,33 +42,37 @@ export default function ChatScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const [lastState, setLastState] = useState<'sent' | 'read'>('read');
 
-  const send = () => {
+  useEffect(() => {
+    getConversationMessages(conversationId)
+      .then((list) => {
+        if (list.length) {
+          setMessages(list.map((m) => ({ ...m, senderId: m.senderId === user?.id ? 'me' : m.senderId, timestamp: m.timestamp })));
+        }
+      })
+      .catch(() => {});
+  }, [conversationId, user?.id]);
+
+  const send = async () => {
     if (!input.trim()) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        text: input.trim(),
-        senderId: 'me',
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+    const text = input.trim();
     setInput('');
+    const myId = user?.id;
+    if (myId) {
+      try {
+        const sent = await sendConversationMessage(conversationId, text, myId);
+        setMessages((prev) => [...prev, { ...sent, senderId: 'me' }]);
+        setLastState('sent');
+      } catch {
+        setMessages((prev) => [...prev, { id: Date.now().toString(), text, senderId: 'me', timestamp: new Date().toISOString() }]);
+      }
+      return;
+    }
+    setMessages((prev) => [...prev, { id: Date.now().toString(), text, senderId: 'me', timestamp: new Date().toISOString() }]);
     setLastState('sent');
-    setTimeout(() => {
-      setIsTyping(true);
-    }, 500);
+    setTimeout(() => setIsTyping(true), 500);
     setTimeout(() => {
       setIsTyping(false);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}-reply`,
-          text: 'Got it. See you soon.',
-          senderId: otherUser.id,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      setMessages((prev) => [...prev, { id: `${Date.now()}-reply`, text: 'Got it. See you soon.', senderId: otherUser.id, timestamp: new Date().toISOString() }]);
       setLastState('read');
     }, 1600);
   };

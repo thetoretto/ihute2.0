@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { mockHotpoints } from '@shared/mocks';
-import { getTripsStore } from '../store';
+import type { Trip } from '@shared/types';
+import { getTripsStore, setTripsStore } from '../store';
+import { fetchTripsFromApi } from '../api';
 
 export interface TripSearchCriteria {
   fromId: string;
@@ -44,6 +46,8 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
   const [date, setDate] = useState(criteria.date);
   const [travelers, setTravelers] = useState(String(criteria.travelers));
   const [tripCategory, setTripCategory] = useState<TripCategory>('all');
+  const [apiTrips, setApiTrips] = useState<Trip[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setFromId(criteria.fromId);
@@ -52,13 +56,35 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
     setTravelers(String(criteria.travelers));
   }, [criteria.date, criteria.fromId, criteria.toId, criteria.travelers]);
 
+  const loadTrips = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchTripsFromApi({
+        fromId: fromId || undefined,
+        toId: toId || undefined,
+        date: date || undefined,
+      });
+      setApiTrips(data);
+      setTripsStore(data);
+    } catch {
+      setApiTrips(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [fromId, toId, date]);
+
+  useEffect(() => {
+    void loadTrips();
+  }, [loadTrips]);
+
   const fromLabel = cityOptions.find((city) => city.id === criteria.fromId)?.name ?? 'Any city';
   const toLabel = cityOptions.find((city) => city.id === criteria.toId)?.name ?? 'Any city';
 
   const trips = useMemo(() => {
     const requestedSeats = Number(travelers) || 1;
+    const baseList = apiTrips !== null ? apiTrips : getTripsStore();
 
-    let list = getTripsStore()
+    let list = baseList
       .filter((trip) => (fromId ? trip.departureHotpoint.id === fromId : true))
       .filter((trip) => (toId ? trip.destinationHotpoint.id === toId : true))
       .filter((trip) => trip.seatsAvailable >= requestedSeats || trip.status === 'full');
@@ -69,8 +95,8 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
       list = list.filter((trip) => !isPublicTrip(trip));
     }
 
-    return list.sort((a, b) => a.departureTime.localeCompare(b.departureTime));
-  }, [fromId, toId, travelers, tripCategory]);
+    return list.sort((a, b) => (a.departureTime ?? '').localeCompare(b.departureTime ?? ''));
+  }, [apiTrips, fromId, toId, travelers, tripCategory]);
 
   const availableCount = trips.filter((trip) => trip.status !== 'full').length;
 
@@ -183,7 +209,10 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
           </div>
 
           <div className="trips-list">
-            {trips.map((trip) => {
+            {loading ? (
+              <p className="lp-mt-24" style={{ textAlign: 'center' }}>Loading trips…</p>
+            ) : (
+            trips.map((trip) => {
               const isFull = trip.status === 'full' || trip.seatsAvailable === 0;
               const perSeat = `${Number(trip.pricePerSeat).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF`;
 
@@ -226,7 +255,8 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
                   </div>
                 </article>
               );
-            })}
+            })
+            )}
           </div>
         </div>
       </div>

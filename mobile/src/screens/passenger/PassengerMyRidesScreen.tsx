@@ -21,7 +21,7 @@ import {
   getUserBookings,
   rateDriverFromBooking,
   cancelBooking,
-} from '../../services/mockApi';
+} from '../../services/api';
 import {
   EmptyState,
   Screen,
@@ -32,6 +32,10 @@ import {
 } from '../../components';
 import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
 import type { Booking } from '../../types';
+
+const PASSENGER_BRAND = colors.passengerBrand;
+const PASSENGER_DARK = colors.passengerDark;
+const PASSENGER_BG_LIGHT = colors.passengerBgLight;
 
 export default function PassengerMyRidesScreen() {
   const navigation = useNavigation<any>();
@@ -208,9 +212,9 @@ export default function PassengerMyRidesScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
-              progressBackgroundColor={colors.surface}
+              colors={[PASSENGER_BRAND]}
+              tintColor={PASSENGER_BRAND}
+              progressBackgroundColor={PASSENGER_BG_LIGHT}
             />
           }
           overScrollMode="always"
@@ -221,17 +225,21 @@ export default function PassengerMyRidesScreen() {
           renderItem={({ item }) => (
             <View style={styles.card}>
               <View style={styles.headerRow}>
-                <Text style={styles.route}>
-                  {item.trip.departureHotpoint.name} → {item.trip.destinationHotpoint.name}
-                </Text>
+                <View style={styles.routeBlock}>
+                  <Text style={styles.badge}>
+                    {item.status === 'upcoming' ? 'Confirmed' : item.status === 'ongoing' ? 'Ongoing' : 'Completed'}
+                  </Text>
+                  <Text style={styles.route}>
+                    {item.trip.departureHotpoint.name} → {item.trip.destinationHotpoint.name}
+                  </Text>
+                  <Text style={styles.time}>{item.trip.departureTime} • with {item.trip.driver.name}</Text>
+                </View>
                 <ExpandActionButton
                   expanded={expandedId === item.id}
                   onPress={() => toggleExpanded(item.id)}
                 />
               </View>
-              <Text style={styles.time}>{item.trip.departureTime}</Text>
-              <Text style={styles.driver}>Driver: {item.trip.driver.name}</Text>
-              <Text style={styles.seats}>{item.seats} seat(s) • {item.paymentMethod}</Text>
+              <Text style={styles.seats}>{item.seats} seat(s) • {item.paymentMethod.replace('_', ' ')}</Text>
               {expandedId === item.id ? (
                 <>
                   <ExpansionDetailsCard
@@ -266,14 +274,14 @@ export default function PassengerMyRidesScreen() {
                       style={styles.actionBtn}
                       onPress={() => navigation.navigate('TicketDetail', { bookingId: item.id })}
                     >
-                      <Ionicons name="document-text-outline" size={14} color={colors.primary} />
+                      <Ionicons name="document-text-outline" size={14} color={PASSENGER_BRAND} />
                       <Text style={styles.actionText}>View full ticket</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.actionBtn}
                       onPress={() => void onDownloadTicket(item.id)}
                     >
-                      <Ionicons name="download-outline" size={14} color={colors.primary} />
+                      <Ionicons name="download-outline" size={14} color={PASSENGER_BRAND} />
                       <Text style={styles.actionText}>Download PDF</Text>
                     </TouchableOpacity>
                     {item.status === 'upcoming' ? (
@@ -304,7 +312,7 @@ export default function PassengerMyRidesScreen() {
                                   : 'star-outline'
                               }
                               size={18}
-                              color={colors.primary}
+                              color={PASSENGER_BRAND}
                             />
                           </TouchableOpacity>
                         ))}
@@ -326,36 +334,53 @@ export default function PassengerMyRidesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: '#fff' },
   tabs: {
     flexDirection: 'row',
     paddingTop: spacing.lg,
-    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   tab: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.button,
-  },
-  tabActive: { backgroundColor: colors.primary },
-  tabText: { ...typography.body, color: colors.textSecondary },
-  tabTextActive: { color: colors.onPrimary, fontWeight: '600' },
-  card: {
-    marginTop: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.card,
-    borderRadius: radii.md,
+    flex: 1,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.sm,
+    borderRadius: 14,
+    alignItems: 'center',
+    backgroundColor: PASSENGER_BG_LIGHT,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  tabActive: { backgroundColor: PASSENGER_BRAND, borderColor: PASSENGER_BRAND },
+  tabText: { ...typography.bodySmall, color: colors.textSecondary, fontWeight: '600' },
+  tabTextActive: { color: '#fff', fontWeight: '600' },
+  card: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    padding: spacing.lg,
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.sm,
   },
-  route: { ...typography.h3, color: colors.text, flex: 1 },
-  time: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
-  driver: { ...typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs },
+  routeBlock: { flex: 1, minWidth: 0 },
+  badge: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: colors.success,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  route: { ...typography.body, color: PASSENGER_DARK, fontWeight: '700' },
+  time: { ...typography.caption, color: colors.textSecondary, marginTop: 4 },
   seats: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
   actionRow: {
     flexDirection: 'row',
@@ -369,14 +394,14 @@ const styles = StyleSheet.create({
     minHeight: buttonHeights.small,
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
-    borderRadius: radii.button,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.primaryButtonBorder,
-    backgroundColor: colors.primary,
+    borderColor: PASSENGER_BRAND,
+    backgroundColor: 'rgba(0,175,245,0.12)',
   },
   actionText: {
     ...typography.caption,
-    color: colors.onPrimary,
+    color: PASSENGER_DARK,
     fontWeight: '600',
   },
   actionDangerText: {
@@ -406,7 +431,8 @@ const styles = StyleSheet.create({
   },
   ratingLocked: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
   listContent: {
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.xl + 80,
+    paddingHorizontal: 0,
   },
   errorBanner: {
     marginBottom: spacing.md,

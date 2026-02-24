@@ -24,10 +24,10 @@ export default function Input({ label, error, style, ...props }: InputProps) {
     marginBottom: spacing.xs,
   };
   const inputStyle = {
-    backgroundColor: c.surface,
+    backgroundColor: c.background,
     borderWidth: 1,
     borderColor: c.border,
-    borderRadius: radii.button,
+    borderRadius: radii.md,
     minHeight: Math.max(44, buttonHeights.large),
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

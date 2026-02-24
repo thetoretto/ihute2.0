@@ -19,8 +19,12 @@ import {
   CarRefreshIndicator,
   DriverPinPulse,
 } from '../../components';
-import { searchTrips } from '../../services/mockApi';
+import { searchTrips } from '../../services/api';
 import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
+
+const PASSENGER_BRAND = colors.passengerBrand;
+const PASSENGER_DARK = colors.passengerDark;
+const PASSENGER_BG_LIGHT = colors.passengerBgLight;
 import type { Trip, TripType } from '../../types';
 
 type Params = {
@@ -103,8 +107,8 @@ export default function SearchResultsScreen() {
     <Screen style={styles.container}>
       <View style={styles.routeCard}>
         <View style={styles.routeLeft}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={18} color={colors.textSecondary} />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={20} color={PASSENGER_DARK} />
           </TouchableOpacity>
           <View>
             <Text style={styles.route}>{fromName} → {toName}</Text>
@@ -122,7 +126,7 @@ export default function SearchResultsScreen() {
             Alert.alert('Filters applied', 'Mock filters toggled.');
           }}
         >
-          <Ionicons name="options-outline" size={16} color={colors.primary} />
+          <Ionicons name="options-outline" size={16} color={PASSENGER_BRAND} />
           <Text style={styles.filter}>Filter</Text>
         </TouchableOpacity>
       </View>
@@ -134,7 +138,7 @@ export default function SearchResultsScreen() {
           <Ionicons
             name="flash-outline"
             size={14}
-            color={activeType === 'insta' ? colors.primary : colors.textSecondary}
+            color={activeType === 'insta' ? '#fff' : colors.textSecondary}
           />
           <Text style={[styles.tabText, activeType === 'insta' && styles.tabTextActive]}>
             Instant
@@ -147,7 +151,7 @@ export default function SearchResultsScreen() {
           <Ionicons
             name="calendar-outline"
             size={14}
-            color={activeType === 'scheduled' ? colors.primary : colors.textSecondary}
+            color={activeType === 'scheduled' ? '#fff' : colors.textSecondary}
           />
           <Text style={[styles.tabText, activeType === 'scheduled' && styles.tabTextActive]}>
             Scheduled
@@ -168,7 +172,7 @@ export default function SearchResultsScreen() {
           <Ionicons
             name="bus-outline"
             size={14}
-            color={tripCategory === 'public' ? colors.primary : colors.textSecondary}
+            color={tripCategory === 'public' ? '#fff' : colors.textSecondary}
           />
           <Text style={[styles.tabText, tripCategory === 'public' && styles.tabTextActive]}>Public</Text>
         </TouchableOpacity>
@@ -179,7 +183,7 @@ export default function SearchResultsScreen() {
           <Ionicons
             name="car-outline"
             size={14}
-            color={tripCategory === 'private' ? colors.primary : colors.textSecondary}
+            color={tripCategory === 'private' ? '#fff' : colors.textSecondary}
           />
           <Text style={[styles.tabText, tripCategory === 'private' && styles.tabTextActive]}>Private</Text>
         </TouchableOpacity>
@@ -218,6 +222,7 @@ export default function SearchResultsScreen() {
         renderItem={({ item }) => (
           <RideCard
             trip={item}
+            variant="blablacar"
             onPress={() => navigation.navigate('RideDetail', { tripId: item.id })}
           />
         )}
@@ -228,15 +233,15 @@ export default function SearchResultsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: '#fff' },
   routeCard: {
     marginTop: spacing.lg,
     marginBottom: spacing.md,
     padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: colors.card,
+    borderRadius: 20,
+    backgroundColor: PASSENGER_BG_LIGHT,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(0,0,0,0.06)',
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
@@ -248,20 +253,20 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     flex: 1,
   },
-  route: { ...typography.h2, color: colors.text },
-  subtitle: { ...typography.bodySmall, color: colors.textSecondary },
+  backBtn: { padding: spacing.xs },
+  route: { ...typography.h2, color: PASSENGER_DARK, fontWeight: '800', fontSize: 18 },
+  subtitle: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
   filterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: buttonHeights.small,
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    borderRadius: radii.button,
-    backgroundColor: colors.primary,
-    borderWidth: 1,
-    borderColor: colors.primaryButtonBorder,
+    borderRadius: 14,
+    backgroundColor: PASSENGER_BRAND,
+    borderWidth: 0,
   },
-  filter: { ...typography.bodySmall, color: colors.onPrimary, fontWeight: '600' },
+  filter: { ...typography.bodySmall, color: '#fff', fontWeight: '600' },
   tabs: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -274,17 +279,17 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     borderRadius: radii.button,
-    backgroundColor: colors.ghostBg,
+    backgroundColor: PASSENGER_BG_LIGHT,
     borderWidth: 1,
-    borderColor: colors.ghostBorder,
+    borderColor: 'rgba(0,0,0,0.08)',
   },
   tabActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: PASSENGER_BRAND,
     borderWidth: 1,
-    borderColor: colors.primaryButtonBorder,
+    borderColor: PASSENGER_BRAND,
   },
   tabText: { ...typography.body, color: colors.textSecondary },
-  tabTextActive: { color: colors.onPrimary, fontWeight: '600' },
+  tabTextActive: { color: '#fff', fontWeight: '600' },
   categoryTabs: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -292,11 +297,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h3,
-    color: colors.text,
+    color: PASSENGER_DARK,
+    fontWeight: '800',
     marginBottom: spacing.md,
   },
   listContent: {
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.xl + 80,
+    paddingHorizontal: spacing.lg,
   },
   mapCard: {
     marginBottom: spacing.sm,

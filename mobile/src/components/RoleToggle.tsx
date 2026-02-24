@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography } from '../utils/theme';
+import { useThemeColors } from '../context/ThemeContext';
+import { spacing, radii, typography } from '../utils/theme';
 import type { UserRole } from '../types';
 
 interface RoleToggleProps {
@@ -19,9 +20,14 @@ export default function RoleToggle({
   availableRoles = ['passenger', 'driver'],
   onNavigateToVehicleGarage,
 }: RoleToggleProps) {
+  const c = useThemeColors();
   const canUsePassenger = availableRoles.includes('passenger');
   const canUseDriver = availableRoles.includes('driver');
   const canUseAgency = availableRoles.includes('agency');
+
+  const getActiveBg = (role: UserRole) =>
+    role === 'passenger' ? c.primary : role === 'driver' ? c.passengerDark : c.agency;
+  const getActiveTextColor = () => c.passengerOnBrand;
 
   const handleSwitchToDriverOrAgency = (role: 'driver' | 'agency') => {
     if (role === 'driver' && !canUseDriver) return;
@@ -46,9 +52,9 @@ export default function RoleToggle({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.surface, borderColor: c.border }]}>
       <TouchableOpacity
-        style={[styles.tab, currentRole === 'passenger' && styles.tabActive]}
+        style={[styles.tab, currentRole === 'passenger' && { backgroundColor: getActiveBg('passenger'), borderRadius: radii.button }]}
         onPress={() => {
           if (canUsePassenger) {
             void onSwitch('passenger');
@@ -59,37 +65,37 @@ export default function RoleToggle({
         <Ionicons
           name="people-outline"
           size={20}
-          color={currentRole === 'passenger' ? colors.onPrimary : colors.textSecondary}
+          color={currentRole === 'passenger' ? getActiveTextColor() : c.textSecondary}
         />
-        <Text style={[styles.tabText, currentRole === 'passenger' && styles.tabTextActive]}>
+        <Text style={[styles.tabText, { color: c.textSecondary }, currentRole === 'passenger' && { color: getActiveTextColor(), fontWeight: '600' }]}>
           Passenger
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.tab, currentRole === 'driver' && styles.tabActive]}
+        style={[styles.tab, currentRole === 'driver' && { backgroundColor: getActiveBg('driver'), borderRadius: radii.button }]}
         onPress={() => handleSwitchToDriverOrAgency('driver')}
         disabled={!canUseDriver}
       >
         <Ionicons
           name="car-outline"
           size={20}
-          color={currentRole === 'driver' ? colors.onPrimary : colors.textSecondary}
+          color={currentRole === 'driver' ? getActiveTextColor() : c.textSecondary}
         />
-        <Text style={[styles.tabText, currentRole === 'driver' && styles.tabTextActive]}>
+        <Text style={[styles.tabText, { color: c.textSecondary }, currentRole === 'driver' && { color: getActiveTextColor(), fontWeight: '600' }]}>
           Driver
         </Text>
       </TouchableOpacity>
       {canUseAgency ? (
         <TouchableOpacity
-          style={[styles.tab, currentRole === 'agency' && styles.tabActive]}
+          style={[styles.tab, currentRole === 'agency' && { backgroundColor: getActiveBg('agency'), borderRadius: radii.button }]}
           onPress={() => handleSwitchToDriverOrAgency('agency')}
         >
           <Ionicons
             name="bus-outline"
             size={20}
-            color={currentRole === 'agency' ? colors.onPrimary : colors.textSecondary}
+            color={currentRole === 'agency' ? getActiveTextColor() : c.textSecondary}
           />
-          <Text style={[styles.tabText, currentRole === 'agency' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, { color: c.textSecondary }, currentRole === 'agency' && { color: getActiveTextColor(), fontWeight: '600' }]}>
             Agency
           </Text>
         </TouchableOpacity>
@@ -101,10 +107,8 @@ export default function RoleToggle({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: spacing.xs,
   },
   tab: {
@@ -115,16 +119,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     gap: spacing.sm,
   },
-  tabActive: {
-    backgroundColor: colors.primary,
-    borderRadius: radii.button,
-  },
   tabText: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
-  },
-  tabTextActive: {
-    color: colors.onPrimary,
-    fontWeight: '600',
   },
 });

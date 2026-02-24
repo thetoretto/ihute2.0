@@ -1,49 +1,60 @@
-// #region agent log
-if (typeof fetch !== 'undefined') { fetch('http://127.0.0.1:7242/ingest/e2426e2f-6eb8-4ea6-91af-e79e0dbac3a5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f694c9'},body:JSON.stringify({sessionId:'f694c9',location:'theme.ts:exports',message:'theme module loaded',data:{},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{}); }
-// #endregion
 export const colors = {
-  background: '#FFFFFF',
+  background: '#f8fafc',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
   card: '#FFFFFF',
 
-  text: '#171C22',
-  textSecondary: '#94A9BC',
-  textMuted: '#94A9BC',
-  onPrimary: '#171C22',
+  text: '#054752',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
+  onPrimary: '#FFFFFF',
 
-  primary: '#FEE46B',
-  primaryDark: '#E5B840',
-  accent: '#FEE46B',
+  primary: '#00AFF5',
+  primaryDark: '#0084b8',
+  accent: '#00AFF5',
 
-  buttonPrimaryBg: '#FEE46B',
-  buttonPrimaryText: '#171C22',
-  primaryButtonBorder: 'rgba(254,228,107,0.5)',
-  buttonSecondaryBg: '#94A9BC',
-  buttonSecondaryText: '#171C22',
-  primaryTextOnLight: '#171C22',
+  buttonPrimaryBg: '#00AFF5',
+  buttonPrimaryText: '#FFFFFF',
+  primaryButtonBorder: 'rgba(0,175,245,0.5)',
+  buttonSecondaryBg: '#e2e8f0',
+  buttonSecondaryText: '#054752',
+  primaryTextOnLight: '#054752',
 
-  popupSurface: '#F8F3EF',
+  popupSurface: '#FFFFFF',
 
-  success: '#2E7D32',
-  successLight: '#66BB6A',
+  success: '#00D382',
+  successLight: '#5EEAD4',
+  successTint: 'rgba(0,211,130,0.12)',
   info: '#1E88E5',
   neutral: '#64748B',
 
-  error: '#DF0827',
+  error: '#FF4757',
   warning: '#B7791F',
 
-  border: 'rgba(23,28,34,0.18)',
-  borderLight: 'rgba(23,28,34,0.10)',
-  overlay: 'rgba(23,28,34,0.35)',
-  primaryTint: 'rgba(254,228,107,0.14)',
-  successTint: 'rgba(46,125,50,0.12)',
-  ghostBg: '#FFFFFF',
-  ghostBorder: 'rgba(23,28,34,0.18)',
-  ghostText: '#94A9BC',
+  border: '#f1f5f9',
+  borderLight: '#f1f5f9',
+  overlay: 'rgba(5,71,82,0.35)',
+  primaryTint: 'rgba(0,175,245,0.14)',
+  ghostBg: '#f8fafc',
+  ghostBorder: '#f1f5f9',
+  ghostText: '#64748B',
 
-  /** Tab bar background (light grey). */
-  tabBarBackground: '#F1F5F9',
+  /** Tab bar background. */
+  tabBarBackground: '#FFFFFF',
+
+  /** Passenger / brand (template). */
+  passengerBrand: '#00AFF5',
+  passengerDark: '#054752',
+  passengerBgLight: '#f8fafc',
+  passengerOnBrand: '#FFFFFF',
+
+  /** Driver context (dark teal). */
+  driverDark: '#054752',
+
+  /** Agency role (indigo). */
+  agency: '#6366f1',
+  agencyDark: '#4f46e5',
+  agencyTint: 'rgba(99,102,241,0.14)',
 } as const;
 
 /** Dark theme colors. Use with ThemeContext for light/dark switching. */
@@ -56,15 +67,19 @@ export const colorsDark = {
   text: '#F1F5F9',
   textSecondary: '#94A9BC',
   textMuted: '#94A9BC',
-  onPrimary: '#171C22',
+  onPrimary: '#FFFFFF',
   popupSurface: '#252D38',
   ghostBg: '#1E252D',
   ghostText: '#94A9BC',
   border: 'rgba(241,245,249,0.18)',
   borderLight: 'rgba(241,245,249,0.10)',
   overlay: 'rgba(0,0,0,0.5)',
-  primaryTint: 'rgba(254,228,107,0.18)',
+  primaryTint: 'rgba(0,175,245,0.18)',
   tabBarBackground: '#1E252D',
+  passengerBrand: '#00AFF5',
+  passengerDark: '#054752',
+  passengerBgLight: '#1E252D',
+  passengerOnBrand: '#FFFFFF',
 } as const;
 
 export type ColorScheme = 'light' | 'dark';
@@ -79,13 +94,23 @@ export const spacing = {
 } as const;
 
 export const radii = {
-  sm: 6,
-  button: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm: 8,
+  button: 20,
+  md: 16,
+  lg: 28,
+  xl: 40,
+  xxl: 28,
   full: 9999,
 } as const;
+
+/** Card shadow (template-style). */
+export const cardShadow = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 20,
+  elevation: 4,
+};
 
 export const buttonHeights = {
   small: 38,

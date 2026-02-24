@@ -7,6 +7,7 @@ import {
   FlatList,
   StyleSheet,
   Modal,
+  ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../utils/theme';
@@ -19,6 +20,8 @@ interface HotpointPickerProps {
   hotpoints: Hotpoint[];
   onSelect: (hotpoint: Hotpoint) => void;
   placeholder?: string;
+  /** Override trigger container style (e.g. transparent when embedded in a custom row). */
+  triggerStyle?: ViewStyle;
 }
 
 export default function HotpointPicker({
@@ -27,6 +30,7 @@ export default function HotpointPicker({
   hotpoints,
   onSelect,
   placeholder = 'Select location',
+  triggerStyle,
 }: HotpointPickerProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [query, setQuery] = useState('');
@@ -57,7 +61,7 @@ export default function HotpointPicker({
     <View style={styles.container}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <TouchableOpacity
-        style={selectorStyles.trigger}
+        style={[selectorStyles.trigger, triggerStyle]}
         onPress={() => setModalVisible(true)}
         activeOpacity={0.8}
       >

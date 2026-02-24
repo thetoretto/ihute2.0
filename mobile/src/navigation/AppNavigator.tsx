@@ -159,6 +159,15 @@ function DriverHomeStack() {
   );
 }
 
+function DriverPublishStack() {
+  const screenOptions = useStackScreenOptions();
+  return (
+    <Stack.Navigator screenOptions={screenOptions}>
+      <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+}
+
 /** Scanner role only: Scan ticket and dashboard. Scanner has no access to PublishRide — do not add it here. */
 function ScannerHomeStack() {
   const screenOptions = useStackScreenOptions();
@@ -243,10 +252,13 @@ function DriverMyRidesStack() {
 
 function PassengerTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
+  const c = useThemeColors();
   const sharedTabBarScreenOptionsBase = useTabBarScreenOptionsBase();
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
   const screenOptions = {
     ...sharedTabBarScreenOptionsBase,
+    tabBarActiveTintColor: c.primary,
+    tabBarInactiveTintColor: c.textSecondary,
     tabBarStyle: {
       ...sharedTabBarScreenOptionsBase.tabBarStyle,
       height: responsiveTheme.layout.tabBarHeight,
@@ -299,6 +311,7 @@ function PassengerTabsNavigator() {
 function DriverTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
   const sharedTabBarScreenOptionsBase = useTabBarScreenOptionsBase();
+  const c = useThemeColors();
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
   const screenOptions = {
     ...sharedTabBarScreenOptionsBase,
@@ -312,14 +325,33 @@ function DriverTabsNavigator() {
     tabBarItemStyle: { borderRadius: responsiveTheme.radii.md, marginHorizontal: 2, minHeight: 48 },
   };
   return (
-    <Tabs.Navigator screenOptions={screenOptions}>
+    <Tabs.Navigator
+      screenOptions={{
+        ...screenOptions,
+        tabBarActiveTintColor: c.passengerDark,
+        tabBarInactiveTintColor: c.textSecondary,
+        headerTintColor: c.passengerDark,
+      }}
+    >
       <Tabs.Screen
         name="DriverCenter"
         component={DriverHomeStack}
         options={{
-          tabBarLabel: strings.tabs.dashboard,
+          tabBarLabel: 'Home',
           headerTitle: () => <LogoHeader />,
-          tabBarIcon: ({ color }) => <Ionicons name="car" size={tabBarIconSize} color={color} />,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={tabBarIconSize} color={focused ? c.passengerDark : color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="DriverPublish"
+        component={DriverPublishStack}
+        options={{
+          tabBarLabel: strings.tabs.publish,
+          tabBarIcon: ({ focused }) => (
+            <Ionicons name="add-circle" size={28} color={c.passengerDark} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -327,7 +359,9 @@ function DriverTabsNavigator() {
         component={MessagesScreen}
         options={{
           tabBarLabel: strings.tabs.messages,
-          tabBarIcon: ({ color }) => <Ionicons name="chatbubbles" size={tabBarIconSize} color={color} />,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={tabBarIconSize} color={focused ? c.passengerDark : color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -335,7 +369,9 @@ function DriverTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: strings.tabs.profile,
-          tabBarIcon: ({ color }) => <Ionicons name="person" size={tabBarIconSize} color={color} />,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={tabBarIconSize} color={focused ? c.passengerDark : color} />
+          ),
         }}
       />
     </Tabs.Navigator>
@@ -344,10 +380,14 @@ function DriverTabsNavigator() {
 
 function AgencyTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
+  const c = useThemeColors();
   const sharedTabBarScreenOptionsBase = useTabBarScreenOptionsBase();
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
   const screenOptions = {
     ...sharedTabBarScreenOptionsBase,
+    tabBarActiveTintColor: c.agency,
+    tabBarInactiveTintColor: c.textSecondary,
+    headerTintColor: c.agency,
     tabBarStyle: {
       ...sharedTabBarScreenOptionsBase.tabBarStyle,
       height: responsiveTheme.layout.tabBarHeight,
@@ -391,10 +431,14 @@ function AgencyTabsNavigator() {
 
 function ScannerTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
+  const c = useThemeColors();
   const sharedTabBarScreenOptionsBase = useTabBarScreenOptionsBase();
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
   const screenOptions = {
     ...sharedTabBarScreenOptionsBase,
+    tabBarActiveTintColor: c.agency,
+    tabBarInactiveTintColor: c.textSecondary,
+    headerTintColor: c.agency,
     tabBarStyle: {
       ...sharedTabBarScreenOptionsBase.tabBarStyle,
       height: responsiveTheme.layout.tabBarHeight,

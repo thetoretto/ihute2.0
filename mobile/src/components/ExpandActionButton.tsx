@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { buttonHeights, colors, radii, spacing, typography } from '../utils/theme';
+import { useThemeColors } from '../context/ThemeContext';
+import { buttonHeights, radii, spacing, typography } from '../utils/theme';
 
 interface ExpandActionButtonProps {
   expanded: boolean;
@@ -9,9 +10,10 @@ interface ExpandActionButtonProps {
 }
 
 export default function ExpandActionButton({ expanded, onPress }: ExpandActionButtonProps) {
+  const c = useThemeColors();
   return (
     <TouchableOpacity
-      style={styles.button}
+      style={[styles.button, { backgroundColor: c.primary, borderColor: c.primaryButtonBorder }]}
       onPress={onPress}
       activeOpacity={0.85}
       accessibilityRole="button"
@@ -20,9 +22,9 @@ export default function ExpandActionButton({ expanded, onPress }: ExpandActionBu
       <Ionicons
         name={expanded ? 'remove-circle-outline' : 'add-circle-outline'}
         size={14}
-        color={colors.onPrimary}
+        color={c.onPrimary}
       />
-      <Text style={styles.text}>{expanded ? 'Hide' : 'Expand'}</Text>
+      <Text style={[styles.text, { color: c.onPrimary }]}>{expanded ? 'Hide' : 'Expand'}</Text>
     </TouchableOpacity>
   );
 }
@@ -35,13 +37,10 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
     borderRadius: radii.button,
-    backgroundColor: colors.primary,
     borderWidth: 1,
-    borderColor: colors.primaryButtonBorder,
   },
   text: {
     ...typography.caption,
-    color: colors.onPrimary,
     fontWeight: '600',
   },
 });

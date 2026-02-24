@@ -3,11 +3,14 @@ import { StyleSheet, Text, TouchableOpacity, View, TextInput, Alert } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Screen } from '../../components';
 import { useAuth } from '../../context/AuthContext';
-import { getWithdrawalMethods, updateWithdrawalMethods } from '../../services/mockPersistence';
-import { colors, spacing, typography, radii } from '../../utils/theme';
+import { useThemeColors } from '../../context/ThemeContext';
+import { getWithdrawalMethods, updateWithdrawalMethods } from '../../services/api';
+import { spacing, typography, radii } from '../../utils/theme';
+import { strings } from '../../constants/strings';
 
 export default function WithdrawalMethodsScreen() {
   const { user } = useAuth();
+  const themeColors = useThemeColors();
   const [mobileMoneyPhone, setMobileMoneyPhone] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
@@ -44,19 +47,17 @@ export default function WithdrawalMethodsScreen() {
   };
 
   return (
-    <Screen scroll style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Withdrawal methods</Text>
-      <Text style={styles.subtitle}>
-        Link your Mobile Money or bank account to receive payouts from your trips.
-      </Text>
+    <Screen scroll style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
+      <Text style={[styles.title, { color: themeColors.text }]}>{strings.profile.withdrawalMethods}</Text>
+      <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>{strings.profile.withdrawalSubtitle}</Text>
 
-      <Text style={styles.sectionLabel}>Mobile Money</Text>
-      <View style={styles.inputWrap}>
-        <Ionicons name="phone-portrait-outline" size={20} color={colors.primary} />
+      <Text style={[styles.sectionLabel, { color: themeColors.textMuted }]}>Mobile Money</Text>
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+        <Ionicons name="phone-portrait-outline" size={20} color={themeColors.primary} />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: themeColors.text }]}
           placeholder="e.g. +250 788 123 456"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={themeColors.textMuted}
           value={mobileMoneyPhone}
           onChangeText={setMobileMoneyPhone}
           keyboardType="phone-pad"
@@ -64,43 +65,43 @@ export default function WithdrawalMethodsScreen() {
         />
       </View>
 
-      <Text style={styles.sectionLabel}>Bank transfer</Text>
-      <View style={styles.inputWrap}>
-        <Ionicons name="business-outline" size={20} color={colors.primary} />
+      <Text style={[styles.sectionLabel, { color: themeColors.textMuted }]}>Bank transfer</Text>
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+        <Ionicons name="business-outline" size={20} color={themeColors.primary} />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: themeColors.text }]}
           placeholder="Bank name"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={themeColors.textMuted}
           value={bankName}
           onChangeText={setBankName}
           autoCapitalize="words"
         />
       </View>
-      <View style={styles.inputWrap}>
-        <Ionicons name="card-outline" size={20} color={colors.primary} />
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+        <Ionicons name="card-outline" size={20} color={themeColors.primary} />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: themeColors.text }]}
           placeholder="Account number"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={themeColors.textMuted}
           value={accountNumber}
           onChangeText={setAccountNumber}
           keyboardType="numeric"
           autoCapitalize="none"
         />
       </View>
-      <View style={styles.inputWrap}>
-        <Ionicons name="person-outline" size={20} color={colors.primary} />
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+        <Ionicons name="person-outline" size={20} color={themeColors.primary} />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: themeColors.text }]}
           placeholder="Account holder name (optional)"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={themeColors.textMuted}
           value={accountName}
           onChangeText={setAccountName}
           autoCapitalize="words"
         />
       </View>
 
-      <Button title={saving ? 'Saving...' : 'Save'} onPress={handleSave} disabled={saving} />
+      <Button title={saving ? strings.profile.saving : strings.profile.save} onPress={handleSave} disabled={saving} />
     </Screen>
   );
 }
@@ -108,9 +109,9 @@ export default function WithdrawalMethodsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
-  title: { ...typography.h2, color: colors.text },
-  subtitle: { ...typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.lg },
-  sectionLabel: { ...typography.caption, color: colors.textMuted, marginTop: spacing.sm, marginBottom: spacing.xs },
+  title: { ...typography.h2 },
+  subtitle: { marginTop: spacing.xs, marginBottom: spacing.lg },
+  sectionLabel: { ...typography.caption, marginTop: spacing.sm, marginBottom: spacing.xs },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -118,9 +119,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
     marginBottom: spacing.sm,
   },
-  input: { flex: 1, ...typography.body, color: colors.text },
+  input: { flex: 1, ...typography.body },
 });

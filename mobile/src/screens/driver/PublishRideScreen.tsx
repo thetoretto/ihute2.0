@@ -11,16 +11,18 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { HotpointPicker, PaymentMethodIcons, Screen } from '../../components';
-import { getHotpoints, getUserVehicles, publishTrip, publishTrips } from '../../services/mockApi';
+import { getHotpoints, getUserVehicles, publishTrip, publishTrips } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
-import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
+import { buttonHeights, colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
+import { useThemeColors } from '../../context/ThemeContext';
 import { selectorStyles } from '../../utils/selectorStyles';
 import { formatRwf } from '../../../../shared/src';
 import type { Hotpoint, Vehicle, PaymentMethod } from '../../types';
 
-const INSTANT_STEPS = ['Ride Type', 'Vehicle', 'Departure', 'Destination', 'Details', 'Payment', 'Review'];
+const INSTANT_STEPS = ['Intro', 'Ride Type', 'Vehicle', 'Departure', 'Destination', 'Details', 'Payment', 'Review'];
 const SCHEDULED_STEPS = [
+  'Intro',
   'Ride Type',
   'Vehicle',
   'Departure',
@@ -31,6 +33,7 @@ const SCHEDULED_STEPS = [
   'Review',
 ];
 const SCHEDULED_AGENCY_STEPS = [
+  'Intro',
   'Vehicle',
   'Departure',
   'Destination',
@@ -60,6 +63,7 @@ export default function PublishRideScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
   const { currentRole } = useRole();
+  const c = useThemeColors();
   const [step, setStep] = useState(0);
   const [hotpoints, setHotpoints] = useState<Hotpoint[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -135,6 +139,7 @@ export default function PublishRideScreen() {
   };
 
   const canProceed = () => {
+    if (currentStep === 'Intro') return true;
     if (currentStep === 'Vehicle') return !!vehicle;
     if (currentStep === 'Departure') return !!departure;
     if (currentStep === 'Destination') return !!destination;
@@ -223,7 +228,11 @@ export default function PublishRideScreen() {
         Alert.alert('Ride published!');
       }
       resetForm();
-      (navigation.getParent() as any)?.navigate('DriverPublished');
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate('DriverHome');
+      }
     } catch (e) {
       Alert.alert('Error', 'Could not publish ride');
     }
@@ -237,6 +246,63 @@ export default function PublishRideScreen() {
 
   return (
     <Screen scroll style={styles.container} contentContainerStyle={styles.content}>
+      {currentStep === 'Intro' ? (
+        <View style={styles.introWrap}>
+          <Text style={[styles.introTitle, { color: c.text }]}>Publish a Ride</Text>
+          <Text style={[styles.introSub, { color: c.textSecondary }]}>
+            Share your trip and earn. Set your route, time and price.
+          </Text>
+          <View style={styles.introSteps}>
+            <View style={styles.introStepRow}>
+              <View style={[styles.introStepIcon, { backgroundColor: c.primaryTint }]}>
+                <Ionicons name="map" size={22} color={c.primary} />
+              </View>
+              <View style={styles.introStepBody}>
+                <Text style={[styles.introStepLabel, { color: c.textSecondary }]}>ROUTE</Text>
+                <Text style={[styles.introStepValue, { color: c.text }]}>Set pick-up and drop-off</Text>
+              </View>
+            </View>
+            <View style={[styles.introStepDivider, { borderBottomColor: c.border }]} />
+            <View style={styles.introStepRow}>
+              <View style={[styles.introStepIcon, { backgroundColor: c.primaryTint }]}>
+                <Ionicons name="time-outline" size={22} color={c.primary} />
+              </View>
+              <View style={styles.introStepBody}>
+                <Text style={[styles.introStepLabel, { color: c.textSecondary }]}>TIME</Text>
+                <Text style={[styles.introStepValue, { color: c.text }]}>Choose date and time</Text>
+              </View>
+            </View>
+            <View style={[styles.introStepDivider, { borderBottomColor: c.border }]} />
+            <View style={styles.introStepRow}>
+              <View style={[styles.introStepIcon, { backgroundColor: c.primaryTint }]}>
+                <Ionicons name="people-outline" size={22} color={c.primary} />
+              </View>
+              <View style={styles.introStepBody}>
+                <Text style={[styles.introStepLabel, { color: c.textSecondary }]}>SEATS</Text>
+                <Text style={[styles.introStepValue, { color: c.text }]}>How many passengers?</Text>
+              </View>
+            </View>
+            <View style={[styles.introStepDivider, { borderBottomColor: c.border }]} />
+            <View style={styles.introStepRow}>
+              <View style={[styles.introStepIcon, { backgroundColor: c.primaryTint }]}>
+                <Ionicons name="cash-outline" size={22} color={c.primary} />
+              </View>
+              <View style={styles.introStepBody}>
+                <Text style={[styles.introStepLabel, { color: c.textSecondary }]}>PRICE</Text>
+                <Text style={[styles.introStepValue, { color: c.text }]}>Set your price per seat</Text>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.introContinueBtn, { backgroundColor: c.text }]}
+            onPress={() => setStep(1)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.introContinueText}>Continue</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
       <View style={styles.stepMetaRow}>
         <Text style={styles.stepCounter}>
           Step {step + 1}/{steps.length}
@@ -564,13 +630,27 @@ export default function PublishRideScreen() {
           <Ionicons name="arrow-forward" size={24} color={colors.onPrimary} />
         </TouchableOpacity>
       </View>
+        </>
+      )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl, paddingHorizontal: spacing.lg },
+  introWrap: { paddingVertical: spacing.md },
+  introTitle: { ...typography.h2, marginBottom: spacing.xs },
+  introSub: { ...typography.bodySmall, marginBottom: spacing.lg },
+  introSteps: { marginBottom: spacing.xl },
+  introStepRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
+  introStepIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  introStepBody: { flex: 1 },
+  introStepLabel: { ...typography.caption, fontWeight: '700', letterSpacing: 0.5, marginBottom: 2 },
+  introStepValue: { ...typography.bodySmall, fontWeight: '600' },
+  introStepDivider: { borderBottomWidth: 1, marginLeft: 48 + spacing.md },
+  introContinueBtn: { paddingVertical: 16, borderRadius: 20, alignItems: 'center' },
+  introContinueText: { ...typography.body, fontWeight: '700', color: '#FFFFFF' },
   stepMetaRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components';
 import { useAuth } from '../../context/AuthContext';
-import { getDriverActivitySummary } from '../../services/mockApi';
+import { getDriverActivitySummary } from '../../services/api';
 import { colors, spacing, radii, typography } from '../../utils/theme';
 
 interface Summary {

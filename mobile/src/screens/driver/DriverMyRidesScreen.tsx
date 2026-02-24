@@ -14,7 +14,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
-import { getDriverTripActivities, updateDriverTripStatus } from '../../services/mockApi';
+import { getDriverTripActivities, updateDriverTripStatus } from '../../services/api';
 import {
   EmptyState,
   Screen,
@@ -23,13 +23,17 @@ import {
   ExpansionDetailsCard,
   ExpandActionButton,
 } from '../../components';
-import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
+import { buttonHeights, colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
+import { useThemeColors } from '../../context/ThemeContext';
 import type { DriverTripActivity } from '../../types';
+
+const CARD_RADIUS = 24;
 
 export default function DriverMyRidesScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
   const { agencySubRole } = useRole();
+  const c = useThemeColors();
   const isScanner = user?.agencySubRole === 'agency_scanner' || agencySubRole === 'agency_scanner';
   const [activities, setActivities] = useState<DriverTripActivity[]>([]);
   const [tab, setTab] = useState<'upcoming' | 'completed'>('upcoming');
@@ -134,21 +138,21 @@ export default function DriverMyRidesScreen() {
   return (
     <Screen style={styles.container}>
       {loadError ? (
-        <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>{loadError}</Text>
+        <View style={[styles.errorBanner, { backgroundColor: c.surfaceElevated, borderColor: c.error }]}>
+          <Text style={[styles.errorText, { color: c.error }]}>{loadError}</Text>
           <Button title="Retry" onPress={() => void loadTrips()} />
         </View>
       ) : null}
       <View style={styles.actionsRow}>
         <TouchableOpacity
-          style={styles.actionBtn}
+          style={[styles.actionBtn, { backgroundColor: c.primary, borderColor: c.primaryButtonBorder }]}
           onPress={() => navigation.navigate('DriverScanTicket')}
         >
-          <Text style={styles.actionBtnText}>Scan ticket</Text>
+          <Text style={[styles.actionBtnText, { color: c.onPrimary }]}>Scan ticket</Text>
         </TouchableOpacity>
         {!isScanner ? (
-          <TouchableOpacity style={styles.actionBtn} onPress={onToggleIncome}>
-            <Text style={styles.actionBtnText}>
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: c.surface, borderColor: c.border }]} onPress={onToggleIncome}>
+            <Text style={[styles.actionBtnText, { color: c.primary }]}>
               {isIncomeVisible ? 'Hide income' : 'View income'}
             </Text>
           </TouchableOpacity>
@@ -156,18 +160,18 @@ export default function DriverMyRidesScreen() {
       </View>
       <View style={styles.tabs}>
         <TouchableOpacity
-          style={[styles.tab, tab === 'upcoming' && styles.tabActive]}
+          style={[styles.tab, tab === 'upcoming' && { backgroundColor: c.primary }]}
           onPress={() => setTab('upcoming')}
         >
-          <Text style={[styles.tabText, tab === 'upcoming' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, { color: c.textSecondary }, tab === 'upcoming' && { color: c.onPrimary, fontWeight: '600' }]}>
             Upcoming
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, tab === 'completed' && styles.tabActive]}
+          style={[styles.tab, tab === 'completed' && { backgroundColor: c.primary }]}
           onPress={() => setTab('completed')}
         >
-          <Text style={[styles.tabText, tab === 'completed' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, { color: c.textSecondary }, tab === 'completed' && { color: c.onPrimary, fontWeight: '600' }]}>
             Completed
           </Text>
         </TouchableOpacity>
@@ -187,9 +191,9 @@ export default function DriverMyRidesScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
-              progressBackgroundColor={colors.surface}
+              colors={[c.primary]}
+              tintColor={c.primary}
+              progressBackgroundColor={c.surface}
             />
           }
           overScrollMode="always"
@@ -198,40 +202,54 @@ export default function DriverMyRidesScreen() {
           decelerationRate="fast"
           removeClippedSubviews={Platform.OS === 'android'}
           renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.headerRow}>
-                <Text style={styles.route}>
-                  {item.trip.departureHotpoint?.name} → {item.trip.destinationHotpoint?.name}
-                </Text>
-                <ExpandActionButton
-                  expanded={expandedTripId === item.trip.id}
-                  onPress={() => toggleExpanded(item.trip.id)}
-                />
-              </View>
-              <Text style={styles.time}>{item.trip.departureTime}</Text>
-              <Text style={styles.price}>
-                Collected {maskIncome(item.collectedAmount)} • Booked {item.bookedSeats}
-              </Text>
-              <Text style={styles.price}>Remaining seats {item.remainingSeats}</Text>
-              {!isScanner ? (
-                <View style={styles.statusActionRow}>
-                  {item.trip.status === 'active' ? (
-                    <TouchableOpacity
-                      style={styles.statusActionBtn}
-                      onPress={() => void onSetTripStatus(item.trip.id, 'completed')}
-                    >
-                      <Text style={styles.statusActionText}>Mark completed</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity
-                      style={styles.statusActionBtn}
-                      onPress={() => void onSetTripStatus(item.trip.id, 'active')}
-                    >
-                      <Text style={styles.statusActionText}>Mark active</Text>
-                    </TouchableOpacity>
-                  )}
+            <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }, cardShadow]}>
+              <View style={styles.routeRow}>
+                <View style={styles.routeCol}>
+                  <View style={[styles.routeLine, { backgroundColor: c.border }]} />
+                  <View style={styles.routeItem}>
+                    <View style={[styles.routeDot, { borderColor: c.primary }]} />
+                    <View style={styles.routeTextWrap}>
+                      <Text style={[styles.routeLabel, { color: c.textSecondary }]}>From</Text>
+                      <Text style={[styles.routeValue, { color: c.text }]} numberOfLines={1}>
+                        {item.trip.departureHotpoint?.name ?? '—'}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.routeItem}>
+                    <View style={[styles.routeDot, { borderColor: c.primary }]} />
+                    <View style={styles.routeTextWrap}>
+                      <Text style={[styles.routeLabel, { color: c.textSecondary }]}>To</Text>
+                      <Text style={[styles.routeValue, { color: c.text }]} numberOfLines={1}>
+                        {item.trip.destinationHotpoint?.name ?? '—'}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              ) : null}
+                <View style={styles.cardMeta}>
+                  <Text style={[styles.cardPrice, { color: c.text }]}>{maskIncome(item.collectedAmount)}</Text>
+                  <Text style={[styles.cardTime, { color: c.textSecondary }]}>{item.trip.departureTime}</Text>
+                  <ExpandActionButton
+                    expanded={expandedTripId === item.trip.id}
+                    onPress={() => toggleExpanded(item.trip.id)}
+                  />
+                </View>
+              </View>
+              <View style={[styles.cardDivider, { backgroundColor: c.border }]} />
+              <View style={styles.cardFooter}>
+                <Text style={[styles.cardFooterText, { color: c.textSecondary }]}>
+                  Booked {item.bookedSeats} • Remaining {item.remainingSeats}
+                </Text>
+                {!isScanner ? (
+                  <TouchableOpacity
+                    style={[styles.statusActionBtn, { backgroundColor: c.primary }]}
+                    onPress={() => void onSetTripStatus(item.trip.id, item.trip.status === 'active' ? 'completed' : 'active')}
+                  >
+                    <Text style={[styles.statusActionText, { color: c.onPrimary }]}>
+                      {item.trip.status === 'active' ? 'Mark completed' : 'Mark active'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
               {expandedTripId === item.trip.id ? (
                 <ExpansionDetailsCard
                   tone="driver"
@@ -276,68 +294,64 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     borderWidth: 1,
-    borderColor: colors.borderLight,
-    borderRadius: radii.button,
+    borderRadius: 16,
     minHeight: buttonHeights.small,
-    backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
     justifyContent: 'center',
   },
-  actionBtnText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '700',
-  },
+  actionBtnText: { ...typography.caption, fontWeight: '700' },
   tabs: {
     flexDirection: 'row',
-    paddingTop: spacing.sm,
-    gap: spacing.md,
+    paddingTop: spacing.md,
+    gap: spacing.sm,
   },
   tab: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    borderRadius: radii.button,
+    borderRadius: 16,
   },
-  tabActive: { backgroundColor: colors.primary },
-  tabText: { ...typography.body, color: colors.textSecondary },
-  tabTextActive: { color: colors.onPrimary, fontWeight: '600' },
+  tabText: { ...typography.body },
   card: {
     marginTop: spacing.md,
     marginBottom: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.card,
-    borderRadius: radii.md,
+    padding: spacing.lg,
+    borderRadius: CARD_RADIUS,
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+  routeRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  routeCol: { flex: 1, position: 'relative' },
+  routeLine: {
+    position: 'absolute',
+    left: 7,
+    top: 10,
+    bottom: 10,
+    width: 2,
   },
-  route: { ...typography.h3, color: colors.text, flex: 1 },
-  time: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
-  price: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
-  statusActionRow: { marginTop: spacing.sm, alignItems: 'flex-start' },
+  routeItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm, zIndex: 1 },
+  routeDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.background, borderWidth: 4 },
+  routeTextWrap: { flex: 1 },
+  routeLabel: { ...typography.caption },
+  routeValue: { ...typography.bodySmall, fontWeight: '600' },
+  cardMeta: { alignItems: 'flex-end' },
+  cardPrice: { ...typography.h3 },
+  cardTime: { ...typography.caption },
+  cardDivider: { height: 1, marginVertical: spacing.md },
+  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },
+  cardFooterText: { ...typography.caption },
   statusActionBtn: {
-    borderWidth: 1,
-    borderColor: colors.primaryButtonBorder,
-    borderRadius: radii.button,
+    borderRadius: 12,
     minHeight: buttonHeights.small,
     paddingHorizontal: spacing.sm,
     justifyContent: 'center',
-    backgroundColor: colors.primary,
   },
-  statusActionText: { ...typography.caption, color: colors.onPrimary, fontWeight: '600' },
+  statusActionText: { ...typography.caption, fontWeight: '600' },
   listContent: { paddingBottom: spacing.xl },
   errorBanner: {
     marginBottom: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.md,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.error,
     gap: spacing.sm,
   },
-  errorText: { ...typography.body, color: colors.error },
+  errorText: { ...typography.body },
 });

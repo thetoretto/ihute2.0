@@ -33,8 +33,8 @@ export const selectorStyles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: colors.popupSurface,
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
     maxHeight: '80%',
     padding: spacing.lg,
   },

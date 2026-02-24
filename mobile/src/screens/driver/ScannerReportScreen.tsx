@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl } fr
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components';
-import { getScannerTicketReport } from '../../services/mockApi';
-import type { ScannerTicketReportItem } from '../../services/mockApi';
+import { getScannerTicketReport } from '../../services/api';
+import type { ScannerTicketReportItem } from '../../services/api';
 import { colors, spacing, typography, radii } from '../../utils/theme';
 
 type Period = 'past' | 'today' | 'upcoming';

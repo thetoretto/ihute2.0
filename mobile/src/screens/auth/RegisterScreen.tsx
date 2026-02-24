@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
-import { getPendingOtp } from '../../services/mockPersistence';
+import { getPendingOtp } from '../../services/api';
 import { Button, Screen } from '../../components';
 import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
 

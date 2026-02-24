@@ -9,8 +9,8 @@ import {
   sendOtp as apiSendOtp,
   verifyOtp as apiVerifyOtp,
   createUserAfterOtp,
-} from '../services/mockApi';
-import { getMockStore, updateMockStore } from '../services/mockPersistence';
+} from '../services/api';
+import { getMockStore, updateMockStore } from '../services/api';
 
 interface AuthContextValue {
   user: User | null;

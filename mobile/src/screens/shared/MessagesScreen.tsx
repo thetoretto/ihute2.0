@@ -1,26 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { EmptyState, Screen } from '../../components';
 import { useThemeColors } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { getConversations } from '../../services/api';
+import type { ConversationListItem } from '../../services/api';
 import { mockUsers } from '../../services/mockData';
 import { colors, spacing, typography } from '../../utils/theme';
-// #region agent log
-fetch('http://127.0.0.1:7242/ingest/e2426e2f-6eb8-4ea6-91af-e79e0dbac3a5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f694c9'},body:JSON.stringify({sessionId:'f694c9',location:'MessagesScreen.tsx:module',message:'MessagesScreen module loading',data:{},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
-// #endregion
-
-type ConversationItem = {
-  id: string;
-  otherUser: { id: string; name: string };
-  lastMessage: string;
-  unreadCount: number;
-  updatedAt: string;
-  scopeLabel?: string;
-};
 
 // Driver (for a given booking/trip) and Agency/Support (ticket & claim) conversations
-const mockConversations: ConversationItem[] = [
+const mockConversations: ConversationListItem[] = [
   {
     id: 'c1',
     otherUser: mockUsers[1], // Camille – driver
@@ -50,9 +41,18 @@ const mockConversations: ConversationItem[] = [
 export default function MessagesScreen() {
   const navigation = useNavigation<any>();
   const c = useThemeColors();
-  const [conversations, setConversations] = useState(
-    [...mockConversations].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
-  );
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState<ConversationListItem[]>([]);
+
+  useEffect(() => {
+    if (user?.id) {
+      getConversations(user.id)
+        .then((list) => setConversations(list.length ? list : [...mockConversations].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))))
+        .catch(() => setConversations([...mockConversations].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))));
+    } else {
+      setConversations([...mockConversations].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)));
+    }
+  }, [user?.id]);
 
   if (conversations.length === 0) {
     return (
@@ -94,7 +94,7 @@ export default function MessagesScreen() {
               {item.scopeLabel ? (
                 <Text style={[styles.scopeLabel, { color: c.primary }]}>{item.scopeLabel}</Text>
               ) : null}
-              <Text style={[styles.preview, { color: c.textSecondary }]}>{item.lastMessage}</Text>
+              <Text style={[styles.preview, { color: c.textSecondary }]}>{item.lastMessage ?? ''}</Text>
             </View>
             <View style={styles.metaCol}>
               <Text style={[styles.timeText, { color: c.textMuted }]}>{new Date(item.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>

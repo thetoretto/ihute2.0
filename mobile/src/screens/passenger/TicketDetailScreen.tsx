@@ -4,7 +4,7 @@ import { RouteProp, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { Button, Screen } from '../../components';
-import { getBookingTicket, shareTicketPdf } from '../../services/mockApi';
+import { getBookingTicket, shareTicketPdf } from '../../services/api';
 import { colors, spacing, typography, radii } from '../../utils/theme';
 import type { BookingTicket } from '../../types';
 

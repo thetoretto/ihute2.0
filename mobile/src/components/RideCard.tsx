@@ -10,7 +10,7 @@ import type { Trip } from '../types';
 interface RideCardProps {
   trip: Trip;
   onPress: () => void;
-  variant?: 'default' | 'compact';
+  variant?: 'default' | 'compact' | 'blablacar';
 }
 
 export default function RideCard({ trip, onPress, variant = 'default' }: RideCardProps) {
@@ -18,6 +18,7 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
   const isFull = trip.status === 'full';
   const scale = React.useRef(new Animated.Value(1)).current;
   const compact = variant === 'compact';
+  const blablacar = variant === 'blablacar';
 
   const animatePressIn = () => {
     Animated.timing(scale, {
@@ -40,6 +41,51 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
   const durationStr = trip.durationMinutes
     ? `${Math.floor(trip.durationMinutes / 60)}h${trip.durationMinutes % 60}`
     : '—';
+
+  if (blablacar) {
+    return (
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <TouchableOpacity
+          style={[
+            styles.card,
+            styles.cardBlablacar,
+            { backgroundColor: c.card, borderColor: isFull ? c.border : c.borderLight },
+          ]}
+          onPress={onPress}
+          disabled={isFull}
+          activeOpacity={0.92}
+          onPressIn={animatePressIn}
+          onPressOut={animatePressOut}
+        >
+          <View style={styles.blablacarLeft}>
+            {trip.driver.avatarUri ? (
+              <Image source={{ uri: trip.driver.avatarUri }} style={styles.blablacarAvatar} />
+            ) : (
+              <View style={[styles.blablacarAvatar, styles.blablacarAvatarPlc]}>
+                <Ionicons name="person" size={20} color={c.textMuted} />
+              </View>
+            )}
+            <View style={styles.blablacarInfo}>
+              <Text style={[styles.blablacarTime, { color: c.text }]}>{trip.departureTime.slice(0, 5)}</Text>
+              <Text style={[styles.blablacarMeta, { color: c.textSecondary }]} numberOfLines={1}>
+                {trip.driver.name} • {trip.vehicle?.make} {trip.vehicle?.model}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.blablacarRight}>
+            {isFull ? (
+              <Text style={[styles.blablacarFull, { color: c.error }]}>Full</Text>
+            ) : (
+              <>
+                <Text style={[styles.blablacarPrice, { color: c.passengerBrand }]}>{formatRwf(trip.pricePerSeat)}</Text>
+                <Text style={[styles.blablacarPerSeat, { color: c.textMuted }]}>per seat</Text>
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
@@ -136,6 +182,38 @@ const styles = StyleSheet.create({
   cardEmphasis: {
     borderColor: colors.borderLight,
   },
+  cardBlablacar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    borderRadius: 24,
+    marginBottom: spacing.sm,
+  },
+  blablacarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+    minWidth: 0,
+  },
+  blablacarAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+  },
+  blablacarAvatarPlc: {
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  blablacarInfo: { flex: 1, minWidth: 0 },
+  blablacarTime: { ...typography.body, fontWeight: '700', fontSize: 16 },
+  blablacarMeta: { ...typography.caption, fontSize: 12, marginTop: 2 },
+  blablacarRight: { alignItems: 'flex-end' },
+  blablacarPrice: { ...typography.body, fontWeight: '800', fontSize: 18 },
+  blablacarPerSeat: { ...typography.caption, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 0 },
+  blablacarFull: { ...typography.caption, fontWeight: '600' },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
