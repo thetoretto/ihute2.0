@@ -14,9 +14,9 @@ import { strings } from '../constants/strings';
 function useStackScreenOptions() {
   const c = useThemeColors();
   return {
-    headerStyle: { backgroundColor: c.background },
-    headerTintColor: c.primary,
-    headerTitleStyle: { color: c.text, ...typography.h3 },
+    headerStyle: { backgroundColor: c.primary },
+    headerTintColor: c.dark,
+    headerTitleStyle: { color: c.dark, ...typography.h3 },
     headerTitle: () => <LogoHeader />,
     headerShadowVisible: false,
     headerTitleAlign: 'center' as const,
@@ -32,15 +32,15 @@ function useTabBarScreenOptionsBase() {
   return {
     tabBarStyle: {
       backgroundColor: c.tabBarBackground,
-      borderTopColor: c.border,
+      borderTopColor: 'rgba(254,228,107,0.15)',
       borderTopWidth: 1,
       paddingTop: spacing.sm,
       paddingBottom: spacing.sm,
     },
-    tabBarActiveTintColor: c.text,
-    tabBarInactiveTintColor: c.textSecondary,
-    headerStyle: { backgroundColor: c.background },
-    headerTintColor: c.primary,
+    tabBarActiveTintColor: c.primary,
+    tabBarInactiveTintColor: c.textMuted,
+    headerStyle: { backgroundColor: c.primary },
+    headerTintColor: c.dark,
     headerTitle: () => <LogoHeader />,
     headerTitleAlign: 'center' as const,
     animation: 'fade' as const,
@@ -67,6 +67,7 @@ import PassengerHomeScreen from '../screens/passenger/PassengerHomeScreen';
 import SearchScreen from '../screens/passenger/SearchScreen';
 import SearchResultsScreen from '../screens/passenger/SearchResultsScreen';
 import RideDetailScreen from '../screens/passenger/RideDetailScreen';
+import PassengerBookingScreen from '../screens/passenger/PassengerBookingScreen';
 import PassengerMyRidesScreen from '../screens/passenger/PassengerMyRidesScreen';
 import TicketDetailScreen from '../screens/passenger/TicketDetailScreen';
 
@@ -137,6 +138,7 @@ function PassengerHomeStack() {
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
       <Stack.Screen name="RideDetail" component={RideDetailScreen} />
+      <Stack.Screen name="PassengerBooking" component={PassengerBookingScreen} options={{ title: 'Book trip' }} />
       <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ title: strings.nav.ticketDetails }} />
     </Stack.Navigator>
   );
@@ -258,7 +260,7 @@ function PassengerTabsNavigator() {
   const screenOptions = {
     ...sharedTabBarScreenOptionsBase,
     tabBarActiveTintColor: c.primary,
-    tabBarInactiveTintColor: c.textSecondary,
+    tabBarInactiveTintColor: c.textMuted,
     tabBarStyle: {
       ...sharedTabBarScreenOptionsBase.tabBarStyle,
       height: responsiveTheme.layout.tabBarHeight,
@@ -328,9 +330,9 @@ function DriverTabsNavigator() {
     <Tabs.Navigator
       screenOptions={{
         ...screenOptions,
-        tabBarActiveTintColor: c.passengerDark,
-        tabBarInactiveTintColor: c.textSecondary,
-        headerTintColor: c.passengerDark,
+        tabBarActiveTintColor: c.primary,
+        tabBarInactiveTintColor: c.textMuted,
+        headerTintColor: c.dark,
       }}
     >
       <Tabs.Screen
@@ -340,7 +342,7 @@ function DriverTabsNavigator() {
           tabBarLabel: 'Home',
           headerTitle: () => <LogoHeader />,
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={tabBarIconSize} color={focused ? c.passengerDark : color} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={tabBarIconSize} color={focused ? c.primary : color} />
           ),
         }}
       />
@@ -350,7 +352,7 @@ function DriverTabsNavigator() {
         options={{
           tabBarLabel: strings.tabs.publish,
           tabBarIcon: ({ focused }) => (
-            <Ionicons name="add-circle" size={28} color={c.passengerDark} />
+            <Ionicons name="add-circle" size={28} color={c.primary} />
           ),
         }}
       />
@@ -360,7 +362,7 @@ function DriverTabsNavigator() {
         options={{
           tabBarLabel: strings.tabs.messages,
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={tabBarIconSize} color={focused ? c.passengerDark : color} />
+            <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={tabBarIconSize} color={focused ? c.primary : color} />
           ),
         }}
       />
@@ -370,7 +372,7 @@ function DriverTabsNavigator() {
         options={{
           tabBarLabel: strings.tabs.profile,
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={tabBarIconSize} color={focused ? c.passengerDark : color} />
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={tabBarIconSize} color={focused ? c.primary : color} />
           ),
         }}
       />
@@ -386,7 +388,7 @@ function AgencyTabsNavigator() {
   const screenOptions = {
     ...sharedTabBarScreenOptionsBase,
     tabBarActiveTintColor: c.agency,
-    tabBarInactiveTintColor: c.textSecondary,
+    tabBarInactiveTintColor: c.textMuted,
     headerTintColor: c.agency,
     tabBarStyle: {
       ...sharedTabBarScreenOptionsBase.tabBarStyle,
@@ -437,7 +439,7 @@ function ScannerTabsNavigator() {
   const screenOptions = {
     ...sharedTabBarScreenOptionsBase,
     tabBarActiveTintColor: c.agency,
-    tabBarInactiveTintColor: c.textSecondary,
+    tabBarInactiveTintColor: c.textMuted,
     headerTintColor: c.agency,
     tabBarStyle: {
       ...sharedTabBarScreenOptionsBase.tabBarStyle,

@@ -1,19 +1,35 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Routes, Route, NavLink, Outlet, useLocation } from 'react-router-dom';
-import DashboardPage   from './pages/DashboardPage';
-import UsersPage       from './pages/UsersPage';
-import ActivitiesPage  from './pages/ActivitiesPage';
-import IncomePage      from './pages/IncomePage';
-import HotpointsPage   from './pages/HotpointsPage';
-import RoutesPage      from './pages/RoutesPage';
-import DisputesPage    from './pages/DisputesPage';
-import TicketsPage     from './pages/TicketsPage';
-import VehiclesPage    from './pages/VehiclesPage';
+import {
+  LayoutGrid,
+  Building2,
+  ScanLine,
+  Users,
+  MapPin,
+  Route as RouteIcon,
+  Activity,
+  Car,
+  Ticket,
+  MessageCircle,
+  Wallet,
+  HelpCircle,
+  LogOut,
+  Search,
+  Bell,
+  Zap,
+} from 'lucide-react';
+import DashboardPage from './pages/DashboardPage';
+import UsersPage from './pages/UsersPage';
+import ActivitiesPage from './pages/ActivitiesPage';
+import IncomePage from './pages/IncomePage';
+import HotpointsPage from './pages/HotpointsPage';
+import RoutesPage from './pages/RoutesPage';
+import DisputesPage from './pages/DisputesPage';
+import TicketsPage from './pages/TicketsPage';
+import VehiclesPage from './pages/VehiclesPage';
 import ScannerOperatorsPage from './pages/ScannerOperatorsPage';
 import AgencyManagementPage from './pages/AgencyManagementPage';
-import LoginPage       from './pages/LoginPage';
-import PageHeader      from './components/PageHeader';
-import { NavIcons }    from './components/NavIcons';
+import LoginPage from './pages/LoginPage';
 import { AdminScopeProvider } from './context/AdminScopeContext';
 import type { AdminUser } from './types';
 
@@ -40,36 +56,38 @@ const NAV_SECTIONS: {
     label: string;
     labelForAgency?: string;
     end?: boolean;
-    icon: keyof typeof NavIcons;
+    icon: React.ReactNode;
     visibleFor?: VisibleFor;
   }[];
 }[] = [
   {
     label: 'Overview',
-    links: [{ to: '/', label: 'Dashboard', end: true, icon: 'overview', visibleFor: 'all' }],
+    links: [
+      { to: '/', label: 'Dashboard', end: true, icon: <LayoutGrid size={20} />, visibleFor: 'all' },
+    ],
   },
   {
     label: 'Operations',
     links: [
-      { to: '/agency-management', label: 'Agency', labelForAgency: 'My agency', icon: 'agency', visibleFor: 'all' },
-      { to: '/scanner-operators', label: 'Scanner operators', icon: 'scanner', visibleFor: 'all' },
-      { to: '/users', label: 'Users', icon: 'users', visibleFor: 'all' },
-      { to: '/hotpoints', label: 'Hot points', icon: 'hotpoints', visibleFor: 'system' },
-      { to: '/routes', label: 'Routes', icon: 'routes', visibleFor: 'all' },
-      { to: '/activities', label: 'Activities', icon: 'activities', visibleFor: 'all' },
-      { to: '/vehicles', label: 'Vehicles', icon: 'vehicles', visibleFor: 'all' },
+      { to: '/agency-management', label: 'Agency', labelForAgency: 'My agency', icon: <Building2 size={20} />, visibleFor: 'all' },
+      { to: '/scanner-operators', label: 'Scanner operators', icon: <ScanLine size={20} />, visibleFor: 'all' },
+      { to: '/users', label: 'Users', icon: <Users size={20} />, visibleFor: 'all' },
+      { to: '/hotpoints', label: 'Hot points', icon: <MapPin size={20} />, visibleFor: 'system' },
+      { to: '/routes', label: 'Routes', icon: <RouteIcon size={20} />, visibleFor: 'all' },
+      { to: '/activities', label: 'Activities', icon: <Activity size={20} />, visibleFor: 'all' },
+      { to: '/vehicles', label: 'Vehicles', icon: <Car size={20} />, visibleFor: 'all' },
     ],
   },
   {
     label: 'Support',
     links: [
-      { to: '/tickets', label: 'Tickets', icon: 'tickets', visibleFor: 'all' },
-      { to: '/disputes', label: 'Disputes', icon: 'disputes', visibleFor: 'all' },
+      { to: '/tickets', label: 'Tickets', icon: <Ticket size={20} />, visibleFor: 'all' },
+      { to: '/disputes', label: 'Disputes', icon: <MessageCircle size={20} />, visibleFor: 'all' },
     ],
   },
   {
     label: 'Finance',
-    links: [{ to: '/income', label: 'Income', icon: 'income', visibleFor: 'all' }],
+    links: [{ to: '/income', label: 'Income', icon: <Wallet size={20} />, visibleFor: 'all' }],
   },
 ];
 
@@ -90,21 +108,29 @@ function Layout({ user, onLogout }: LayoutProps) {
   const title = ROUTE_TITLES[location.pathname] ?? 'Dashboard';
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <img src="/logo.png" className="app-logo-img" alt="ihute" />
+    <div className="flex min-h-screen bg-surface font-sans text-dark">
+      {/* Sidebar - Dominant Yellow (template style) */}
+      <aside className="w-64 bg-primary flex flex-col h-screen sticky top-0 shadow-xl z-20">
+        <div className="p-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-dark rounded-xl flex items-center justify-center">
+              <Zap className="text-primary" size={24} fill="#FEE46B" />
+            </div>
+            <span className="font-black text-2xl tracking-tight text-dark">ihute</span>
+          </div>
         </div>
 
-        <nav>
+        <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
           {NAV_SECTIONS.map((section) => {
             const visibleLinks = section.links.filter((link) =>
               isLinkVisible(link.visibleFor, user.adminType)
             );
             if (visibleLinks.length === 0) return null;
             return (
-              <React.Fragment key={section.label}>
-                <div className="nav-section-label">{section.label}</div>
+              <div key={section.label}>
+                <p className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-dark/60">
+                  {section.label}
+                </p>
                 {visibleLinks.map(({ to, label, labelForAgency, end, icon }) => {
                   const displayLabel = user.adminType === 'agency' && labelForAgency != null ? labelForAgency : label;
                   return (
@@ -112,77 +138,112 @@ function Layout({ user, onLogout }: LayoutProps) {
                       key={to}
                       to={to}
                       end={end ?? false}
-                      className={({ isActive }) => (isActive ? 'nav-btn nav-btn-active' : 'nav-btn')}
+                      className={({ isActive }) =>
+                        `w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all mb-2 ${
+                          isActive
+                            ? 'bg-dark text-primary shadow-lg'
+                            : 'text-dark hover:bg-dark/10'
+                        }`
+                      }
                     >
-                      {NavIcons[icon]}
+                      {icon}
                       {displayLabel}
                     </NavLink>
                   );
                 })}
-              </React.Fragment>
+              </div>
             );
           })}
         </nav>
 
-        <div className="sidebar-user">
-          <div className="sidebar-user-avatar">{user.name[0]}</div>
-          <div className="sidebar-user-info">
-            <span className="sidebar-user-name">{user.name}</span>
-            <span className="sidebar-user-role">
-              {user.adminType === 'agency' ? 'Agency admin' : user.adminType === 'system' ? 'System admin' : user.roles[0]}
-            </span>
-          </div>
+        <div className="p-6 border-t border-dark/10 space-y-2">
+          <a href="#support" className="w-full flex items-center gap-4 px-4 py-3 text-dark font-bold hover:bg-dark/10 rounded-xl">
+            <HelpCircle size={20} /> Support
+          </a>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="w-full flex items-center gap-4 px-4 py-3 text-accent font-bold hover:bg-accent/10 rounded-xl"
+          >
+            <LogOut size={20} /> Logout
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="sidebar-logout-link"
-          onClick={onLogout}
-          title="Log out"
-        >
-          {NavIcons.logout}
-          Log out
-        </button>
       </aside>
 
-      <div className="content">
-        <PageHeader title={title} />
-        <div className="content-main">
+      {/* Main content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Top navbar (template style) */}
+        <header className="h-20 bg-white border-b border-soft px-10 flex items-center justify-between shrink-0">
+          <div className="relative w-96">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+            <input
+              type="text"
+              placeholder="Search data, transactions, files..."
+              className="w-full py-2 pl-12 pr-4 bg-surface rounded-xl text-sm border-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          <div className="flex items-center gap-6">
+            <div className="p-2 text-muted hover:text-dark cursor-pointer relative">
+              <Bell size={22} />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full" />
+            </div>
+            <div className="flex items-center gap-3 border-l pl-6 border-soft">
+              <div className="text-right">
+                <p className="text-sm font-bold">{user.name}</p>
+                <p className="text-[10px] text-muted font-bold uppercase tracking-widest">
+                  {user.adminType === 'agency' ? 'Agency Admin' : 'System Admin'}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-soft border-2 border-primary flex items-center justify-center font-bold text-dark">
+                {user.name[0]}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page title + content */}
+        <div className="flex-1 overflow-y-auto p-10">
+          <h1 className="text-2xl font-black text-dark mb-6">{title}</h1>
           <Outlet />
         </div>
-      </div>
+      </main>
     </div>
   );
 }
 
 export default function App() {
-  const [authedUser, setAuthedUser] = useState<AdminUser | null>(null);
+  const [authedUser, setAuthedUser] = React.useState<AdminUser | null>(null);
 
   if (!authedUser) {
     return <LoginPage onLogin={setAuthedUser} />;
   }
 
-  const scope = authedUser?.adminType === 'agency' && authedUser.agencyId
-    ? { agencyId: authedUser.agencyId }
-    : undefined;
+  const scope =
+    authedUser?.adminType === 'agency' && authedUser.agencyId
+      ? { agencyId: authedUser.agencyId }
+      : undefined;
 
   return (
     <AdminScopeProvider scope={scope}>
-    <Routes>
-      <Route path="/" element={<Layout user={authedUser} onLogout={() => setAuthedUser(null)} />}>
-        <Route index               element={<DashboardPage />}  />
-        <Route path="users"        element={<UsersPage />}      />
-        <Route path="hotpoints"    element={<HotpointsPage />}  />
-        <Route path="routes"       element={<RoutesPage />}     />
-        <Route path="activities"   element={<ActivitiesPage />} />
-        <Route path="tickets"      element={<TicketsPage />}    />
-        <Route path="vehicles"     element={<VehiclesPage />}   />
-        <Route path="scanner-operators" element={<ScannerOperatorsPage />} />
-        <Route path="agency-management" element={<AgencyManagementPage />} />
-        <Route path="disputes"     element={<DisputesPage />}   />
-        <Route path="income"       element={<IncomePage />}     />
-      </Route>
-    </Routes>
+      <Routes>
+        <Route
+          path="/"
+          element={<Layout user={authedUser} onLogout={() => setAuthedUser(null)} />}
+        >
+          <Route index element={<DashboardPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="hotpoints" element={<HotpointsPage />} />
+          <Route path="routes" element={<RoutesPage />} />
+          <Route path="activities" element={<ActivitiesPage />} />
+          <Route path="tickets" element={<TicketsPage />} />
+          <Route path="vehicles" element={<VehiclesPage />} />
+          <Route path="scanner-operators" element={<ScannerOperatorsPage />} />
+          <Route path="agency-management" element={<AgencyManagementPage />} />
+          <Route path="disputes" element={<DisputesPage />} />
+          <Route path="income" element={<IncomePage />} />
+        </Route>
+      </Routes>
     </AdminScopeProvider>
   );
 }

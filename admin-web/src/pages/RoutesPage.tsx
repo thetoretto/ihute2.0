@@ -54,30 +54,33 @@ export default function RoutesPage() {
     return rows;
   }, []);
 
+  const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
   return (
-    <section>
-      <h2>Routes</h2>
-      <p className="subtle">Distinct origin–destination pairs derived from trips.</p>
-      <table>
-        <thead>
-          <tr>
-            <th>Route</th>
-            <th>Trip count</th>
-            <th>Bookings</th>
-            <th>Last activity</th>
-          </tr>
-        </thead>
-        <tbody>
-          {routes.map((r) => (
-            <tr key={`${r.originId}-${r.destId}`}>
-              <td>{r.originName} → {r.destName}</td>
-              <td>{r.tripCount}</td>
-              <td>{r.bookingCount}</td>
-              <td>{r.lastActivity}</td>
+    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+      <h3 className="text-2xl font-black text-dark mb-2">Routes</h3>
+      <p className="text-muted text-sm mb-6">Distinct origin–destination pairs derived from trips.</p>
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-surface">
+              <th className={th}>Route</th>
+              <th className={th}>Trip count</th>
+              <th className={th}>Bookings</th>
+              <th className={th}>Last activity</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
+          </thead>
+          <tbody className="divide-y divide-surface">
+            {routes.map((r) => (
+              <tr key={`${r.originId}-${r.destId}`} className="group hover:bg-surface/50 transition-colors">
+                <td className="py-5 font-bold text-sm">{r.originName} → {r.destName}</td>
+                <td className="py-5 text-sm">{r.tripCount}</td>
+                <td className="py-5 text-sm">{r.bookingCount}</td>
+                <td className="py-5 text-sm">{r.lastActivity}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }

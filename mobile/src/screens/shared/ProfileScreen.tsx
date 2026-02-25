@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
-import { getDriverRatingSummary, getDriverActivitySummary } from '../../services/api';
+import { getDriverRatingSummary } from '../../services/api';
 import { Button, Screen, RatingDisplay, formatRatingValue } from '../../components';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeContext, useThemeColors } from '../../context/ThemeContext';
@@ -29,20 +29,9 @@ export default function ProfileScreen() {
   const effectiveTypography = responsive?.typography ?? typography;
   const isScanner = currentRole === 'agency' && agencySubRole === 'agency_scanner';
   const [driverRatingSummary, setDriverRatingSummary] = React.useState<{ average: number; count: number } | null>(null);
-  const [activitySummary, setActivitySummary] = React.useState<{
-    doneCount: number;
-    activeCount: number;
-    bookingsCount: number;
-    remainingSeats: number;
-    income: number;
-  } | null>(null);
-  const [timeframe, setTimeframe] = React.useState<'today' | 'week'>('today');
-  const [isIncomeVisible, setIsIncomeVisible] = React.useState(false);
-  const incomeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isDriverOrAgency =
     (user?.roles?.includes('driver') || user?.roles?.includes('agency')) ?? false;
-  const showActivitiesWallet = isDriverOrAgency && !isScanner;
 
   React.useEffect(() => {
     const load = async () => {
@@ -55,56 +44,6 @@ export default function ProfileScreen() {
     };
     void load();
   }, [currentRole, user]);
-
-  React.useEffect(() => {
-    const load = async () => {
-      if (!showActivitiesWallet || !user) {
-        setActivitySummary(null);
-        return;
-      }
-      const summary = await getDriverActivitySummary(user.id);
-      setActivitySummary(summary);
-    };
-    void load();
-  }, [showActivitiesWallet, user]);
-
-  React.useEffect(() => () => {
-    if (incomeTimerRef.current) clearTimeout(incomeTimerRef.current);
-  }, []);
-
-  const maskIncome = (value: number, suffix = 'RWF') =>
-    isIncomeVisible ? `${Number(value).toLocaleString('en-RW', { maximumFractionDigits: 0 })} ${suffix}` : '••••••';
-
-  const displaySummary = React.useMemo(() => {
-    if (!activitySummary) return null;
-    if (timeframe === 'today') return activitySummary;
-    return {
-      doneCount: activitySummary.doneCount * 2,
-      activeCount: activitySummary.activeCount,
-      bookingsCount: activitySummary.bookingsCount * 2,
-      remainingSeats: activitySummary.remainingSeats,
-      income: activitySummary.income * 2,
-    };
-  }, [activitySummary, timeframe]);
-
-  const onToggleIncome = () => {
-    if (isIncomeVisible) {
-      setIsIncomeVisible(false);
-      if (incomeTimerRef.current) clearTimeout(incomeTimerRef.current);
-      return;
-    }
-    Alert.alert('View income', 'Reveal income values for 12 seconds?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'View income',
-        onPress: () => {
-          setIsIncomeVisible(true);
-          if (incomeTimerRef.current) clearTimeout(incomeTimerRef.current);
-          incomeTimerRef.current = setTimeout(() => setIsIncomeVisible(false), 12000);
-        },
-      },
-    ]);
-  };
 
   const handleLogout = () => {
     Alert.alert(strings.auth.logOut, strings.auth.logOutConfirm, [
@@ -152,52 +91,6 @@ export default function ProfileScreen() {
         </>
       ) : null}
 
-      {showActivitiesWallet && activitySummary != null ? (
-        <>
-          <View style={[styles.walletCard, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
-            <Text style={[styles.walletTitle, { color: themeColors.text }]}>{strings.profile.activitiesWallet}</Text>
-            <View style={styles.walletHeaderRow}>
-              <Text style={[styles.walletSubtitle, { color: themeColors.textSecondary }]}>{strings.profile.quickTotals}</Text>
-              <View style={styles.timeframeRow}>
-                <TouchableOpacity
-                  onPress={() => setTimeframe('today')}
-                  style={[styles.timeframeBtn, { borderColor: themeColors.border, backgroundColor: themeColors.surface }, timeframe === 'today' && { borderColor: themeColors.primaryButtonBorder, backgroundColor: themeColors.primary }]}
-                >
-                  <Text style={[styles.timeframeText, { color: themeColors.textSecondary }, timeframe === 'today' && { color: themeColors.onPrimary, fontWeight: '600' }]}>{strings.profile.today}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setTimeframe('week')}
-                  style={[styles.timeframeBtn, { borderColor: themeColors.border, backgroundColor: themeColors.surface }, timeframe === 'week' && { borderColor: themeColors.primaryButtonBorder, backgroundColor: themeColors.primary }]}
-                >
-                  <Text style={[styles.timeframeText, { color: themeColors.textSecondary }, timeframe === 'week' && { color: themeColors.onPrimary, fontWeight: '600' }]}>{strings.profile.week}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            <View style={styles.metricsGrid}>
-              <View style={[styles.miniCard, { backgroundColor: themeColors.surfaceElevated, borderColor: themeColors.border }]}>
-                <Text style={[styles.miniLabel, { color: themeColors.textSecondary }]}>{strings.profile.done}</Text>
-                <Text style={[styles.miniValue, { color: themeColors.text }]}>{displaySummary?.doneCount ?? 0}</Text>
-              </View>
-              <View style={[styles.miniCard, { backgroundColor: themeColors.surfaceElevated, borderColor: themeColors.border }]}>
-                <Text style={[styles.miniLabel, { color: themeColors.textSecondary }]}>{strings.profile.active}</Text>
-                <Text style={[styles.miniValue, { color: themeColors.text }]}>{displaySummary?.activeCount ?? 0}</Text>
-              </View>
-              <View style={[styles.miniCard, { backgroundColor: themeColors.surfaceElevated, borderColor: themeColors.border }]}>
-                <Text style={[styles.miniLabel, { color: themeColors.textSecondary }]}>{strings.profile.bookings}</Text>
-                <Text style={[styles.miniValue, { color: themeColors.text }]}>{displaySummary?.bookingsCount ?? 0}</Text>
-              </View>
-              <View style={[styles.miniCard, { backgroundColor: themeColors.surfaceElevated, borderColor: themeColors.border }]}>
-                <Text style={[styles.miniLabel, { color: themeColors.textSecondary }]}>{strings.profile.income}</Text>
-                <Text style={[styles.miniValue, { color: themeColors.text }]}>{maskIncome(displaySummary?.income ?? 0)}</Text>
-                <TouchableOpacity onPress={onToggleIncome} style={[styles.incomeToggleBtn, { borderColor: themeColors.primaryButtonBorder, backgroundColor: themeColors.primary }]}>
-                  <Text style={[styles.incomeToggleText, { color: themeColors.onPrimary }]}>{isIncomeVisible ? strings.profile.hideIncome : strings.profile.viewIncome}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-          <View style={[styles.divider, { backgroundColor: themeColors.border }]} />
-        </>
-      ) : null}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: themeColors.text }]}>{strings.profile.account}</Text>
         <TouchableOpacity
@@ -368,46 +261,4 @@ const styles = StyleSheet.create({
   },
   hotlineText: { flex: 1, ...typography.body },
   logoutWrap: { marginTop: spacing.md, paddingVertical: spacing.md, borderRadius: radii.md },
-  walletCard: {
-    borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  walletTitle: { ...typography.h3 },
-  walletHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  walletSubtitle: { ...typography.caption },
-  timeframeRow: { flexDirection: 'row', gap: spacing.xs },
-  timeframeBtn: {
-    borderWidth: 1,
-    borderRadius: radii.button,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  timeframeText: { ...typography.caption },
-  metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  miniCard: {
-    width: '48%',
-    minHeight: 80,
-    borderWidth: 1,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    justifyContent: 'space-between',
-  },
-  miniLabel: { ...typography.caption },
-  miniValue: { ...typography.h3 },
-  incomeToggleBtn: {
-    marginTop: spacing.xs,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderRadius: radii.button,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  incomeToggleText: { ...typography.caption, fontWeight: '700' },
 });

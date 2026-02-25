@@ -8,15 +8,13 @@ import {
   Modal,
   FlatList,
   TextInput,
-  Platform,
   Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
-import { RoleToggle, Button, RideCard, Screen, CarRefreshIndicator, Divider } from '../../components';
+import { RoleToggle, Button, RideCard, Screen, CarRefreshIndicator, Divider, DateTimePicker } from '../../components';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
@@ -267,18 +265,14 @@ export default function PassengerHomeScreen() {
           </Text>
           <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
         </TouchableOpacity>
-        {showDatePicker && (
-          <DateTimePicker
-            value={searchDate || new Date()}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            minimumDate={new Date()}
-            onChange={(_, selectedDate) => {
-              setShowDatePicker(false);
-              if (selectedDate) setSearchDate(selectedDate);
-            }}
-          />
-        )}
+        <DateTimePicker
+          visible={showDatePicker}
+          onRequestClose={() => setShowDatePicker(false)}
+          value={searchDate || new Date()}
+          onChange={(d) => setSearchDate(d)}
+          mode="date"
+          minimumDate={new Date()}
+        />
         {searchValidation ? (
           <Text style={[styles.searchValidation, { color: c.error }]}>{searchValidation}</Text>
         ) : null}

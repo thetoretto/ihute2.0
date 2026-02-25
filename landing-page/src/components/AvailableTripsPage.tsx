@@ -3,6 +3,7 @@ import { mockHotpoints } from '@shared/mocks';
 import type { Trip } from '@shared/types';
 import { getTripsStore, setTripsStore } from '../store';
 import { fetchTripsFromApi } from '../api';
+import DateTimePicker from './DateTimePicker';
 
 export interface TripSearchCriteria {
   fromId: string;
@@ -43,7 +44,9 @@ function isPublicTrip(trip: { driver: { roles?: string[] } }) {
 export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onSelectTrip }: AvailableTripsPageProps) {
   const [fromId, setFromId] = useState(criteria.fromId);
   const [toId, setToId] = useState(criteria.toId);
-  const [date, setDate] = useState(criteria.date);
+  const [date, setDate] = useState<Date | null>(
+    criteria.date ? new Date(criteria.date) : null
+  );
   const [travelers, setTravelers] = useState(String(criteria.travelers));
   const [tripCategory, setTripCategory] = useState<TripCategory>('all');
   const [apiTrips, setApiTrips] = useState<Trip[] | null>(null);
@@ -52,7 +55,7 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
   useEffect(() => {
     setFromId(criteria.fromId);
     setToId(criteria.toId);
-    setDate(criteria.date);
+    setDate(criteria.date ? new Date(criteria.date) : null);
     setTravelers(String(criteria.travelers));
   }, [criteria.date, criteria.fromId, criteria.toId, criteria.travelers]);
 
@@ -62,7 +65,7 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
       const data = await fetchTripsFromApi({
         fromId: fromId || undefined,
         toId: toId || undefined,
-        date: date || undefined,
+        date: date ? date.toISOString().slice(0, 10) : undefined,
       });
       setApiTrips(data);
       setTripsStore(data);
@@ -105,7 +108,7 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
     onSearch({
       fromId,
       toId,
-      date,
+      date: date ? date.toISOString().slice(0, 10) : '',
       travelers: Math.max(1, Number(travelers) || 1),
     });
   }
@@ -151,13 +154,13 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
           </div>
 
           <div className="trips-filter-field">
-            <label htmlFor="filter-date">Date</label>
-            <input
-              id="filter-date"
-              type="date"
+            <DateTimePicker
+              label="Date"
+              mode="date"
               value={date}
-              min={new Date().toISOString().slice(0, 10)}
-              onChange={(event) => setDate(event.target.value)}
+              onChange={(d) => setDate(d)}
+              minDate={new Date()}
+              placeholder="Any date"
             />
           </div>
 

@@ -5,12 +5,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Platform,
+  TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { HotpointPicker, PaymentMethodIcons, Screen } from '../../components';
+import { HotpointPicker, PaymentMethodIcons, Screen, DateTimePicker } from '../../components';
 import { getHotpoints, getUserVehicles, publishTrip, publishTrips } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
@@ -20,13 +19,12 @@ import { selectorStyles } from '../../utils/selectorStyles';
 import { formatRwf } from '../../../../shared/src';
 import type { Hotpoint, Vehicle, PaymentMethod } from '../../types';
 
-const INSTANT_STEPS = ['Intro', 'Ride Type', 'Vehicle', 'Departure', 'Destination', 'Details', 'Payment', 'Review'];
+const INSTANT_STEPS = ['Intro', 'Ride Type', 'Vehicle', 'Route', 'Details', 'Payment', 'Review'];
 const SCHEDULED_STEPS = [
   'Intro',
   'Ride Type',
   'Vehicle',
-  'Departure',
-  'Destination',
+  'Route',
   'Schedule',
   'Details',
   'Payment',
@@ -35,14 +33,20 @@ const SCHEDULED_STEPS = [
 const SCHEDULED_AGENCY_STEPS = [
   'Intro',
   'Vehicle',
-  'Departure',
-  'Destination',
+  'Route',
   'Schedule',
   'Repetition',
   'Details',
   'Payment',
   'Review',
 ];
+
+const AMENITIES = [
+  { id: 'ac', label: 'AC', icon: 'snow-outline' as const },
+  { id: 'charger', label: 'USB Charger', icon: 'battery-charging-outline' as const },
+  { id: 'music', label: 'Music', icon: 'musical-notes-outline' as const },
+  { id: 'coffee', label: 'Coffee stop', icon: 'cafe-outline' as const },
+] as const;
 
 function formatDateValue(date: Date) {
   const y = date.getFullYear();
@@ -86,6 +90,9 @@ export default function PublishRideScreen() {
   const [maxRear, setMaxRear] = useState(false);
   const [allowFullCar, setAllowFullCar] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(['cash', 'mobile_money', 'card']);
+  const [durationDisplay, setDurationDisplay] = useState('45 mins');
+  const [driverNote, setDriverNote] = useState('');
+  const [amenities, setAmenities] = useState<string[]>(['ac', 'music']);
   const isAgency = currentRole === 'agency';
   const steps =
     rideType === 'scheduled' && isAgency
@@ -136,13 +143,21 @@ export default function PublishRideScreen() {
     setMaxRear(false);
     setAllowFullCar(true);
     setPaymentMethods(['cash', 'mobile_money', 'card']);
+    setDurationDisplay('45 mins');
+    setDriverNote('');
+    setAmenities(['ac', 'music']);
+  };
+
+  const toggleAmenity = (id: string) => {
+    setAmenities((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   };
 
   const canProceed = () => {
     if (currentStep === 'Intro') return true;
     if (currentStep === 'Vehicle') return !!vehicle;
-    if (currentStep === 'Departure') return !!departure;
-    if (currentStep === 'Destination') return !!destination;
+    if (currentStep === 'Route') return !!departure && !!destination;
     if (currentStep === 'Schedule') {
       return scheduledDate.trim().length > 0 && scheduledTime.trim().length > 0;
     }
@@ -154,8 +169,7 @@ export default function PublishRideScreen() {
 
   const getStepValidationMessage = () => {
     if (currentStep === 'Vehicle') return 'Select an approved vehicle first.';
-    if (currentStep === 'Departure') return 'Select a departure hotpoint.';
-    if (currentStep === 'Destination') return 'Select a destination hotpoint.';
+    if (currentStep === 'Route') return 'Select departure and destination.';
     if (currentStep === 'Schedule') return 'Select both schedule date and departure time.';
     if (currentStep === 'Repetition') return 'Select repetition interval.';
     if (currentStep === 'Payment') return 'Choose at least one payment method.';
@@ -313,24 +327,24 @@ export default function PublishRideScreen() {
       {currentStep === 'Ride Type' && (
         <View style={styles.stepContent}>
           <TouchableOpacity
-            style={[styles.option, rideType === 'insta' && styles.optionActive]}
+            style={[styles.option, { backgroundColor: c.card, borderColor: c.border }, rideType === 'insta' && { backgroundColor: c.primary, borderColor: c.primary }]}
             onPress={() => setRideType('insta')}
           >
             <View style={styles.optionRow}>
-              <Ionicons name="flash-outline" size={18} color={rideType === 'insta' ? colors.onPrimary : colors.primary} />
-              <Text style={[styles.optionText, rideType === 'insta' && styles.optionTextActive]}>InstaRide</Text>
+              <Ionicons name="flash-outline" size={18} color={rideType === 'insta' ? c.onPrimary : c.primary} />
+              <Text style={[styles.optionText, { color: c.text }, rideType === 'insta' && { color: c.onPrimary }]}>InstaRide</Text>
             </View>
-            <Text style={[styles.optionSub, rideType === 'insta' && styles.optionSubActive]}>Publish immediately for riders nearby.</Text>
+            <Text style={[styles.optionSub, { color: c.textSecondary }, rideType === 'insta' && { color: c.onPrimary, opacity: 0.9 }]}>Publish immediately for riders nearby.</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.option, rideType === 'scheduled' && styles.optionActive]}
+            style={[styles.option, { backgroundColor: c.card, borderColor: c.border }, rideType === 'scheduled' && { backgroundColor: c.primary, borderColor: c.primary }]}
             onPress={() => setRideType('scheduled')}
           >
             <View style={styles.optionRow}>
-              <Ionicons name="calendar-outline" size={18} color={rideType === 'scheduled' ? colors.onPrimary : colors.primary} />
-              <Text style={[styles.optionText, rideType === 'scheduled' && styles.optionTextActive]}>Scheduled</Text>
+              <Ionicons name="calendar-outline" size={18} color={rideType === 'scheduled' ? c.onPrimary : c.primary} />
+              <Text style={[styles.optionText, { color: c.text }, rideType === 'scheduled' && { color: c.onPrimary }]}>Scheduled</Text>
             </View>
-            <Text style={[styles.optionSub, rideType === 'scheduled' && styles.optionSubActive]}>Plan and publish in advance.</Text>
+            <Text style={[styles.optionSub, { color: c.textSecondary }, rideType === 'scheduled' && { color: c.onPrimary, opacity: 0.9 }]}>Plan and publish in advance.</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -340,44 +354,56 @@ export default function PublishRideScreen() {
           {vehicles.map((v) => (
             <TouchableOpacity
               key={v.id}
-              style={[styles.option, vehicle?.id === v.id && styles.optionActive]}
+              style={[styles.option, { backgroundColor: c.card, borderColor: c.border }, vehicle?.id === v.id && { backgroundColor: c.primary, borderColor: c.primary }]}
               onPress={() => {
                 setVehicle(v);
                 if (isAgency) setSeats(v.seats);
               }}
             >
               <View style={styles.optionRow}>
-                <Ionicons name="car-sport-outline" size={18} color={vehicle?.id === v.id ? colors.onPrimary : colors.primary} />
-                <Text style={[styles.optionText, vehicle?.id === v.id && styles.optionTextActive]}>{v.make} {v.model}</Text>
+                <Ionicons name="car-sport-outline" size={18} color={vehicle?.id === v.id ? c.onPrimary : c.primary} />
+                <Text style={[styles.optionText, { color: c.text }, vehicle?.id === v.id && { color: c.onPrimary }]}>{v.make} {v.model}</Text>
               </View>
-              <Text style={[styles.optionSub, vehicle?.id === v.id && styles.optionSubActive]}>{v.color} • {v.licensePlate}</Text>
+              <Text style={[styles.optionSub, { color: c.textSecondary }, vehicle?.id === v.id && { color: c.onPrimary, opacity: 0.9 }]}>{v.color} • {v.licensePlate}</Text>
             </TouchableOpacity>
           ))}
           {vehicles.length === 0 && (
-            <Text style={styles.empty}>No approved vehicles. Add one in Vehicle Garage.</Text>
+            <Text style={[styles.empty, { color: c.textSecondary }]}>No approved vehicles. Add one in Vehicle Garage.</Text>
           )}
         </View>
       )}
 
-      {currentStep === 'Departure' && (
+      {currentStep === 'Route' && (
         <View style={styles.stepContent}>
-          <HotpointPicker
-            value={departure}
-            hotpoints={hotpoints}
-            onSelect={setDeparture}
-            placeholder="Select departure"
-          />
-        </View>
-      )}
-
-      {currentStep === 'Destination' && (
-        <View style={styles.stepContent}>
-          <HotpointPicker
-            value={destination}
-            hotpoints={hotpoints}
-            onSelect={setDestination}
-            placeholder="Select destination"
-          />
+          <View style={[styles.routeCard, { backgroundColor: c.primaryTint, borderColor: c.border }, cardShadow]}>
+            <View style={styles.routeLineWrap}>
+              <View style={[styles.routeDotStart, { borderColor: c.primary }]} />
+              <View style={[styles.routeLine, { backgroundColor: c.border }]} />
+              <View style={[styles.routeDotEnd, { backgroundColor: c.primary }]} />
+            </View>
+            <View style={styles.routePickers}>
+              <View style={styles.routePickerRow}>
+                <Text style={[styles.routeLabel, { color: c.textSecondary }]}>Where from?</Text>
+                <HotpointPicker
+                  value={departure}
+                  hotpoints={hotpoints}
+                  onSelect={setDeparture}
+                  placeholder="Where from?"
+                  triggerStyle={[styles.routeTrigger, { borderBottomColor: c.border }]}
+                />
+              </View>
+              <View style={styles.routePickerRow}>
+                <Text style={[styles.routeLabel, { color: c.textSecondary }]}>Where to?</Text>
+                <HotpointPicker
+                  value={destination}
+                  hotpoints={hotpoints}
+                  onSelect={setDestination}
+                  placeholder="Where to?"
+                  triggerStyle={styles.routeTrigger}
+                />
+              </View>
+            </View>
+          </View>
         </View>
       )}
 
@@ -391,20 +417,16 @@ export default function PublishRideScreen() {
             </Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
-          {showDatePicker ? (
-            <DateTimePicker
-              value={scheduledDateObj}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'inline' : 'default'}
-              onChange={(_, selectedDate) => {
-                setShowDatePicker(false);
-                if (selectedDate) {
-                  setScheduledDateObj(selectedDate);
-                  setScheduledDate(formatDateValue(selectedDate));
-                }
-              }}
-            />
-          ) : null}
+          <DateTimePicker
+            visible={showDatePicker}
+            onRequestClose={() => setShowDatePicker(false)}
+            value={scheduledDateObj}
+            onChange={(selectedDate) => {
+              setScheduledDateObj(selectedDate);
+              setScheduledDate(formatDateValue(selectedDate));
+            }}
+            mode="date"
+          />
 
           <Text style={[styles.label, styles.scheduleLabel]}>Departure time</Text>
           <TouchableOpacity style={selectorStyles.trigger} onPress={() => setShowTimePicker(true)} activeOpacity={0.8}>
@@ -414,20 +436,16 @@ export default function PublishRideScreen() {
             </Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
-          {showTimePicker ? (
-            <DateTimePicker
-              value={scheduledDateObj}
-              mode="time"
-              display="default"
-              onChange={(_, selectedTime) => {
-                setShowTimePicker(false);
-                if (selectedTime) {
-                  setScheduledDateObj(selectedTime);
-                  setScheduledTime(formatTimeValue(selectedTime));
-                }
-              }}
-            />
-          ) : null}
+          <DateTimePicker
+            visible={showTimePicker}
+            onRequestClose={() => setShowTimePicker(false)}
+            value={scheduledDateObj}
+            onChange={(selectedTime) => {
+              setScheduledDateObj(selectedTime);
+              setScheduledTime(formatTimeValue(selectedTime));
+            }}
+            mode="time"
+          />
           <Text style={styles.scheduleHint}>
             Use picker controls to set date/time (no manual typing).
           </Text>
@@ -474,20 +492,16 @@ export default function PublishRideScreen() {
             </Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
-          {showRepetitionEndPicker ? (
-            <DateTimePicker
-              value={repetitionEndDateObj}
-              mode="time"
-              display="default"
-              onChange={(_, selectedTime) => {
-                setShowRepetitionEndPicker(false);
-                if (selectedTime) {
-                  setRepetitionEndDateObj(selectedTime);
-                  setRepetitionEndTime(formatTimeValue(selectedTime));
-                }
-              }}
-            />
-          ) : null}
+          <DateTimePicker
+            visible={showRepetitionEndPicker}
+            onRequestClose={() => setShowRepetitionEndPicker(false)}
+            value={repetitionEndDateObj}
+            onChange={(selectedTime) => {
+              setRepetitionEndDateObj(selectedTime);
+              setRepetitionEndTime(formatTimeValue(selectedTime));
+            }}
+            mode="time"
+          />
           <Text style={styles.scheduleHint}>
             Buses will depart at the selected interval. Set an end time to limit the number of trips.
           </Text>
@@ -496,59 +510,129 @@ export default function PublishRideScreen() {
 
       {currentStep === 'Details' && (
         <View style={styles.stepContent}>
-          <Text style={styles.label}>Seats available</Text>
-          <View style={styles.stepper}>
-            <TouchableOpacity
-              style={styles.stepperBtn}
-              onPress={() => setSeats((s) => Math.max(1, s - 1))}
-            >
-              <Ionicons name="remove" size={24} color={colors.primary} />
-            </TouchableOpacity>
-            <Text style={styles.stepperValue}>{seats}</Text>
-            <TouchableOpacity
-              style={styles.stepperBtn}
-              onPress={() => setSeats((s) => Math.min(seatsMax, s + 1))}
-            >
-              <Ionicons name="add" size={24} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-          {!isAgency ? (
-            <TouchableOpacity
-              style={styles.checkRow}
-              onPress={() => setMaxRear(!maxRear)}
-            >
-              <View style={[styles.checkbox, maxRear && styles.checkboxChecked]}>
-                {maxRear && <Ionicons name="checkmark" size={16} color={colors.primary} />}
+          <View style={styles.detailsGrid}>
+            <View style={[styles.detailsCard, { backgroundColor: c.card, borderColor: c.border }, cardShadow]}>
+              <Text style={[styles.detailsCardLabel, { color: c.textSecondary }]}>CAPACITY</Text>
+              <View style={styles.detailsStepperRow}>
+                <TouchableOpacity
+                  style={[styles.detailsStepperBtn, { backgroundColor: c.primaryTint, borderColor: c.border }]}
+                  onPress={() => setSeats((s) => Math.max(1, s - 1))}
+                >
+                  <Ionicons name="remove" size={18} color={c.text} />
+                </TouchableOpacity>
+                <Text style={[styles.detailsStepperValue, { color: c.text }]}>{seats}</Text>
+                <TouchableOpacity
+                  style={[styles.detailsStepperBtn, { backgroundColor: c.primaryTint, borderColor: c.border }]}
+                  onPress={() => setSeats((s) => Math.min(seatsMax, s + 1))}
+                >
+                  <Ionicons name="add" size={18} color={c.text} />
+                </TouchableOpacity>
               </View>
-              <Text style={styles.checkLabel}>Max 2 in the back (comfort)</Text>
-            </TouchableOpacity>
-          ) : null}
-          <Text style={styles.label}>Price per seat (RWF)</Text>
-          <View style={styles.stepper}>
-            <TouchableOpacity
-              style={styles.stepperBtn}
-              onPress={() => setPrice((p) => Math.max(priceMin, p - priceStep))}
-            >
-              <Ionicons name="remove" size={24} color={colors.primary} />
-            </TouchableOpacity>
-            <Text style={[styles.stepperValue, styles.priceText]}>{formatRwf(price)}</Text>
-            <TouchableOpacity
-              style={styles.stepperBtn}
-              onPress={() => setPrice((p) => Math.min(priceMax, p + priceStep))}
-            >
-              <Ionicons name="add" size={24} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.recommended}>Recommended: 30,000 - 35,000 RWF</Text>
-          <TouchableOpacity
-            style={styles.checkRow}
-            onPress={() => setAllowFullCar(!allowFullCar)}
-          >
-            <View style={[styles.checkbox, allowFullCar && styles.checkboxChecked]}>
-              {allowFullCar && <Ionicons name="checkmark" size={16} color={colors.primary} />}
             </View>
-            <Text style={styles.checkLabel}>Allow full car booking</Text>
-          </TouchableOpacity>
+            <View style={[styles.detailsCard, { backgroundColor: c.card, borderColor: c.border }, cardShadow]}>
+              <Text style={[styles.detailsCardLabel, { color: c.textSecondary }]}>PRICE / SEAT</Text>
+              <View style={styles.detailsPriceRow}>
+                <Text style={[styles.detailsPricePrefix, { color: c.primary }]}>RWF</Text>
+                <View style={styles.detailsPriceStepper}>
+                  <TouchableOpacity
+                    style={[styles.detailsStepperBtn, { backgroundColor: c.primaryTint, borderColor: c.border }]}
+                    onPress={() => setPrice((p) => Math.max(priceMin, p - priceStep))}
+                  >
+                    <Ionicons name="remove" size={16} color={c.text} />
+                  </TouchableOpacity>
+                  <Text style={[styles.detailsStepperValue, { color: c.text }]}>{formatRwf(price)}</Text>
+                  <TouchableOpacity
+                    style={[styles.detailsStepperBtn, { backgroundColor: c.primaryTint, borderColor: c.border }]}
+                    onPress={() => setPrice((p) => Math.min(priceMax, p + priceStep))}
+                  >
+                    <Ionicons name="add" size={16} color={c.text} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.durationRow, { backgroundColor: c.primaryTint, borderColor: c.border }]}>
+            <View style={[styles.durationIconWrap, { backgroundColor: c.background }]}>
+              <Ionicons name="time-outline" size={20} color={c.primary} />
+            </View>
+            <View style={styles.durationBody}>
+              <Text style={[styles.detailsCardLabel, { color: c.textSecondary }]}>TRIP DURATION</Text>
+              <TextInput
+                style={[styles.durationInput, { color: c.text }]}
+                value={durationDisplay}
+                onChangeText={setDurationDisplay}
+                placeholder="e.g. 45 mins"
+                placeholderTextColor={c.textSecondary}
+              />
+            </View>
+            <View style={[styles.autoCalcBadge, { backgroundColor: c.primary }]}>
+              <Text style={[styles.autoCalcText, { color: c.onPrimary }]}>Auto-Calc</Text>
+            </View>
+          </View>
+
+          <View style={styles.amenitiesSection}>
+            <View style={styles.amenitiesHeader}>
+              <Text style={[styles.amenitiesTitle, { color: c.text }]}>AMENITIES</Text>
+              <Text style={[styles.amenitiesCount, { color: c.textSecondary }]}>{amenities.length} selected</Text>
+            </View>
+            <View style={styles.amenitiesGrid}>
+              {AMENITIES.map((a) => {
+                const selected = amenities.includes(a.id);
+                return (
+                  <TouchableOpacity
+                    key={a.id}
+                    style={[
+                      styles.amenityChip,
+                      { borderColor: c.border, backgroundColor: selected ? c.primary : c.card },
+                      selected && cardShadow,
+                    ]}
+                    onPress={() => toggleAmenity(a.id)}
+                  >
+                    <Ionicons
+                      name={a.icon}
+                      size={18}
+                      color={selected ? c.onPrimary : c.textSecondary}
+                    />
+                    <Text style={[styles.amenityLabel, { color: selected ? c.onPrimary : c.text }]}>{a.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.noteSection}>
+            <View style={styles.noteHeader}>
+              <Ionicons name="information-circle-outline" size={16} color={c.primary} />
+              <Text style={[styles.noteTitle, { color: c.text }]}>DRIVER NOTE</Text>
+            </View>
+            <TextInput
+              style={[styles.noteInput, { backgroundColor: c.primaryTint, borderColor: c.border, color: c.text }]}
+              value={driverNote}
+              onChangeText={setDriverNote}
+              placeholder="e.g. Please no large suitcases..."
+              placeholderTextColor={c.textSecondary}
+              multiline
+              numberOfLines={4}
+            />
+          </View>
+
+          {!isAgency ? (
+            <>
+              <TouchableOpacity style={styles.checkRow} onPress={() => setMaxRear(!maxRear)}>
+                <View style={[styles.checkbox, maxRear && { borderColor: c.primary, backgroundColor: c.primary }]}>
+                  {maxRear && <Ionicons name="checkmark" size={16} color={c.onPrimary} />}
+                </View>
+                <Text style={[styles.checkLabel, { color: c.text }]}>Max 2 in the back (comfort)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.checkRow} onPress={() => setAllowFullCar(!allowFullCar)}>
+                <View style={[styles.checkbox, allowFullCar && { borderColor: c.primary, backgroundColor: c.primary }]}>
+                  {allowFullCar && <Ionicons name="checkmark" size={16} color={c.onPrimary} />}
+                </View>
+                <Text style={[styles.checkLabel, { color: c.text }]}>Allow full car booking</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
         </View>
       )}
 
@@ -609,6 +693,24 @@ export default function PublishRideScreen() {
               <Ionicons name="cash-outline" size={16} color={colors.primary} />
               <Text style={styles.reviewText}>{formatRwf(price)}/seat</Text>
             </View>
+            {durationDisplay ? (
+              <View style={styles.reviewRow}>
+                <Ionicons name="time-outline" size={16} color={colors.primary} />
+                <Text style={styles.reviewText}>{durationDisplay}</Text>
+              </View>
+            ) : null}
+            {driverNote ? (
+              <View style={styles.reviewRow}>
+                <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.primary} />
+                <Text style={styles.reviewText} numberOfLines={2}>{driverNote}</Text>
+              </View>
+            ) : null}
+            {amenities.length > 0 ? (
+              <View style={styles.reviewRow}>
+                <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
+                <Text style={styles.reviewText}>{AMENITIES.filter((a) => amenities.includes(a.id)).map((a) => a.label).join(', ')}</Text>
+              </View>
+            ) : null}
             <View style={styles.reviewRow}>
               <Ionicons name="card-outline" size={16} color={colors.primary} />
               <Text style={styles.reviewText}>
@@ -619,15 +721,22 @@ export default function PublishRideScreen() {
         </View>
       )}
 
-      <View style={styles.footer}>
-        <TouchableOpacity onPress={() => (step > 0 ? setStep(step - 1) : navigation.goBack())}>
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
+      <View style={[styles.footer, { borderTopColor: c.border }]}>
+        <TouchableOpacity onPress={() => (step > 0 ? setStep(step - 1) : navigation.goBack())} style={styles.footerBack}>
+          <Ionicons name="chevron-back" size={24} color={c.primary} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.nextBtn, !canProceed() && styles.nextBtnDisabled]}
+          style={[
+            styles.publishBtn,
+            { backgroundColor: c.text },
+            !canProceed() && styles.nextBtnDisabled,
+          ]}
           onPress={nextStep}
         >
-          <Ionicons name="arrow-forward" size={24} color={colors.onPrimary} />
+          <Ionicons name="navigate" size={20} color="#FFFFFF" />
+          <Text style={styles.publishBtnText}>
+            {currentStep === 'Review' ? 'Publish Trip' : 'Continue'}
+          </Text>
         </TouchableOpacity>
       </View>
         </>
@@ -753,6 +862,103 @@ const styles = StyleSheet.create({
   },
   repetitionChipText: { ...typography.body, color: colors.textSecondary },
   repetitionChipTextActive: { color: colors.onPrimary, fontWeight: '600' },
+  routeCard: {
+    flexDirection: 'row',
+    padding: spacing.lg,
+    borderRadius: 24,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  routeLineWrap: {
+    width: 32,
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  routeDotStart: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.background,
+    borderWidth: 2,
+  },
+  routeLine: { width: 2, flex: 1, minHeight: 24, marginVertical: 4 },
+  routeDotEnd: { width: 10, height: 10, borderRadius: 5 },
+  routePickers: { flex: 1 },
+  routePickerRow: { marginBottom: spacing.sm },
+  routeLabel: { ...typography.caption, marginBottom: 2 },
+  routeTrigger: {
+    backgroundColor: 'transparent',
+    borderBottomWidth: 1,
+    paddingVertical: 8,
+    borderRadius: 0,
+    marginBottom: 0,
+  },
+  detailsGrid: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
+  detailsCard: {
+    flex: 1,
+    padding: spacing.lg,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  detailsCardLabel: {
+    ...typography.caption,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+  },
+  detailsStepperRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  detailsStepperBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detailsStepperValue: { ...typography.h2 },
+  detailsPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs },
+  detailsPricePrefix: { ...typography.bodySmall, fontWeight: '700' },
+  detailsPriceStepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
+  durationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: spacing.lg,
+  },
+  durationIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
+  durationBody: { flex: 1 },
+  durationInput: { ...typography.body, fontWeight: '600', paddingVertical: 4 },
+  autoCalcBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  autoCalcText: { ...typography.caption, fontWeight: '700' },
+  amenitiesSection: { marginBottom: spacing.lg },
+  amenitiesHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
+  amenitiesTitle: { ...typography.bodySmall, fontWeight: '700' },
+  amenitiesCount: { ...typography.caption },
+  amenitiesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  amenityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+    borderRadius: 20,
+    borderWidth: 1,
+    minWidth: '47%',
+  },
+  amenityLabel: { ...typography.bodySmall, fontWeight: '700' },
+  noteSection: { marginBottom: spacing.lg },
+  noteHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
+  noteTitle: { ...typography.bodySmall, fontWeight: '700' },
+  noteInput: {
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: spacing.lg,
+    ...typography.bodySmall,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
   reviewCard: {
     padding: spacing.md,
     borderRadius: radii.md,
@@ -766,10 +972,22 @@ const styles = StyleSheet.create({
   reviewText: { ...typography.bodySmall, color: colors.text },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.md,
     padding: spacing.lg,
+    borderTopWidth: 1,
   },
+  footerBack: { padding: spacing.sm },
+  publishBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: 18,
+    borderRadius: 20,
+  },
+  publishBtnText: { ...typography.body, fontWeight: '700', color: '#FFFFFF' },
   nextBtn: {
     width: buttonHeights.large,
     height: buttonHeights.large,

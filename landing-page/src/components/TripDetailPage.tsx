@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { mockUsers } from '@shared/mocks';
-import { BOOKING_ID_PREFIX } from '@shared/constants';
 import { getTripsStore, getBookingsStore, setBookingsStore, setTripsStore } from '../store';
+import { createBooking } from '../api';
 import type { PaymentMethod } from '@shared/types';
 
 interface TripDetailPageProps {
@@ -56,39 +55,17 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked }: 
     setError('');
     setLoading(true);
     try {
-      await new Promise<void>((resolve) => setTimeout(resolve, 700));
-
-      const passenger = mockUsers.find((u) => u.roles.includes('passenger')) ?? mockUsers[0];
-      const bookingId = `${BOOKING_ID_PREFIX}web_${Date.now()}`;
-      const now = new Date().toISOString();
-      const method = paymentMethod as PaymentMethod;
-
-      const newBooking = {
-        id: bookingId,
-        trip: currentTrip,
-        passenger,
+      const booking = await createBooking({
+        tripId: currentTrip.id,
         seats: effectiveSeats,
-        paymentMethod: method,
+        paymentMethod: paymentMethod as PaymentMethod,
         isFullCar,
-        status: 'upcoming' as const,
-        createdAt: now,
-        ticketId: `tk_${bookingId}`,
-        ticketNumber: `IHT-${bookingId.toUpperCase()}-${new Date().getFullYear()}`,
-        ticketIssuedAt: now,
-        paymentStatus: (method === 'cash' ? 'cash_on_pickup' : 'paid') as 'cash_on_pickup' | 'paid',
-      };
-
-      const remaining = currentTrip.seatsAvailable - effectiveSeats;
-      const updatedTrip: typeof currentTrip = {
-        ...currentTrip,
-        seatsAvailable: Math.max(0, remaining),
-        status: (remaining <= 0 ? 'full' : 'active') as typeof currentTrip.status,
-      };
-
-      setBookingsStore([...getBookingsStore(), newBooking]);
-      setTripsStore(getTripsStore().map((t) => (t.id === currentTrip.id ? updatedTrip : t)));
-
-      onBooked(bookingId);
+      });
+      setBookingsStore([...getBookingsStore(), booking]);
+      const trips = getTripsStore();
+      const updatedTrips = trips.map((t) => (t.id === currentTrip.id && booking.trip ? { ...booking.trip } : t));
+      setTripsStore(updatedTrips);
+      onBooked(booking.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Booking failed. Please try again.');
     } finally {

@@ -1,100 +1,154 @@
-import React, { useState, useEffect } from 'react';
-import { getDisputes, getBookings, resolveDispute, setDisputeStatus } from '../services/adminData';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getDisputes as getDisputesLocal, getBookings, resolveDispute as resolveDisputeLocal, setDisputeStatus as setDisputeStatusLocal } from '../services/adminData';
+import { getDisputes as getDisputesApi, patchDispute as patchDisputeApi, isApiConfigured } from '../services/api';
 import { adminSnapshot } from '../data/snapshot';
 import { useAdminScope } from '../context/AdminScopeContext';
 import type { Dispute } from '../types';
 
 export default function DisputesPage() {
   const scope = useAdminScope();
-  const [disputes, setDisputes] = useState<Dispute[]>(() => getDisputes(scope));
+  const useApi = isApiConfigured();
+  const [disputes, setDisputes] = useState<Dispute[]>(() => (useApi ? [] : getDisputesLocal(scope)));
+  const [loading, setLoading] = useState(useApi);
   const [filter, setFilter] = useState<Dispute['status'] | 'all'>('all');
   const [detail, setDetail] = useState<Dispute | null>(null);
   const [resolution, setResolution] = useState('');
   const [resolvedBy, setResolvedBy] = useState('admin');
 
-  useEffect(() => {
-    setDisputes([...getDisputes(scope)]);
-  }, [scope]);
+  const refresh = useCallback(async () => {
+    if (useApi) {
+      setLoading(true);
+      try {
+        const list = await getDisputesApi(scope);
+        setDisputes(list);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setDisputes([...getDisputesLocal(scope)]);
+    }
+  }, [scope, useApi]);
 
-  const refresh = () => setDisputes([...getDisputes(scope)]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const filtered = filter === 'all' ? disputes : disputes.filter((d) => d.status === filter);
 
   const bookings = getBookings(scope);
-  const getReporterName = (id: string) => adminSnapshot.users.find((u) => u.id === id)?.name ?? id;
+  const getReporterName = (id: string) =>
+    useApi ? id : (adminSnapshot.users.find((u) => u.id === id)?.name ?? id);
   const getBooking = (bookingId: string) => bookings.find((b) => b.id === bookingId);
   const getRoute = (d: Dispute) => {
+    if (useApi) return d.bookingId;
     const b = getBooking(d.bookingId);
     if (!b) return '—';
     return `${b.trip.departureHotpoint.name} → ${b.trip.destinationHotpoint.name}`;
   };
 
-  const handleResolve = () => {
+  const handleResolve = async () => {
     if (!detail || !resolution.trim()) return;
-    resolveDispute(detail.id, resolution.trim(), resolvedBy);
-    setDetail(null);
-    setResolution('');
-    refresh();
+    if (useApi) {
+      try {
+        await patchDisputeApi(detail.id, { status: 'resolved', resolution: resolution.trim(), resolvedBy });
+        setDetail(null);
+        setResolution('');
+        await refresh();
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      resolveDisputeLocal(detail.id, resolution.trim(), resolvedBy);
+      setDetail(null);
+      setResolution('');
+      refresh();
+    }
   };
 
-  const handleSetStatus = (id: string, status: Dispute['status']) => {
-    setDisputeStatus(id, status);
-    refresh();
+  const handleSetStatus = async (id: string, status: Dispute['status']) => {
+    if (useApi) {
+      try {
+        await patchDisputeApi(id, { status });
+        await refresh();
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      setDisputeStatusLocal(id, status);
+      refresh();
+    }
   };
 
+  const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
   return (
-    <section>
-      <div className="header-row">
-        <h2>Disputes</h2>
-        <div className="chip-row">
+    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-2xl font-black text-dark">Disputes</h3>
+        <div className="flex gap-2">
           {(['all', 'open', 'in_review', 'resolved'] as const).map((s) => (
-            <button key={s} className={`chip ${filter === s ? 'chip-active' : ''}`} onClick={() => setFilter(s)}>
+            <button
+              key={s}
+              type="button"
+              onClick={() => setFilter(s)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                filter === s ? 'bg-dark text-primary' : 'bg-surface text-dark hover:bg-soft'
+              }`}
+            >
               {s === 'all' ? 'All' : s.replace('_', ' ')}
             </button>
           ))}
         </div>
       </div>
-      <p className="subtle">Resolve payment, cancellation, and other disputes.</p>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Booking</th>
-            <th>Route</th>
-            <th>Reporter</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map((d) => (
-            <tr key={d.id}>
-              <td>{d.id}</td>
-              <td>{d.bookingId}</td>
-              <td>{getRoute(d)}</td>
-              <td>{getReporterName(d.reporterId)}</td>
-              <td>{d.type}</td>
-              <td>
-                <span className={`status-chip status-${d.status === 'in_review' ? 'in_review' : d.status}`}>
-                  {d.status.toUpperCase()}
-                </span>
-              </td>
-              <td>{new Date(d.createdAt).toLocaleDateString()}</td>
-              <td>
-                <button type="button" className="btn-sm" onClick={() => { setDetail(d); setResolution(d.resolution ?? ''); }}>View</button>
-                {d.status !== 'resolved' && (
-                  <>
-                    {d.status !== 'in_review' && <button type="button" className="btn-sm" onClick={() => handleSetStatus(d.id, 'in_review')}>In review</button>}
-                    <button type="button" className="btn-sm btn-primary" onClick={() => setDetail(d)}>Resolve</button>
-                  </>
-                )}
-              </td>
+      <p className="text-muted text-sm mb-6">Resolve payment, cancellation, and other disputes.</p>
+      {useApi && <p className="text-muted text-xs mb-4">Using server API (VITE_API_BASE_URL).</p>}
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-surface">
+              <th className={th}>ID</th>
+              <th className={th}>Booking</th>
+              <th className={th}>Route</th>
+              <th className={th}>Reporter</th>
+              <th className={th}>Type</th>
+              <th className={th}>Status</th>
+              <th className={th}>Created</th>
+              <th className={th}>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-surface">
+            {loading ? (
+              <tr><td colSpan={8} className="py-8 text-center text-muted">Loading…</td></tr>
+            ) : (
+              filtered.map((d) => (
+                <tr key={d.id} className="group hover:bg-surface/50 transition-colors">
+                  <td className="py-5 text-sm font-medium">{d.id}</td>
+                  <td className="py-5 text-sm">{d.bookingId}</td>
+                  <td className="py-5 text-sm">{getRoute(d)}</td>
+                  <td className="py-5 text-sm">{getReporterName(d.reporterId)}</td>
+                  <td className="py-5 text-sm">{d.type}</td>
+                  <td className="py-5">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                      d.status === 'resolved' ? 'bg-gray-100 text-gray-700' : d.status === 'in_review' ? 'bg-blue-100 text-blue-700' : 'bg-primary text-dark'
+                    }`}>
+                      {d.status.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="py-5 text-sm">{new Date(d.createdAt).toLocaleDateString()}</td>
+                  <td className="py-5">
+                    <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-surface hover:bg-soft mr-2" onClick={() => { setDetail(d); setResolution(d.resolution ?? ''); }}>View</button>
+                    {d.status !== 'resolved' && (
+                      <>
+                        {d.status !== 'in_review' && <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-surface hover:bg-soft mr-2" onClick={() => handleSetStatus(d.id, 'in_review')}>In review</button>}
+                        <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-primary text-dark" onClick={() => setDetail(d)}>Resolve</button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {detail && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
@@ -134,6 +188,6 @@ export default function DisputesPage() {
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }

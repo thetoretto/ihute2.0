@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react';
 import Navbar                from './components/Navbar';
 import Hero                  from './components/Hero';
-import PopularRoutes         from './components/PopularRoutes';
-import DriverCTA             from './components/DriverCTA';
-import Benefits              from './components/Benefits';
-import TravelModes           from './components/TravelModes';
+import HowItWorks            from './components/HowItWorks';
+import HotDestinations       from './components/HotDestinations';
 import AppDownload           from './components/AppDownload';
-import DestinationSpotlight   from './components/DestinationSpotlight';
-import Testimonial           from './components/Testimonial';
-import HelpCenter            from './components/HelpCenter';
 import Footer                from './components/Footer';
 import AvailableTripsPage, { type TripSearchCriteria } from './components/AvailableTripsPage';
 import TripDetailPage        from './components/TripDetailPage';
@@ -85,17 +80,12 @@ export default function App() {
       <Navbar onViewAllTrips={handleViewAllTrips} />
       <main className="lp-main" role="main">
         {page === 'landing' && (
-          <>
-            <Hero onSearch={handleSearch} onViewAllTrips={handleViewAllTrips} />
-            <PopularRoutes onSearch={handleSearch} />
-            <DriverCTA />
-            <Benefits />
-            <TravelModes onViewAllTrips={handleViewAllTrips} />
+          <div className="landing-rs">
+            <Hero onSearch={handleSearch} />
+            <HowItWorks />
+            <HotDestinations onSearch={handleSearch} />
             <AppDownload />
-            <DestinationSpotlight onSearch={handleViewAllTrips} />
-            <Testimonial />
-            <HelpCenter />
-          </>
+          </div>
         )}
 
         {page === 'trips' && (

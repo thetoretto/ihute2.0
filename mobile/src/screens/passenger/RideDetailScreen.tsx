@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { PaymentMethodIcons, Screen } from '../../components';
-import { getTripsStore, getTrip, bookTrip } from '../../services/api';
+import { Screen } from '../../components';
+import { getTripsStore, getTrip } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
+import { colors, spacing, typography, radii, buttonHeights } from '../../utils/theme';
 import { formatRwf } from '../../../../shared/src';
-import type { PaymentMethod, Trip } from '../../types';
+import type { Trip } from '../../types';
+
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/e2426e2f-6eb8-4ea6-91af-e79e0dbac3a5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'91e267'},body:JSON.stringify({sessionId:'91e267',location:'RideDetailScreen.tsx:after-import',message:'theme import',data:{hasButtonHeights:typeof buttonHeights!=='undefined'},timestamp:Date.now(),hypothesisId:'H1',runId:'post-fix'})}).catch(()=>{});
+// #endregion
 
 const PASSENGER_BRAND = colors.passengerBrand;
 const PASSENGER_DARK = colors.passengerDark;
@@ -33,10 +28,6 @@ export default function RideDetailScreen() {
   const [trip, setTrip] = useState<Trip | undefined>(
     () => getTripsStore().find((t) => t.id === route.params.tripId)
   );
-  const [modalVisible, setModalVisible] = useState(false);
-  const [seats, setSeats] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | undefined>(undefined);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
     const store = getTripsStore();
@@ -79,51 +70,9 @@ export default function RideDetailScreen() {
     return true;
   };
 
-  const handleBook = async () => {
-    if (!user || paymentMethod == null || isProcessingPayment) {
-      Alert.alert('Select a payment method');
-      return;
-    }
+  const openBooking = () => {
     if (!requireProfileForBooking()) return;
-    if (seats < 1 || seats > trip.seatsAvailable) {
-      Alert.alert('Invalid seats', `Choose between 1 and ${trip.seatsAvailable} seats.`);
-      return;
-    }
-    try {
-      setIsProcessingPayment(true);
-      const booking = await bookTrip({
-        tripId: trip.id,
-        passenger: user,
-        seats,
-        paymentMethod,
-        isFullCar: seats >= trip.seatsAvailable,
-      });
-      const updatedTrip = getTripsStore().find((x) => x.id === route.params.tripId) ?? await getTrip(route.params.tripId);
-      if (updatedTrip) setTrip(updatedTrip);
-      setSeats(1);
-      setPaymentMethod(undefined);
-      setModalVisible(false);
-      const paymentMessage =
-        paymentMethod === 'cash'
-          ? 'Cash payment reserved for pickup'
-          : paymentMethod === 'mobile_money'
-            ? 'Mobile money payment approved'
-            : 'Card payment approved';
-      Alert.alert('Booking confirmed', `${paymentMessage}. Ticket generated successfully.`, [
-        {
-          text: 'View ticket',
-          onPress: () => navigation.navigate('TicketDetail', { bookingId: booking.id }),
-        },
-        {
-          text: 'Activities',
-          onPress: () => (navigation.getParent() as any)?.navigate('PassengerBookings'),
-        },
-      ]);
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not complete booking');
-    } finally {
-      setIsProcessingPayment(false);
-    }
+    navigation.navigate('PassengerBooking', { tripId: trip.id });
   };
 
   return (
@@ -183,32 +132,16 @@ export default function RideDetailScreen() {
           </Text>
         </View>
         <Text style={styles.price}>{formatRwf(trip.pricePerSeat)} <Text style={styles.perSeat}>per seat</Text></Text>
-        <PaymentMethodIcons
-          methods={trip.paymentMethods}
-          selected={paymentMethod}
-          onSelect={setPaymentMethod}
-        />
       </View>
       {!isFull && (
         <>
-          <TouchableOpacity
-            style={styles.bookBtn}
-            onPress={() => {
-              if (!requireProfileForBooking()) return;
-              setModalVisible(true);
-            }}
-            activeOpacity={0.85}
-          >
+          <TouchableOpacity style={styles.bookBtn} onPress={openBooking} activeOpacity={0.85}>
             <Text style={styles.bookBtnText}>Book seat(s)</Text>
           </TouchableOpacity>
           {trip.allowFullCar && trip.seatsAvailable > 1 && (
             <TouchableOpacity
               style={styles.bookFullBtn}
-              onPress={() => {
-                if (!requireProfileForBooking()) return;
-                setSeats(trip.seatsAvailable);
-                setModalVisible(true);
-              }}
+              onPress={openBooking}
               activeOpacity={0.85}
             >
               <Text style={styles.bookFullBtnText}>Book full car</Text>
@@ -216,88 +149,6 @@ export default function RideDetailScreen() {
           )}
         </>
       )}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Confirm your ride</Text>
-            <View style={styles.modalDriverRow}>
-              {trip.driver.avatarUri ? (
-                <Image source={{ uri: trip.driver.avatarUri }} style={styles.modalAvatar} />
-              ) : (
-                <View style={[styles.modalAvatar, styles.modalAvatarPlc]}>
-                  <Ionicons name="person" size={28} color={colors.textMuted} />
-                </View>
-              )}
-              <View style={styles.modalDriverInfo}>
-                <Text style={styles.modalDriverName}>{trip.driver.name}</Text>
-                {trip.driver.rating != null && (
-                  <Text style={styles.modalRating}>
-                    <Ionicons name="star" size={12} color={PASSENGER_BRAND} /> {trip.driver.rating} Rating
-                  </Text>
-                )}
-              </View>
-            </View>
-            <View style={styles.modalSummaryBox}>
-              <View style={styles.modalSummaryRow}>
-                <Text style={styles.modalSummaryLabel}>Route</Text>
-                <Text style={styles.modalSummaryValue}>
-                  {trip.departureHotpoint.name} → {trip.destinationHotpoint.name}
-                </Text>
-              </View>
-              <View style={styles.modalSummaryRow}>
-                <Text style={styles.modalSummaryLabel}>Departure</Text>
-                <Text style={styles.modalSummaryValue}>{trip.departureTime}</Text>
-              </View>
-              <View style={[styles.modalSummaryRow, styles.modalSummaryRowTotal]}>
-                <Text style={styles.modalSummaryTotal}>Total Price</Text>
-                <Text style={styles.modalSummaryPrice}>{formatRwf(seats * trip.pricePerSeat)}</Text>
-              </View>
-            </View>
-            <Text style={styles.modalSeatsLabel}>Number of seats</Text>
-            <View style={styles.stepper}>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => setSeats((s) => Math.max(1, s - 1))}
-              >
-                <Text style={styles.stepperText}>−</Text>
-              </TouchableOpacity>
-              <Text style={styles.stepperValue}>{seats}</Text>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => setSeats((s) => Math.min(trip.seatsAvailable, s + 1))}
-              >
-                <Text style={styles.stepperText}>+</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.modalSub}>Payment method</Text>
-            <PaymentMethodIcons
-              methods={trip.paymentMethods}
-              selected={paymentMethod}
-              onSelect={setPaymentMethod}
-            />
-            <TouchableOpacity
-              style={styles.confirmBtn}
-              onPress={handleBook}
-              disabled={isProcessingPayment || paymentMethod == null}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.confirmBtnText}>
-                {isProcessingPayment ? 'Processing...' : 'Confirm Booking'}
-              </Text>
-            </TouchableOpacity>
-            {isProcessingPayment ? (
-              <View style={styles.processingRow}>
-                <ActivityIndicator size="small" color="#fff" />
-                <Text style={styles.processingText}>Finalizing payment...</Text>
-              </View>
-            ) : null}
-            <TouchableOpacity style={styles.goBackBtn} onPress={() => setModalVisible(false)}>
-              <Text style={styles.goBackText}>Go Back</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </Screen>
   );
 }

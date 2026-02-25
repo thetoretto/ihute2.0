@@ -50,49 +50,51 @@ export default function TicketsPage() {
     setBookings([...getBookingsWithTickets(scope)]);
   }, [scope]);
 
+  const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
   return (
-    <section>
-      <div className="header-row">
-        <h2>Tickets</h2>
-        <button type="button" className="btn-primary" onClick={() => downloadCsv(bookings)}>Export CSV</button>
+    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-2xl font-black text-dark">Tickets</h3>
+        <button type="button" className="px-4 py-2 bg-primary text-dark rounded-xl font-bold text-sm" onClick={() => downloadCsv(bookings)}>Export CSV</button>
       </div>
-      <p className="subtle">Bookings with issued tickets. Download single PDF or export all as CSV.</p>
-      <table>
-        <thead>
-          <tr>
-            <th>Ticket number</th>
-            <th>Booking</th>
-            <th>Passenger</th>
-            <th>Route</th>
-            <th>Departure</th>
-            <th>Seats</th>
-            <th>Amount</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {bookings.map((b) => (
-            <tr key={b.id}>
-              <td>{b.ticketNumber}</td>
-              <td>{b.id}</td>
-              <td>{b.passenger.name}</td>
-              <td>{b.trip.departureHotpoint.name} → {b.trip.destinationHotpoint.name}</td>
-              <td>{b.trip.departureTime}</td>
-              <td>{b.seats}</td>
-              <td>
-                <span className={`tag tag-${b.paymentMethod === 'cash' ? 'a' : b.paymentMethod === 'mobile_money' ? 'b' : 'c'}`}>
-                  {b.paymentMethod.replace('_', ' ')}
-                </span>
-                {' '}
-                {Number(b.seats * b.trip.pricePerSeat).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF
-              </td>
-              <td>
-                <button type="button" className="btn-sm btn-primary" onClick={() => downloadTicketPdf(b)}>Download PDF</button>
-              </td>
+      <p className="text-muted text-sm mb-6">Bookings with issued tickets. Download single PDF or export all as CSV.</p>
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-surface">
+              <th className={th}>Ticket number</th>
+              <th className={th}>Booking</th>
+              <th className={th}>Passenger</th>
+              <th className={th}>Route</th>
+              <th className={th}>Departure</th>
+              <th className={th}>Seats</th>
+              <th className={th}>Amount</th>
+              <th className={th}>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
+          </thead>
+          <tbody className="divide-y divide-surface">
+            {bookings.map((b) => (
+              <tr key={b.id} className="group hover:bg-surface/50 transition-colors">
+                <td className="py-5 font-medium text-sm">{b.ticketNumber}</td>
+                <td className="py-5 text-sm">{b.id}</td>
+                <td className="py-5 font-bold text-sm">{b.passenger.name}</td>
+                <td className="py-5 text-sm">{b.trip.departureHotpoint.name} → {b.trip.destinationHotpoint.name}</td>
+                <td className="py-5 text-sm">{b.trip.departureTime}</td>
+                <td className="py-5 text-sm">{b.seats}</td>
+                <td className="py-5">
+                  <span className={`inline-block px-2 py-0.5 rounded-lg text-[11px] font-bold mr-1 ${b.paymentMethod === 'cash' ? 'bg-green-100 text-green-700' : b.paymentMethod === 'mobile_money' ? 'bg-blue-100 text-blue-700' : 'bg-soft text-dark'}`}>
+                    {b.paymentMethod.replace('_', ' ')}
+                  </span>
+                  {Number(b.seats * b.trip.pricePerSeat).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF
+                </td>
+                <td className="py-5">
+                  <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-primary text-dark" onClick={() => downloadTicketPdf(b)}>Download PDF</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }

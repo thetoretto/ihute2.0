@@ -245,6 +245,13 @@ export async function updateUserProfile(userId: string, updates: Parameters<type
   return mockApi.updateUserProfile(userId, updates);
 }
 
+/** When real API: fetches from GET /api/users/:id/profile-complete. When mock: reads from local store. */
+export async function getProfileComplete(userId: string): Promise<boolean> {
+  if (USE_REAL_API) return request<boolean>('GET', `/api/users/${userId}/profile-complete`);
+  const store = await mockPersistence.getMockStore();
+  return !!store.profileCompleteByUserId?.[userId];
+}
+
 export async function getScannerTicketReport(period: 'past' | 'today' | 'upcoming') {
   if (USE_REAL_API) {
     const store = await mockPersistence.getMockStore();

@@ -12,12 +12,12 @@ export default function AgencyManagementPage() {
 
   if (!scope?.agencyId) {
     return (
-      <section>
-        <h2>Agency management</h2>
-        <p className="subtle">
+      <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+        <h3 className="text-2xl font-black text-dark mb-2">Agency management</h3>
+        <p className="text-muted">
           Log in as an agency admin to manage your agency&apos;s trips, vehicles, and employees.
         </p>
-      </section>
+      </div>
     );
   }
 
@@ -25,35 +25,37 @@ export default function AgencyManagementPage() {
   const totalBookings = bookings.filter((b) => b.status !== 'cancelled').length;
 
   return (
-    <section>
-      <h2>Agency management</h2>
-      <p className="subtle">Overview of your agency&apos;s operations.</p>
-      <div className="dashboard-kpi-row">
-        <div className="metric-card kpi-active">
-          <p className="metric-label">Total trips</p>
-          <h3 className="metric-value">{trips.length}</h3>
+    <div className="space-y-8">
+      <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+        <h3 className="text-2xl font-black text-dark mb-2">Agency management</h3>
+        <p className="text-muted text-sm mb-6">Overview of your agency&apos;s operations.</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="bg-dark rounded-2xl p-6 text-white">
+            <p className="text-muted text-xs font-bold uppercase tracking-widest">Total trips</p>
+            <p className="text-2xl font-black text-primary mt-1">{trips.length}</p>
+          </div>
+          <div className="bg-soft rounded-2xl p-6">
+            <p className="text-muted text-xs font-bold uppercase tracking-widest">Active trips</p>
+            <p className="text-2xl font-black text-dark mt-1">{activeTrips}</p>
+          </div>
+          <div className="bg-soft rounded-2xl p-6">
+            <p className="text-muted text-xs font-bold uppercase tracking-widest">Vehicles</p>
+            <p className="text-2xl font-black text-dark mt-1">{vehicles.length}</p>
+          </div>
+          <div className="bg-soft rounded-2xl p-6">
+            <p className="text-muted text-xs font-bold uppercase tracking-widest">Bookings</p>
+            <p className="text-2xl font-black text-dark mt-1">{totalBookings}</p>
+          </div>
         </div>
-        <div className="metric-card kpi-customers">
-          <p className="metric-label">Active trips</p>
-          <h3 className="metric-value">{activeTrips}</h3>
-        </div>
-        <div className="metric-card kpi-revenue">
-          <p className="metric-label">Vehicles</p>
-          <h3 className="metric-value">{vehicles.length}</h3>
-        </div>
-        <div className="metric-card kpi-alert">
-          <p className="metric-label">Bookings</p>
-          <h3 className="metric-value">{totalBookings}</h3>
+        <h4 className="text-lg font-black text-dark mt-8 mb-4">Manage</h4>
+        <div className="flex flex-wrap gap-3">
+          <Link to="/activities" className="px-4 py-2 bg-surface rounded-xl text-sm font-bold text-dark hover:bg-primary">Activities</Link>
+          <Link to="/tickets" className="px-4 py-2 bg-surface rounded-xl text-sm font-bold text-dark hover:bg-primary">Tickets</Link>
+          <Link to="/vehicles" className="px-4 py-2 bg-surface rounded-xl text-sm font-bold text-dark hover:bg-primary">Vehicles</Link>
+          <Link to="/users" className="px-4 py-2 bg-surface rounded-xl text-sm font-bold text-dark hover:bg-primary">Users</Link>
+          <Link to="/scanner-operators" className="px-4 py-2 bg-surface rounded-xl text-sm font-bold text-dark hover:bg-primary">Scanner operators</Link>
         </div>
       </div>
-      <h3>Manage</h3>
-      <div className="dashboard-links">
-        <Link to="/activities" className="dashboard-link">Activities</Link>
-        <Link to="/tickets" className="dashboard-link">Tickets</Link>
-        <Link to="/vehicles" className="dashboard-link">Vehicles</Link>
-        <Link to="/users" className="dashboard-link">Users</Link>
-        <Link to="/scanner-operators" className="dashboard-link">Scanner operators</Link>
-      </div>
-    </section>
+    </div>
   );
 }

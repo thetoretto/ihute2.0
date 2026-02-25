@@ -1,27 +1,17 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { mockHotpoints } from '@shared/mocks';
-import { SLOGAN } from '../constants/contact';
+import DateTimePicker from './DateTimePicker';
 import type { TripSearchCriteria } from './AvailableTripsPage';
 
 interface HeroProps {
   onSearch: (criteria: TripSearchCriteria) => void;
-  onViewAllTrips?: () => void;
 }
 
-function formatDisplayDate(value: string): string {
-  if (!value) return 'Today';
-  const d = new Date(value);
-  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-}
-
-export default function Hero({ onSearch, onViewAllTrips }: HeroProps) {
+export default function Hero({ onSearch }: HeroProps) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-  const [date, setDate] = useState('');
-  const [returnDate, setReturnDate] = useState('');
-  const [travelers, setTravelers] = useState(1);
-  const dateInputRef = useRef<HTMLInputElement>(null);
-  const returnInputRef = useRef<HTMLInputElement>(null);
+  const [dateOutbound, setDateOutbound] = useState<Date | null>(null);
+  const [travelers] = useState(1);
 
   const cities = useMemo(
     () =>
@@ -39,111 +29,78 @@ export default function Hero({ onSearch, onViewAllTrips }: HeroProps) {
   );
 
   return (
-    <section className="hero-shell hero-bbc" id="hero">
-      <div className="hero-bbc-main">
-        <div className="hero-bbc-inner">
-          <h1 className="hero-bbc-title">
-            Bus, carpool: ihute takes you where you want to go.
-          </h1>
-          <p className="hero-bbc-slogan">{SLOGAN}.</p>
+    <section className="rs-hero" id="hero">
+      <div className="rs-hero-inner">
+        <h1>
+          Travel light, <br />
+          <span className="accent">travel together.</span>
+        </h1>
+        <p className="rs-hero-sub">
+          Connect with drivers heading your way. Simple, affordable, and sustainable travel across East Africa.
+        </p>
+      </div>
 
-          <div className="hero-search-bar">
-            <form
-              className="hero-search hero-search-bbc"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!from || !to) return;
-                onSearch({
-                  fromId: from,
-                  toId: to,
-                  date: date || '',
-                  travelers,
-                });
-              }}
+      <div className="rs-search-widget">
+        <form
+          className="rs-search-grid"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!from || !to) return;
+            onSearch({
+              fromId: from,
+              toId: to,
+              date: dateOutbound ? dateOutbound.toISOString().slice(0, 10) : '',
+              travelers,
+            });
+          }}
+        >
+          <div className="rs-search-cell">
+            <label htmlFor="from" className="rs-search-label">From</label>
+            <select
+              id="from"
+              className="rs-search-input"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              aria-label="Departure city"
             >
-              <div className="hero-search-cell">
-                <label htmlFor="from" className="hero-search-label">Departure</label>
-                <select id="from" value={from} onChange={(e) => setFrom(e.target.value)} className="hero-search-input" aria-label="Your departure">
-                  <option value="">Your departure</option>
-                  {cities.map((city) => (
-                    <option key={city.id} value={city.id}>{city.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="hero-search-cell">
-                <label htmlFor="to" className="hero-search-label">Destination</label>
-                <select id="to" value={to} onChange={(e) => setTo(e.target.value)} className="hero-search-input" aria-label="Your destination">
-                  <option value="">Your destination</option>
-                  {cities.filter((c) => c.id !== from).map((city) => (
-                    <option key={city.id} value={city.id}>{city.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="hero-search-cell">
-                <label htmlFor="travel-date" className="hero-search-label">When?</label>
-                <button
-                  type="button"
-                  className="hero-search-when-trigger"
-                  onClick={() => dateInputRef.current?.click()}
-                  aria-label="Outbound date"
-                >
-                  {formatDisplayDate(date)}
-                </button>
-                <input
-                  ref={dateInputRef}
-                  id="travel-date"
-                  type="date"
-                  value={date}
-                  min={new Date().toISOString().slice(0, 10)}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="hero-search-date-hidden"
-                  aria-hidden
-                />
-              </div>
-              <div className="hero-search-cell">
-                <label htmlFor="return-date" className="hero-search-label">Return</label>
-                <button
-                  type="button"
-                  className="hero-search-when-trigger"
-                  onClick={() => returnInputRef.current?.click()}
-                  aria-label="Return date"
-                >
-                  {returnDate ? formatDisplayDate(returnDate) : '—'}
-                </button>
-                <input
-                  ref={returnInputRef}
-                  id="return-date"
-                  type="date"
-                  value={returnDate}
-                  min={date || new Date().toISOString().slice(0, 10)}
-                  onChange={(e) => setReturnDate(e.target.value)}
-                  className="hero-search-date-hidden"
-                  aria-hidden
-                />
-              </div>
-              <div className="hero-search-cell hero-search-cell-who">
-                <label htmlFor="travelers" className="hero-search-label">Who?</label>
-                <select id="travelers" value={travelers} onChange={(e) => setTravelers(Number(e.target.value))} className="hero-search-input" aria-label="Number of passengers">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>{n} {n === 1 ? 'Adult' : 'Adults'}</option>
-                  ))}
-                </select>
-                <span className="hero-search-helper">No discount card required</span>
-              </div>
-              <div className="hero-search-cell hero-search-cell-btn">
-                <button type="submit" className="hero-search-btn hero-search-btn-bbc" disabled={!from || !to}>
-                  Search
-                </button>
-              </div>
-            </form>
+              <option value="">Departure city</option>
+              {cities.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
-
-          <div className="hero-search-footer">
-            <button type="button" className="hero-search-footer-link" onClick={onViewAllTrips}>
-              View all trips
+          <div className="rs-search-cell">
+            <label htmlFor="to" className="rs-search-label">To</label>
+            <select
+              id="to"
+              className="rs-search-input"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              aria-label="Arrival city"
+            >
+              <option value="">Arrival city</option>
+              {cities.filter((c) => c.id !== from).map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="rs-search-cell">
+            <DateTimePicker
+              label="When"
+              mode="date"
+              value={dateOutbound}
+              onChange={(d) => setDateOutbound(d)}
+              minDate={new Date()}
+              placeholder="Date"
+            />
+          </div>
+          <div className="rs-search-cell rs-search-btn-wrap">
+            <button type="submit" className="rs-search-btn" disabled={!from || !to}>
+              <i className="fas fa-search" aria-hidden />
+              <span>Search Rides</span>
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </section>
   );

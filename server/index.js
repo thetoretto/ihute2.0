@@ -432,6 +432,49 @@ app.get('/api/bookings/:id/ticket', (req, res) => {
   });
 });
 
+// ---------- Disputes ----------
+function filterDisputesByScope(list, agencyId) {
+  if (!agencyId) return list;
+  const driverTripIds = new Set(
+    store.tripsStore.filter((t) => (t.driver?.id || t.driver) === agencyId).map((t) => t.id)
+  );
+  const agencyBookingIds = new Set(
+    store.bookingsStore.filter((b) => driverTripIds.has(b.trip?.id || b.trip)).map((b) => b.id)
+  );
+  return list.filter((d) => agencyBookingIds.has(d.bookingId));
+}
+
+app.get('/api/disputes', (req, res) => {
+  const { userId, status, agencyId } = req.query;
+  let list = [...store.disputesStore];
+  if (userId) list = list.filter((d) => d.reporterId === userId);
+  if (status) list = list.filter((d) => d.status === status);
+  list = filterDisputesByScope(list, agencyId);
+  res.json(list);
+});
+
+app.get('/api/disputes/:id', (req, res) => {
+  const dispute = store.disputesStore.find((d) => d.id === req.params.id);
+  if (!dispute) return res.status(404).json({ error: 'Dispute not found' });
+  res.json(dispute);
+});
+
+app.patch('/api/disputes/:id', (req, res) => {
+  const idx = store.disputesStore.findIndex((d) => d.id === req.params.id);
+  if (idx < 0) return res.status(404).json({ error: 'Dispute not found' });
+  const { status, resolution, resolvedBy } = req.body || {};
+  const current = store.disputesStore[idx];
+  const next = { ...current };
+  if (status !== undefined) next.status = status;
+  if (resolution !== undefined) next.resolution = resolution;
+  if (resolvedBy !== undefined) next.resolvedBy = resolvedBy;
+  if (status === 'resolved' && (resolution != null || resolvedBy != null)) {
+    next.resolvedAt = next.resolvedAt || new Date().toISOString();
+  }
+  store.disputesStore[idx] = next;
+  res.json(next);
+});
+
 // ---------- Tickets validate ----------
 app.post('/api/tickets/validate', (req, res) => {
   const { payload, validatorUserId } = req.body || {};

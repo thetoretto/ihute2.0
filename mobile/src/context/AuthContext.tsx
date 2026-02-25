@@ -6,6 +6,7 @@ import {
   registerMinimal as apiRegisterMinimal,
   updateUserProfile,
   getUser,
+  getProfileComplete,
   sendOtp as apiSendOtp,
   verifyOtp as apiVerifyOtp,
   createUserAfterOtp,
@@ -56,14 +57,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const restoreSession = async () => {
       try {
         const store = await getMockStore();
-        if (store.profileCompleteByUserId) {
-          if (mounted) setProfileCompleteByUserId(store.profileCompleteByUserId);
-        }
         if (store.authUserId) {
           const existing = await getUser(store.authUserId);
-          if (mounted) {
-            setUser(existing);
-          }
+          if (mounted) setUser(existing);
+          const complete = await getProfileComplete(store.authUserId);
+          if (mounted) setProfileCompleteByUserId((prev) => ({ ...prev, [store.authUserId]: complete }));
+        } else if (store.profileCompleteByUserId && mounted) {
+          setProfileCompleteByUserId(store.profileCompleteByUserId);
         }
       } finally {
         if (mounted) {

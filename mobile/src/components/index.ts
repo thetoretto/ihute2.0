@@ -14,3 +14,5 @@ export { default as ExpandActionButton } from './ExpandActionButton';
 export { default as RatingDisplay } from './RatingDisplay';
 export { formatRatingValue } from './RatingDisplay';
 export { default as Divider } from './Divider';
+export { default as DateTimePicker, formatDate as formatDateTimePickerDate, formatTime as formatDateTimePickerTime } from './DateTimePicker';
+export type { DateTimePickerMode, DateTimePickerProps } from './DateTimePicker';

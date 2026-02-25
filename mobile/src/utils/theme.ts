@@ -1,55 +1,62 @@
 export const colors = {
-  background: '#f8fafc',
+  background: '#F8F3EF',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
   card: '#FFFFFF',
 
-  text: '#054752',
-  textSecondary: '#64748B',
-  textMuted: '#94A3B8',
-  onPrimary: '#FFFFFF',
+  text: '#171C22',
+  textSecondary: '#94A9BC',
+  textMuted: '#94A9BC',
+  onPrimary: '#171C22',
 
-  primary: '#00AFF5',
-  primaryDark: '#0084b8',
-  accent: '#00AFF5',
+  primary: '#FEE46B',
+  primaryDark: '#FDD835',
+  accent: '#DF0827',
 
-  buttonPrimaryBg: '#00AFF5',
-  buttonPrimaryText: '#FFFFFF',
-  primaryButtonBorder: 'rgba(0,175,245,0.5)',
-  buttonSecondaryBg: '#e2e8f0',
-  buttonSecondaryText: '#054752',
-  primaryTextOnLight: '#054752',
+  buttonPrimaryBg: '#FEE46B',
+  buttonPrimaryText: '#171C22',
+  primaryButtonBorder: 'rgba(254,228,107,0.5)',
+  buttonSecondaryBg: 'transparent',
+  buttonSecondaryText: '#94A9BC',
+  primaryTextOnLight: '#171C22',
 
   popupSurface: '#FFFFFF',
+
+  /** Semantic: deep neutral (tab bar, premium card). */
+  dark: '#171C22',
+  /** Semantic: highlight/tertiary, empty states. */
+  soft: '#E6DBEB',
+  /** Primary pressed state. */
+  primaryActive: '#FDD835',
 
   success: '#00D382',
   successLight: '#5EEAD4',
   successTint: 'rgba(0,211,130,0.12)',
   info: '#1E88E5',
-  neutral: '#64748B',
+  neutral: '#94A9BC',
 
-  error: '#FF4757',
+  error: '#DF0827',
   warning: '#B7791F',
 
-  border: '#f1f5f9',
-  borderLight: '#f1f5f9',
-  overlay: 'rgba(5,71,82,0.35)',
-  primaryTint: 'rgba(0,175,245,0.14)',
-  ghostBg: '#f8fafc',
-  ghostBorder: '#f1f5f9',
-  ghostText: '#64748B',
+  border: '#E6DBEB',
+  borderLight: '#E6DBEB',
+  overlay: 'rgba(23,28,34,0.35)',
+  primaryTint: 'rgba(254,228,107,0.1)',
+  ghostBg: '#F8F3EF',
+  ghostBorder: '#E6DBEB',
+  ghostText: '#94A9BC',
 
-  /** Tab bar background. */
-  tabBarBackground: '#FFFFFF',
+  /** Tab bar background (dark). */
+  tabBarBackground: '#171C22',
 
-  /** Passenger / brand (template). */
-  passengerBrand: '#00AFF5',
-  passengerDark: '#054752',
-  passengerBgLight: '#f8fafc',
-  passengerOnBrand: '#FFFFFF',
+  /** Passenger / brand = primary. */
+  passengerBrand: '#FEE46B',
+  passengerDark: '#171C22',
+  passengerBgLight: '#F8F3EF',
+  passengerOnBrand: '#171C22',
 
-  /** Driver context (dark teal). */
-  driverDark: '#054752',
+  /** Driver context (dark). */
+  driverDark: '#171C22',
 
   /** Agency role (indigo). */
   agency: '#6366f1',
@@ -67,19 +74,19 @@ export const colorsDark = {
   text: '#F1F5F9',
   textSecondary: '#94A9BC',
   textMuted: '#94A9BC',
-  onPrimary: '#FFFFFF',
+  onPrimary: '#171C22',
   popupSurface: '#252D38',
   ghostBg: '#1E252D',
   ghostText: '#94A9BC',
   border: 'rgba(241,245,249,0.18)',
   borderLight: 'rgba(241,245,249,0.10)',
   overlay: 'rgba(0,0,0,0.5)',
-  primaryTint: 'rgba(0,175,245,0.18)',
-  tabBarBackground: '#1E252D',
-  passengerBrand: '#00AFF5',
-  passengerDark: '#054752',
+  primaryTint: 'rgba(254,228,107,0.18)',
+  tabBarBackground: '#171C22',
+  passengerBrand: '#FEE46B',
+  passengerDark: '#171C22',
   passengerBgLight: '#1E252D',
-  passengerOnBrand: '#FFFFFF',
+  passengerOnBrand: '#171C22',
 } as const;
 
 export type ColorScheme = 'light' | 'dark';
@@ -100,6 +107,7 @@ export const radii = {
   lg: 28,
   xl: 40,
   xxl: 28,
+  xlMobile: 32,
   full: 9999,
 } as const;
 

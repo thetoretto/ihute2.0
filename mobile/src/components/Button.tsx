@@ -7,7 +7,7 @@ import { useThemeColors } from '../context/ThemeContext';
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'agency';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'agency' | 'danger';
   size?: 'small' | 'medium' | 'large';
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -38,8 +38,8 @@ export default function Button({
     },
     secondary: {
       backgroundColor: c.buttonSecondaryBg,
-      borderWidth: 1,
-      borderColor: c.border,
+      borderWidth: 2,
+      borderColor: c.textMuted,
     },
     outline: {
       backgroundColor: 'transparent',
@@ -56,6 +56,11 @@ export default function Button({
       borderWidth: 1,
       borderColor: 'rgba(99,102,241,0.5)',
     },
+    danger: {
+      backgroundColor: c.accent,
+      borderWidth: 0,
+      borderColor: 'transparent',
+    },
   };
   const textColor =
     variant === 'primary'
@@ -68,7 +73,9 @@ export default function Button({
             ? c.ghostText
             : variant === 'agency'
               ? '#FFFFFF'
-              : c.text;
+              : variant === 'danger'
+                ? '#FFFFFF'
+                : c.text;
   return (
     <TouchableOpacity
       style={[

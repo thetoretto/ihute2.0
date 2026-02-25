@@ -64,6 +64,8 @@ function scaleRadii(base: ResponsiveRadii, scale: number): ResponsiveRadii {
     md: Math.round(base.md * scale),
     lg: Math.round(base.lg * scale),
     xl: Math.round(base.xl * scale),
+    xxl: Math.round(base.xxl * scale),
+    xlMobile: Math.round(base.xlMobile * scale),
     full: base.full,
   };
 }

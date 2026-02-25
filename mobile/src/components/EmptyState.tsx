@@ -13,7 +13,7 @@ interface EmptyStateProps {
 export default function EmptyState({ icon = 'document-text-outline', title, subtitle }: EmptyStateProps) {
   const c = useThemeColors();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.soft }]}>
       <Ionicons name={icon} size={48} color={c.textMuted} />
       <Text style={[styles.title, { color: c.text }]}>{title}</Text>
       {subtitle ? <Text style={[styles.subtitle, { color: c.textSecondary }]}>{subtitle}</Text> : null}
