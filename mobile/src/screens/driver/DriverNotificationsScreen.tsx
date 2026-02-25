@@ -6,10 +6,9 @@ import { Screen } from '../../components';
 import { getDriverNotifications, markDriverNotificationsRead } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
+import { cardRadius, listBottomPaddingDefault } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { DriverNotification } from '../../services/api';
-
-const CARD_RADIUS = 24;
 
 export default function DriverNotificationsScreen() {
   const { user } = useAuth();
@@ -104,13 +103,13 @@ export default function DriverNotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  content: { paddingTop: spacing.lg, paddingBottom: listBottomPaddingDefault },
   title: { ...typography.h2 },
   subtitle: { ...typography.bodySmall, marginTop: spacing.xs, marginBottom: spacing.lg },
   emptyCard: {
     alignItems: 'center',
     padding: spacing.xl,
-    borderRadius: CARD_RADIUS,
+    borderRadius: cardRadius,
     borderWidth: 1,
     marginTop: spacing.md,
   },
@@ -120,7 +119,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     padding: spacing.lg,
-    borderRadius: CARD_RADIUS,
+    borderRadius: cardRadius,
     borderWidth: 1,
     marginBottom: spacing.sm,
   },

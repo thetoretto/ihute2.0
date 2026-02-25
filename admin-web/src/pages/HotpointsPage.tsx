@@ -1,51 +1,126 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { Hotpoint } from '../types';
 import { getHotpoints, createHotpoint, updateHotpoint, deleteHotpoint } from '../services/adminData';
+import {
+  isApiConfigured,
+  getHotpointsApi,
+  createHotpointApi,
+  updateHotpointApi,
+  deleteHotpointApi,
+} from '../services/api';
 
 const emptyForm: Partial<Hotpoint> = { name: '', address: '', latitude: 0, longitude: 0, country: '' };
 
 export default function HotpointsPage() {
-  const [hotpoints, setHotpoints] = useState<Hotpoint[]>(() => getHotpoints());
+  const useApi = isApiConfigured();
+  const [hotpoints, setHotpoints] = useState<Hotpoint[]>(() => (useApi ? [] : getHotpoints()));
+  const [loading, setLoading] = useState(useApi);
   const [editing, setEditing] = useState<Hotpoint | null>(null);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<Partial<Hotpoint>>(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const refresh = () => setHotpoints([...getHotpoints()]);
-
-  const handleSaveNew = () => {
-    if (!form.name || form.latitude == null || form.longitude == null) return;
-    createHotpoint({
-      name: form.name,
-      address: form.address ?? '',
-      latitude: Number(form.latitude),
-      longitude: Number(form.longitude),
-      country: form.country,
-    });
-    setAdding(false);
-    setForm(emptyForm);
-    refresh();
-  };
-
-  const handleSaveEdit = () => {
-    if (!editing) return;
-    updateHotpoint(editing.id, {
-      name: form.name,
-      address: form.address,
-      latitude: form.latitude != null ? Number(form.latitude) : undefined,
-      longitude: form.longitude != null ? Number(form.longitude) : undefined,
-      country: form.country,
-    });
-    setEditing(null);
-    refresh();
-  };
-
-  const handleDelete = (id: string) => {
-    if (deleteHotpoint(id)) {
-      setDeleteConfirm(null);
-      refresh();
+  const refresh = useCallback(async () => {
+    if (useApi) {
+      setLoading(true);
+      setError(null);
+      try {
+        const list = await getHotpointsApi();
+        setHotpoints(list);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load hotpoints');
+      } finally {
+        setLoading(false);
+      }
     } else {
-      alert('Cannot delete: hot point is in use by one or more trips.');
+      setHotpoints([...getHotpoints()]);
+    }
+  }, [useApi]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const handleSaveNew = async () => {
+    if (!form.name || form.latitude == null || form.longitude == null) return;
+    setError(null);
+    try {
+      if (useApi) {
+        await createHotpointApi({
+          name: form.name,
+          address: form.address ?? '',
+          latitude: Number(form.latitude),
+          longitude: Number(form.longitude),
+          country: form.country,
+        });
+        setAdding(false);
+        setForm(emptyForm);
+        await refresh();
+      } else {
+        createHotpoint({
+          name: form.name,
+          address: form.address ?? '',
+          latitude: Number(form.latitude),
+          longitude: Number(form.longitude),
+          country: form.country,
+        });
+        setAdding(false);
+        setForm(emptyForm);
+        refresh();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create hotpoint');
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editing) return;
+    setError(null);
+    try {
+      if (useApi) {
+        await updateHotpointApi(editing.id, {
+          name: form.name,
+          address: form.address,
+          latitude: form.latitude != null ? Number(form.latitude) : undefined,
+          longitude: form.longitude != null ? Number(form.longitude) : undefined,
+          country: form.country,
+        });
+        setEditing(null);
+        await refresh();
+      } else {
+        updateHotpoint(editing.id, {
+          name: form.name,
+          address: form.address,
+          latitude: form.latitude != null ? Number(form.latitude) : undefined,
+          longitude: form.longitude != null ? Number(form.longitude) : undefined,
+          country: form.country,
+        });
+        setEditing(null);
+        refresh();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update hotpoint');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    setError(null);
+    try {
+      if (useApi) {
+        await deleteHotpointApi(id);
+        setDeleteConfirm(null);
+        await refresh();
+      } else {
+        if (deleteHotpoint(id)) {
+          setDeleteConfirm(null);
+          refresh();
+        } else {
+          setError('Cannot delete: hot point is in use by one or more trips.');
+        }
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Cannot delete hotpoint');
     }
   };
 
@@ -58,7 +133,13 @@ export default function HotpointsPage() {
           Add hot point
         </button>
       </div>
-      <p className="text-muted text-sm mb-6">Pickup and drop-off locations used for trips.</p>
+      <p className="text-muted text-sm mb-2">Pickup and drop-off locations used for trips.</p>
+      {useApi && (
+        <p className="text-muted text-xs mb-4">Connected to server: changes here apply to the whole app (mobile, web).</p>
+      )}
+      {error && (
+        <div className="mb-4 px-4 py-2 rounded-xl bg-red-100 text-red-700 text-sm font-bold">{error}</div>
+      )}
       <div className="w-full overflow-x-auto">
         <table className="w-full text-left">
           <thead>
@@ -71,7 +152,12 @@ export default function HotpointsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-surface">
-            {hotpoints.map((h) => (
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-muted">Loading…</td>
+              </tr>
+            ) : (
+            hotpoints.map((h) => (
               <tr key={h.id} className="group hover:bg-surface/50 transition-colors">
                 <td className="py-5 font-bold text-sm">{h.name}</td>
                 <td className="py-5 text-sm">{h.address ?? '—'}</td>
@@ -88,7 +174,8 @@ export default function HotpointsPage() {
                   )}
                 </td>
               </tr>
-            ))}
+            ))
+            )}
           </tbody>
         </table>
       </div>

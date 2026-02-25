@@ -835,7 +835,7 @@ export async function createUserAfterOtp(options: {
   return delay(user);
 }
 
-/** Update user profile (name, role, email, phone) and set profile complete in persistence. */
+/** Update user profile (name, role, email, phone, avatarUri) and set profile complete in persistence. */
 export async function updateUserProfile(
   userId: string,
   updates: {
@@ -844,6 +844,7 @@ export async function updateUserProfile(
     email?: string;
     phone?: string;
     password?: string;
+    avatarUri?: string;
   }
 ): Promise<User> {
   consumeMockFailure('register');
@@ -870,6 +871,9 @@ export async function updateUserProfile(
   }
   if (updates.phone !== undefined) {
     next = { ...next, phone: updates.phone.trim() };
+  }
+  if (updates.avatarUri !== undefined) {
+    next = { ...next, avatarUri: updates.avatarUri };
   }
   mockUsers[i] = next;
   const store = await getMockStore();

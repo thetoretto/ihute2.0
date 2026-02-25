@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -30,24 +30,47 @@ import {
   ExpansionDetailsCard,
   ExpandActionButton,
 } from '../../components';
+import { useTabbedList } from '../../hooks/useTabbedList';
 import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
+import { listBottomPaddingTab, cardRadius } from '../../utils/layout';
+import { useResponsiveTheme } from '../../utils/responsiveTheme';
 import type { Booking } from '../../types';
 
 const PASSENGER_BRAND = colors.passengerBrand;
 const PASSENGER_DARK = colors.passengerDark;
 const PASSENGER_BG_LIGHT = colors.passengerBgLight;
 
+const TABS = [
+  { key: 'upcoming' as const, label: 'Upcoming' },
+  { key: 'ongoing' as const, label: 'Ongoing' },
+  { key: 'completed' as const, label: 'Completed' },
+];
+
 export default function PassengerMyRidesScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [tab, setTab] = useState<'upcoming' | 'ongoing' | 'completed'>('upcoming');
+  const responsiveTheme = useResponsiveTheme();
+  const rs = responsiveTheme.spacing;
+  const rTypography = responsiveTheme.typography;
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [ratingsByBooking, setRatingsByBooking] = useState<Record<string, number>>({});
   const [ratingLoadingId, setRatingLoadingId] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [refreshState, setRefreshState] = useState<'idle' | 'refreshing' | 'done'>('idle');
-  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const fetchBookings = useCallback(async () => {
+    if (!user) return [];
+    return getUserBookings(user.id);
+  }, [user?.id]);
+
+  const tabbed = useTabbedList({
+    tabs: TABS,
+    initialTab: 'upcoming',
+    fetchData: fetchBookings,
+    filterByTab: (b, t) => b.status === t,
+    deps: [user?.id],
+  });
+
+  const { tab, setTab, list, data: bookings, error: loadError, refreshing, refresh, setError } = tabbed;
 
   useEffect(() => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -55,47 +78,37 @@ export default function PassengerMyRidesScreen() {
     }
   }, []);
 
-  const loadBookings = React.useCallback(async () => {
-    setLoadError(null);
-    if (user) {
-      try {
-        const items = await getUserBookings(user.id);
-        setBookings(items);
-        const completed = items.filter((item) => item.status === 'completed');
-        const ratings = await Promise.all(
-          completed.map(async (item) => ({
-            bookingId: item.id,
-            rating: await getBookingRating(item.id),
-          }))
-        );
-        const map: Record<string, number> = {};
-        ratings.forEach((item) => {
-          if (item.rating) {
-            map[item.bookingId] = item.rating.score;
-          }
-        });
-        setRatingsByBooking(map);
-      } catch (e) {
-        setLoadError(e instanceof Error ? e.message : 'Could not load bookings.');
-      }
-    }
-  }, [user]);
-
   useEffect(() => {
-    void loadBookings();
-  }, [loadBookings]);
+    const completed = bookings.filter((b) => b.status === 'completed');
+    if (completed.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      completed.map(async (item) => ({
+        bookingId: item.id,
+        rating: await getBookingRating(item.id),
+      }))
+    ).then((ratings) => {
+      if (cancelled) return;
+      const map: Record<string, number> = {};
+      ratings.forEach((item) => {
+        if (item.rating) {
+          map[item.bookingId] = item.rating.score;
+        }
+      });
+      setRatingsByBooking(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [bookings]);
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       setExpandedId(null);
       setTab('upcoming');
-      if (user) {
-        void loadBookings();
-      }
-    }, [loadBookings, user])
+      void refresh();
+    }, [setTab, refresh])
   );
-
-  const list = bookings.filter((b) => b.status === tab);
 
   const toggleExpanded = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
@@ -130,11 +143,9 @@ export default function PassengerMyRidesScreen() {
   };
 
   const onRefresh = async () => {
-    setRefreshing(true);
     setRefreshState('refreshing');
-    await loadBookings();
+    await refresh();
     setRefreshState('done');
-    setRefreshing(false);
     setTimeout(() => setRefreshState('idle'), 240);
   };
 
@@ -153,7 +164,7 @@ export default function PassengerMyRidesScreen() {
         onPress: async () => {
           try {
             await cancelBooking(booking.id, user.id);
-            await loadBookings();
+            await refresh();
           } catch (e) {
             Alert.alert('Cancellation failed', e instanceof Error ? e.message : 'Could not cancel booking.');
           }
@@ -168,31 +179,31 @@ export default function PassengerMyRidesScreen() {
       {loadError ? (
         <View style={styles.errorBanner}>
           <Text style={styles.errorText}>{loadError}</Text>
-          <Button title="Retry" onPress={() => void loadBookings()} />
+          <Button title="Retry" onPress={() => void refresh()} />
         </View>
       ) : null}
-      <View style={styles.tabs}>
+      <View style={[styles.tabs, { paddingTop: rs.lg, paddingHorizontal: rs.lg, gap: rs.sm, marginBottom: rs.sm }]}>
         <TouchableOpacity
-          style={[styles.tab, tab === 'upcoming' && styles.tabActive]}
+          style={[styles.tab, { paddingVertical: rs.sm + 2, paddingHorizontal: rs.sm }, tab === 'upcoming' && styles.tabActive]}
           onPress={() => setTab('upcoming')}
         >
-          <Text style={[styles.tabText, tab === 'upcoming' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, rTypography.bodySmall, tab === 'upcoming' && styles.tabTextActive]}>
             Upcoming
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, tab === 'ongoing' && styles.tabActive]}
+          style={[styles.tab, { paddingVertical: rs.sm + 2, paddingHorizontal: rs.sm }, tab === 'ongoing' && styles.tabActive]}
           onPress={() => setTab('ongoing')}
         >
-          <Text style={[styles.tabText, tab === 'ongoing' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, rTypography.bodySmall, tab === 'ongoing' && styles.tabTextActive]}>
             Ongoing
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, tab === 'completed' && styles.tabActive]}
+          style={[styles.tab, { paddingVertical: rs.sm + 2, paddingHorizontal: rs.sm }, tab === 'completed' && styles.tabActive]}
           onPress={() => setTab('completed')}
         >
-          <Text style={[styles.tabText, tab === 'completed' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, rTypography.bodySmall, tab === 'completed' && styles.tabTextActive]}>
             Completed
           </Text>
         </TouchableOpacity>
@@ -211,7 +222,7 @@ export default function PassengerMyRidesScreen() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={onRefresh}
+              onRefresh={() => void onRefresh()}
               colors={[PASSENGER_BRAND]}
               tintColor={PASSENGER_BRAND}
               progressBackgroundColor={PASSENGER_BG_LIGHT}
@@ -354,14 +365,14 @@ const styles = StyleSheet.create({
   },
   tabActive: { backgroundColor: PASSENGER_BRAND, borderColor: PASSENGER_BRAND },
   tabText: { ...typography.bodySmall, color: colors.textSecondary, fontWeight: '600' },
-  tabTextActive: { color: '#fff', fontWeight: '600' },
+  tabTextActive: { color: PASSENGER_DARK, fontWeight: '600' },
   card: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
     padding: spacing.lg,
     backgroundColor: colors.card,
-    borderRadius: 24,
+    borderRadius: cardRadius,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
   },
@@ -431,7 +442,7 @@ const styles = StyleSheet.create({
   },
   ratingLocked: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
   listContent: {
-    paddingBottom: spacing.xl + 80,
+    paddingBottom: listBottomPaddingTab,
     paddingHorizontal: 0,
   },
   errorBanner: {

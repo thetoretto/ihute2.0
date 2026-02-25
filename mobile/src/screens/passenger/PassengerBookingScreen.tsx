@@ -9,10 +9,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PaymentMethodIcons, Screen } from '../../components';
 import { getTrip, getTripsStore, bookTrip } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useThemeColors } from '../../context/ThemeContext';
 import { colors, spacing, typography } from '../../utils/theme';
 import { formatRwf } from '../../../../shared/src';
 import type { Trip, PaymentMethod } from '../../types';
@@ -55,6 +57,8 @@ function getBookableSeatIds(layout: number[][]): string[] {
 export default function PassengerBookingScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<Params, 'PassengerBooking'>>();
+  const insets = useSafeAreaInsets();
+  const c = useThemeColors();
   const { user, isProfileComplete } = useAuth();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [step, setStep] = useState(1);
@@ -188,7 +192,7 @@ export default function PassengerBookingScreen() {
                   <Ionicons
                     name="person-outline"
                     size={22}
-                    color={isSelected ? '#fff' : colors.textMuted}
+                    color={isSelected ? PASSENGER_DARK : colors.textMuted}
                   />
                 </TouchableOpacity>
               );
@@ -202,16 +206,16 @@ export default function PassengerBookingScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header: same look as native stack header (primary bg, dark text) */}
+      <View style={[styles.header, { backgroundColor: c.primary, paddingTop: insets.top, borderBottomWidth: 0 }]}>
         <TouchableOpacity
           onPress={goBack}
           style={[styles.headerBtn, step === 1 && styles.headerBtnInvisible]}
           disabled={step === 1}
         >
-          <Ionicons name="chevron-back" size={24} color={PASSENGER_DARK} />
+          <Ionicons name="chevron-back" size={24} color={c.dark} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
+        <Text style={[styles.headerTitle, { color: c.dark }]}>
           {step === 1 && 'Select Vehicle'}
           {step === 2 && 'Choose Seats'}
           {step === 3 && 'Confirm Booking'}
@@ -253,7 +257,7 @@ export default function PassengerBookingScreen() {
               </View>
               <TouchableOpacity style={[styles.vehicleCard, styles.vehicleCardSelected]} activeOpacity={0.9}>
                 <View style={styles.vehicleIconWrap}>
-                  <Ionicons name="car-sport" size={28} color="#fff" />
+                  <Ionicons name="car-sport" size={28} color={PASSENGER_DARK} />
                 </View>
                 <View style={styles.vehicleTextWrap}>
                   <Text style={styles.vehicleName}>
@@ -412,9 +416,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
-    backgroundColor: '#fff',
     minHeight: 56,
   },
   headerBtn: { padding: spacing.sm, marginLeft: -spacing.sm },
@@ -444,7 +445,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1.2,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(23,28,34,0.8)',
     marginBottom: 4,
   },
   infoValueRow: {
@@ -455,14 +456,14 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#fff',
+    color: PASSENGER_DARK,
     marginLeft: 8,
   },
   infoDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#fff',
+    backgroundColor: PASSENGER_DARK,
     marginRight: 8,
   },
   infoRow: {
@@ -470,7 +471,7 @@ const styles = StyleSheet.create({
     gap: spacing.xl * 2,
     marginTop: spacing.sm,
   },
-  infoSub: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  infoSub: { fontSize: 14, fontWeight: '600', color: PASSENGER_DARK },
   infoBlob: {
     position: 'absolute',
     top: -24,
@@ -697,7 +698,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.08)',
     shadowOpacity: 0,
   },
-  ctaContinueText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  ctaContinueText: { fontSize: 16, fontWeight: '700', color: PASSENGER_DARK },
   ctaPayment: {
     flexDirection: 'row',
     alignItems: 'center',

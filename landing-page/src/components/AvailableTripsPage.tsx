@@ -1,4 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  MapPin,
+  Calendar,
+  SlidersHorizontal,
+  Star,
+  Zap,
+  Car,
+  Wind,
+  Info,
+  Navigation,
+  ChevronDown,
+} from 'lucide-react';
 import { mockHotpoints } from '@shared/mocks';
 import type { Trip } from '@shared/types';
 import { getTripsStore, setTripsStore } from '../store';
@@ -41,7 +53,131 @@ function isPublicTrip(trip: { driver: { roles?: string[] } }) {
   return trip.driver.roles?.includes('agency') ?? false;
 }
 
-export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onSelectTrip }: AvailableTripsPageProps) {
+const PAYMENT_LABELS: Record<string, string> = {
+  cash: 'Cash',
+  mobile_money: 'Mobile Money',
+  card: 'Card',
+};
+
+function TripCardV2({
+  trip,
+  isExpanded,
+  onToggle,
+  onSelectTrip,
+}: {
+  trip: Trip;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onSelectTrip: (tripId: string) => void;
+}) {
+  const isFull = trip.status === 'full' || trip.seatsAvailable === 0;
+  const priceStr = `${Number(trip.pricePerSeat).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF`;
+  const paymentStr = trip.paymentMethods.map((m) => PAYMENT_LABELS[m] ?? m).join(' · ');
+
+  return (
+    <article
+      className={`trip-card-v2 ${isExpanded ? 'trip-card-v2--expanded' : ''}`}
+      onClick={!isExpanded ? onToggle : undefined}
+    >
+      <div className="trip-card-v2-main">
+        <div className="trip-card-v2-time">
+          <span className="trip-card-v2-time-dep">{normalizeTimeLabel(trip.departureTime)}</span>
+          <div className="trip-card-v2-line" aria-hidden />
+          <span className="trip-card-v2-time-arr">{normalizeTimeLabel(trip.arrivalTime)}</span>
+        </div>
+
+        <div className="trip-card-v2-route">
+          <div className="trip-card-v2-from">
+            <strong>{trip.departureHotpoint.name}</strong>
+            {trip.departureHotpoint.address && (
+              <small>{trip.departureHotpoint.address}</small>
+            )}
+          </div>
+          <div className="trip-card-v2-to">
+            <strong>{trip.destinationHotpoint.name}</strong>
+            {trip.type === 'insta' && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                <Zap size={12} style={{ color: 'var(--lp-primary)' }} />
+                <small>Insta</small>
+              </span>
+            )}
+            {trip.destinationHotpoint.address && (
+              <small>{trip.destinationHotpoint.address}</small>
+            )}
+          </div>
+        </div>
+
+        <div className="trip-card-v2-meta">
+          <span className="trip-card-v2-price">{priceStr}</span>
+          <span className="trip-card-v2-seats">{trip.seatsAvailable} seats left</span>
+          <div className="trip-card-v2-driver">
+            {trip.driver.avatarUri ? (
+              <img
+                src={trip.driver.avatarUri}
+                alt=""
+                className="trip-card-v2-driver-avatar"
+              />
+            ) : (
+              <span className="trip-card-v2-driver-initial">
+                {trip.driver.name.trim().slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <div className="trip-card-v2-driver-info">
+              <span className="trip-card-v2-driver-name">{trip.driver.name}</span>
+              <span className="trip-card-v2-driver-rating">
+                <Star size={10} fill="currentColor" /> {trip.driver.rating?.toFixed(1) ?? '—'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div
+          className="trip-card-v2-expanded"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="trip-card-v2-details">
+            <div className="trip-card-v2-detail-item">
+              <p>Vehicle</p>
+              <p>
+                <Car size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                {trip.vehicle.make} {trip.vehicle.model}
+              </p>
+            </div>
+            <div className="trip-card-v2-detail-item">
+              <p>Amenities</p>
+              <p>
+                <Wind size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                {paymentStr}
+              </p>
+            </div>
+          </div>
+          <div className="trip-card-v2-actions">
+            <button
+              type="button"
+              className="trip-card-v2-btn-book"
+              disabled={isFull}
+              onClick={() => !isFull && onSelectTrip(trip.id)}
+            >
+              Book Ride
+            </button>
+            <button type="button" className="trip-card-v2-btn-info" aria-label="More info">
+              <Info size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+    </article>
+  );
+}
+
+export default function AvailableTripsPage({
+  criteria,
+  onSearch,
+  onBackHome,
+  onSelectTrip,
+}: AvailableTripsPageProps) {
   const [fromId, setFromId] = useState(criteria.fromId);
   const [toId, setToId] = useState(criteria.toId);
   const [date, setDate] = useState<Date | null>(
@@ -51,6 +187,7 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
   const [tripCategory, setTripCategory] = useState<TripCategory>('all');
   const [apiTrips, setApiTrips] = useState<Trip[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
 
   useEffect(() => {
     setFromId(criteria.fromId);
@@ -79,9 +216,6 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
   useEffect(() => {
     void loadTrips();
   }, [loadTrips]);
-
-  const fromLabel = cityOptions.find((city) => city.id === criteria.fromId)?.name ?? 'Any city';
-  const toLabel = cityOptions.find((city) => city.id === criteria.toId)?.name ?? 'Any city';
 
   const trips = useMemo(() => {
     const requestedSeats = Number(travelers) || 1;
@@ -113,152 +247,147 @@ export default function AvailableTripsPage({ criteria, onSearch, onBackHome, onS
     });
   }
 
+  const dayLabel = date
+    ? date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+    : 'Today';
+
   return (
-    <section className="trips-page">
-      <div className="lp-container">
-        <div className="trips-topbar">
-          <button type="button" className="trips-back-btn" onClick={onBackHome}>
-            ← Back to landing
-          </button>
-          <h1>Available trips</h1>
-          <p>
-            {fromLabel} → {toLabel}
-          </p>
-        </div>
-
-        <form className="trips-filter-bar" onSubmit={handleSubmit}>
-          <div className="trips-filter-field">
-            <label htmlFor="filter-from">Leaving from</label>
-            <select id="filter-from" value={fromId} onChange={(event) => setFromId(event.target.value)}>
-              <option value="">All</option>
-              {cityOptions.map((city) => (
-                <option key={city.id} value={city.id}>
-                  {city.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="trips-filter-field">
-            <label htmlFor="filter-to">Going to</label>
-            <select id="filter-to" value={toId} onChange={(event) => setToId(event.target.value)}>
-              <option value="">All</option>
-              {cityOptions
-                .filter((city) => city.id !== fromId)
-                .map((city) => (
-                  <option key={city.id} value={city.id}>
-                    {city.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div className="trips-filter-field">
-            <DateTimePicker
-              label="Date"
-              mode="date"
-              value={date}
-              onChange={(d) => setDate(d)}
-              minDate={new Date()}
-              placeholder="Any date"
-            />
-          </div>
-
-          <div className="trips-filter-field small">
-            <label htmlFor="filter-travelers">Travelers</label>
-            <select id="filter-travelers" value={travelers} onChange={(event) => setTravelers(event.target.value)}>
-              {[1, 2, 3, 4, 5].map((count) => (
-                <option key={count} value={count}>
-                  {count}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button type="submit" className="trips-search-btn">
-            Search
-          </button>
-        </form>
-
-        <div className="trips-layout">
-          <div className="trips-list-head">
-            <h2>
-              {trips.length} trips found
-              <span> · {availableCount} available</span>
-            </h2>
-            <div className="trips-category-chips">
-              <button
-                type="button"
-                className={`trips-category-chip ${tripCategory === 'all' ? 'active' : ''}`}
-                onClick={() => setTripCategory('all')}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                className={`trips-category-chip ${tripCategory === 'public' ? 'active' : ''}`}
-                onClick={() => setTripCategory('public')}
-              >
-                Public
-              </button>
-              <button
-                type="button"
-                className={`trips-category-chip ${tripCategory === 'private' ? 'active' : ''}`}
-                onClick={() => setTripCategory('private')}
-              >
-                Private
-              </button>
-            </div>
-          </div>
-
-          <div className="trips-list">
-            {loading ? (
-              <p className="lp-mt-24" style={{ textAlign: 'center' }}>Loading trips…</p>
-            ) : (
-            trips.map((trip) => {
-              const isFull = trip.status === 'full' || trip.seatsAvailable === 0;
-              const perSeat = `${Number(trip.pricePerSeat).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF`;
-
-              return (
-                <article className="trip-card" key={trip.id}>
-                  <div className="trip-time-col">
-                    <strong>{normalizeTimeLabel(trip.departureTime)}</strong>
-                    <span>{normalizeTimeLabel(trip.arrivalTime)}</span>
+    <section className="trips-page trips-page-v2">
+      <div className="trips-v2-wrap">
+        <div className="trips-v2-layout">
+          <aside className="trips-sidebar">
+            <div className="trips-finder">
+              <h3 className="trips-finder-title">
+                <SlidersHorizontal size={18} />
+                Trip Finder
+              </h3>
+              <form onSubmit={handleSubmit}>
+                <div className="tf-field">
+                  <label className="tf-label" htmlFor="tf-from">From</label>
+                  <div className="tf-input-wrap">
+                    <MapPin size={16} />
+                    <select
+                      id="tf-from"
+                      value={fromId}
+                      onChange={(e) => setFromId(e.target.value)}
+                    >
+                      <option value="">Any city</option>
+                      {cityOptions.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
                   </div>
-
-                  <div className="trip-main-col">
-                    <h3>
-                      {trip.departureHotpoint.name} → {trip.destinationHotpoint.name}
-                    </h3>
-                    <p className="trip-driver-row">
-                      {trip.driver.avatarUri ? (
-                        <img src={trip.driver.avatarUri} alt="" className="trip-driver-avatar" />
-                      ) : (
-                        <span className="trip-driver-avatar trip-driver-avatar-initial">
-                          {trip.driver.name.trim().slice(0, 1).toUpperCase()}
-                        </span>
-                      )}
-                      <span>
-                        {trip.driver.name} · {trip.vehicle.make} {trip.vehicle.model} · {trip.durationMinutes ?? 0} min
-                      </span>
-                    </p>
-                    <div className="trip-chips">
-                      <span>{trip.type === 'insta' ? 'Insta' : 'Scheduled'}</span>
-                      <span>{trip.paymentMethods.join(' · ')}</span>
-                      <span>{trip.allowFullCar ? 'Full car allowed' : 'Seat booking only'}</span>
-                    </div>
+                </div>
+                <div className="tf-field">
+                  <label className="tf-label" htmlFor="tf-to">To</label>
+                  <div className="tf-input-wrap">
+                    <Navigation size={16} />
+                    <select
+                      id="tf-to"
+                      value={toId}
+                      onChange={(e) => setToId(e.target.value)}
+                    >
+                      <option value="">Anywhere</option>
+                      {cityOptions
+                        .filter((c) => c.id !== fromId)
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
                   </div>
-
-                  <div className="trip-side-col">
-                    <strong>{perSeat}</strong>
-                    <small>{trip.seatsAvailable} seats left</small>
-                    <button type="button" disabled={isFull} onClick={() => !isFull && onSelectTrip(trip.id)}>
-                      {isFull ? 'Full' : 'Select trip'}
+                </div>
+                <div className="tf-field">
+                  <label className="tf-label">Date</label>
+                  <DateTimePicker
+                    mode="date"
+                    value={date}
+                    onChange={(d) => setDate(d)}
+                    minDate={new Date()}
+                    placeholder="Any date"
+                    label=""
+                  />
+                </div>
+                <div className="tf-preferences">
+                  <p className="tf-pref-label">Trip type</p>
+                  <div className="tf-chips">
+                    <button
+                      type="button"
+                      className={`tf-chip ${tripCategory === 'all' ? 'tf-chip-on' : ''}`}
+                      onClick={() => setTripCategory('all')}
+                    >
+                      All
+                    </button>
+                    <button
+                      type="button"
+                      className={`tf-chip ${tripCategory === 'public' ? 'tf-chip-on' : ''}`}
+                      onClick={() => setTripCategory('public')}
+                    >
+                      Public
+                    </button>
+                    <button
+                      type="button"
+                      className={`tf-chip ${tripCategory === 'private' ? 'tf-chip-on' : ''}`}
+                      onClick={() => setTripCategory('private')}
+                    >
+                      Private
                     </button>
                   </div>
-                </article>
-              );
-            })
+                </div>
+                <button type="submit" className="tf-submit">
+                  Update Search
+                </button>
+              </form>
+            </div>
+          </aside>
+
+          <div className="trips-feed">
+            <div className="trips-feed-header">
+              <div>
+                <h2 className="trips-feed-title">All Trips</h2>
+                <p className="trips-feed-subtitle">
+                  Showing {trips.length} trips{availableCount !== trips.length ? ` · ${availableCount} available` : ''} across East Africa
+                </p>
+              </div>
+              <div className="trips-feed-toolbar">
+                <button type="button" className="trips-feed-sort">
+                  Sort: Latest <ChevronDown size={14} />
+                </button>
+                <button type="button" className="trips-feed-sort">
+                  Currency: RWF <ChevronDown size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="trips-day-sep">
+              <span>{dayLabel}</span>
+            </div>
+
+            <div className="trips-feed-list">
+              {loading ? (
+                <p style={{ textAlign: 'center', padding: 48, color: 'var(--lp-muted)' }}>
+                  Loading trips…
+                </p>
+              ) : (
+                trips.map((trip) => (
+                  <TripCardV2
+                    key={trip.id}
+                    trip={trip}
+                    isExpanded={expandedTripId === trip.id}
+                    onToggle={() =>
+                      setExpandedTripId((id) => (id === trip.id ? null : trip.id))
+                    }
+                    onSelectTrip={onSelectTrip}
+                  />
+                ))
+              )}
+            </div>
+
+            {!loading && trips.length > 0 && (
+              <div className="trips-load-more">
+                <button type="button" className="trips-load-more-btn">
+                  Load More Trips
+                </button>
+              </div>
             )}
           </div>
         </div>

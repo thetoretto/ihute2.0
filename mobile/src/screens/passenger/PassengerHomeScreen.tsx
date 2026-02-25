@@ -5,24 +5,21 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  Modal,
-  FlatList,
-  TextInput,
   Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
-import { RoleToggle, Button, RideCard, Screen, CarRefreshIndicator, Divider, DateTimePicker } from '../../components';
+import { RoleToggle, RideCard, Screen, CarRefreshIndicator } from '../../components';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
+import { listBottomPaddingTab, sectionTitleStyle } from '../../utils/layout';
 import { strings } from '../../constants/strings';
-import { selectorStyles } from '../../utils/selectorStyles';
-import { searchTrips, getHotpoints, getUserBookings } from '../../services/api';
+import { searchTrips, getUserBookings } from '../../services/api';
 import { getMockStore, updateMockStore } from '../../services/api';
-import type { Trip, TripType, Hotpoint, Booking } from '../../types';
+import type { Trip, TripType, Booking } from '../../types';
 
 const PASSENGER_BRAND = colors.passengerBrand;
 const PASSENGER_DARK = colors.passengerDark;
@@ -40,18 +37,6 @@ export default function PassengerHomeScreen() {
   const [upcomingBookings, setUpcomingBookings] = React.useState<Booking[]>([]);
   const [refreshing, setRefreshing] = React.useState(false);
   const [refreshState, setRefreshState] = React.useState<'idle' | 'refreshing' | 'done'>('idle');
-  const [hotpoints, setHotpoints] = React.useState<Hotpoint[]>([]);
-  const [from, setFrom] = React.useState<Hotpoint | null>(null);
-  const [to, setTo] = React.useState<Hotpoint | null>(null);
-  const [pickerMode, setPickerMode] = React.useState<'from' | 'to' | null>(null);
-  const [pickerQuery, setPickerQuery] = React.useState('');
-  const [searchValidation, setSearchValidation] = React.useState<string | null>(null);
-  const [searchDate, setSearchDate] = React.useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = React.useState(false);
-
-  React.useEffect(() => {
-    getHotpoints().then(setHotpoints);
-  }, []);
 
   React.useEffect(() => {
     const hydratePreferences = async () => {
@@ -98,72 +83,13 @@ export default function PassengerHomeScreen() {
     setTimeout(() => setRefreshState('idle'), 240);
   };
 
-  const swapFromTo = () => {
-    setFrom(to);
-    setTo(from);
-    setSearchValidation(null);
-  };
-
-  const filteredHotpoints =
-    pickerQuery.trim().length > 0
-      ? hotpoints.filter(
-          (h) =>
-            h.name.toLowerCase().includes(pickerQuery.trim().toLowerCase()) ||
-            h.country?.toLowerCase().includes(pickerQuery.trim().toLowerCase()) ||
-            h.address?.toLowerCase().includes(pickerQuery.trim().toLowerCase())
-        )
-      : hotpoints;
-
-  const onSelectHotpoint = (h: Hotpoint) => {
-    if (pickerMode === 'from') setFrom(h);
-    if (pickerMode === 'to') setTo(h);
-    setPickerMode(null);
-    setPickerQuery('');
-    setSearchValidation(null);
-  };
-
-  const onSearch = () => {
-    if (!from || !to) {
-      setSearchValidation('Select departure and destination');
-      return;
-    }
-    if (from.id === to.id) {
-      setSearchValidation('Departure and destination cannot be the same');
-      return;
-    }
-    setSearchValidation(null);
-    navigation.navigate('SearchResults', {
-      fromId: from.id,
-      toId: to.id,
-      tripType,
-      passengerCount: 1,
-      date: searchDate ? searchDate.toISOString().slice(0, 10) : undefined,
-    });
-  };
-
-  const openRecentSearch = (fromId: string, toId: string) => {
-    navigation.navigate('SearchResults', {
-      fromId,
-      toId,
-      tripType,
-      passengerCount: 1,
-    });
-  };
-
-  const formatSearchDate = (d: Date | null) => {
-    if (!d) return null;
-    const today = new Date();
-    if (d.toDateString() === today.toDateString()) return 'Today';
-    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-  };
-
   const displayName = user?.name || strings.common.guest;
 
   return (
     <Screen
       scroll
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: effectiveSpacing.lg, paddingBottom: effectiveSpacing.xl + 80 }]}
+      contentContainerStyle={[styles.content, { paddingTop: effectiveSpacing.lg, paddingBottom: listBottomPaddingTab }]}
       scrollProps={{
         refreshControl: (
           <RefreshControl
@@ -212,74 +138,22 @@ export default function PassengerHomeScreen() {
         />
       ) : null}
 
-      {/* Hero card - Ready to travel? */}
+      {/* Find trips CTA */}
       <TouchableOpacity
         style={styles.heroCard}
-        onPress={() => navigation.navigate('Search')}
+        onPress={() => navigation.navigate('SearchResults', {})}
         activeOpacity={0.9}
       >
         <View style={styles.heroContent}>
           <Text style={styles.heroTitle}>Ready to travel?</Text>
           <Text style={styles.heroSubtitle}>Find rides with verified drivers at the best prices.</Text>
           <View style={styles.heroBtn}>
-            <Text style={styles.heroBtnText}>Find a Ride</Text>
-            <Ionicons name="arrow-forward" size={16} color="#fff" />
+            <Text style={styles.heroBtnText}>Find trips</Text>
+            <Ionicons name="arrow-forward" size={16} color={PASSENGER_DARK} />
           </View>
         </View>
         <View style={styles.heroBlob} />
       </TouchableOpacity>
-
-      {/* Search inputs - BlaBlaCar style */}
-      <View style={[styles.searchCard, { backgroundColor: PASSENGER_BG_LIGHT, borderColor: c.borderLight }]}>
-        <TouchableOpacity
-          style={styles.searchRow}
-          onPress={() => setPickerMode('from')}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="ellipse" size={10} color={c.textMuted} style={styles.searchDot} />
-          <Text style={[styles.searchRowText, !from && styles.searchRowPlaceholder, { color: from ? c.text : c.textMuted }]} numberOfLines={1}>
-            {from ? (from.country ? `${from.name}, ${from.country}` : from.name) : 'From...'}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.searchRow, styles.searchRowLast]}
-          onPress={() => setPickerMode('to')}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="location" size={16} color={PASSENGER_BRAND} style={styles.searchDot} />
-          <Text style={[styles.searchRowText, !to && styles.searchRowPlaceholder, { color: to ? c.text : c.textMuted }]} numberOfLines={1}>
-            {to ? (to.country ? `${to.name}, ${to.country}` : to.name) : 'To...'}
-          </Text>
-          <TouchableOpacity hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={(e) => { e.stopPropagation(); swapFromTo(); }} style={styles.swapBtn}>
-            <Ionicons name="swap-vertical" size={22} color={PASSENGER_BRAND} />
-          </TouchableOpacity>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.searchRow, styles.searchRowLast]}
-          onPress={() => setShowDatePicker(true)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="calendar-outline" size={18} color={c.textMuted} style={styles.searchDot} />
-          <Text style={[styles.searchRowText, !searchDate && styles.searchRowPlaceholder, { color: searchDate ? c.text : c.textMuted }]} numberOfLines={1}>
-            {formatSearchDate(searchDate) || 'Date (optional)'}
-          </Text>
-          <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
-        </TouchableOpacity>
-        <DateTimePicker
-          visible={showDatePicker}
-          onRequestClose={() => setShowDatePicker(false)}
-          value={searchDate || new Date()}
-          onChange={(d) => setSearchDate(d)}
-          mode="date"
-          minimumDate={new Date()}
-        />
-        {searchValidation ? (
-          <Text style={[styles.searchValidation, { color: c.error }]}>{searchValidation}</Text>
-        ) : null}
-        <TouchableOpacity style={styles.searchBtn} onPress={onSearch} activeOpacity={0.85}>
-          <Text style={styles.searchBtnText}>Find Rides</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Upcoming Trips */}
       <Text style={[styles.sectionTitle, { color: c.text }]}>Upcoming Trips</Text>
@@ -344,81 +218,14 @@ export default function PassengerHomeScreen() {
         />
       ))}
 
-      <Divider />
-      <Text style={[styles.sectionTitle, styles.recentTitle, { color: c.text }]}>Recent searches</Text>
-      <TouchableOpacity
-        style={[styles.recentRow, { borderBottomColor: c.border }]}
-        onPress={() => openRecentSearch('hp3', 'hp2')}
-      >
-        <Ionicons name="time-outline" size={20} color={c.textSecondary} />
-        <View style={styles.recentText}>
-          <Text style={[styles.recentPrimary, { color: c.text }]}>Kigali → Rubavu</Text>
-          <Text style={[styles.recentSecondary, { color: c.textSecondary }]}>Today</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.recentRow, { borderBottomColor: c.border }]}
-        onPress={() => openRecentSearch('hp1', 'hp2')}
-      >
-        <Ionicons name="time-outline" size={20} color={c.textSecondary} />
-        <View style={styles.recentText}>
-          <Text style={[styles.recentPrimary, { color: c.text }]}>Kigali → Goma</Text>
-          <Text style={[styles.recentSecondary, { color: c.textSecondary }]}>Today</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
-      </TouchableOpacity>
       <CarRefreshIndicator state={refreshState} />
-
-      <Modal visible={pickerMode !== null} animationType="slide" transparent>
-        <View style={selectorStyles.overlay}>
-          <View style={selectorStyles.sheet}>
-            <View style={selectorStyles.searchRow}>
-              <Ionicons name="search" size={20} color={c.textMuted} />
-              <TextInput
-                style={selectorStyles.searchInput}
-                placeholder="Type city or hotpoint"
-                placeholderTextColor={c.textMuted}
-                value={pickerQuery}
-                onChangeText={setPickerQuery}
-                autoFocus
-              />
-            </View>
-            <FlatList
-              data={filteredHotpoints}
-              keyExtractor={(item) => item.id}
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={selectorStyles.optionRow}
-                  onPress={() => onSelectHotpoint(item)}
-                >
-                  <Ionicons name="location-outline" size={20} color={c.textMuted} />
-                  <View style={selectorStyles.optionText}>
-                    <Text style={selectorStyles.optionPrimary}>
-                      {item.country ? `${item.name}, ${item.country}` : item.name}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity
-              style={selectorStyles.closeButton}
-              onPress={() => { setPickerMode(null); setPickerQuery(''); }}
-            >
-              <Text style={selectorStyles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  content: { paddingHorizontal: spacing.lg },
+  content: {},
   blob1: {
     position: 'absolute',
     top: -40,
@@ -490,7 +297,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     gap: 8,
   },
-  heroBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  heroBtnText: { fontSize: 14, fontWeight: '700', color: PASSENGER_DARK },
   heroBlob: {
     position: 'absolute',
     right: -24,
@@ -500,39 +307,8 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
-  searchCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: spacing.xl,
-    overflow: 'hidden',
-    padding: spacing.sm,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.sm,
-    gap: spacing.sm,
-  },
-  searchRowLast: { borderBottomWidth: 0 },
-  searchDot: { width: 24, textAlign: 'center' },
-  searchRowText: { flex: 1, ...typography.body, fontWeight: '600' },
-  searchRowPlaceholder: { fontWeight: '500', color: colors.textMuted },
-  swapBtn: { padding: spacing.xs },
-  searchValidation: { ...typography.caption, color: colors.error, paddingHorizontal: spacing.sm, paddingTop: spacing.xs },
-  searchBtn: {
-    backgroundColor: PASSENGER_BRAND,
-    marginTop: spacing.sm,
-    marginHorizontal: spacing.sm,
-    paddingVertical: 18,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  sectionTitle: { ...typography.h3, fontWeight: '800', marginBottom: spacing.sm, fontSize: 18 },
+  sectionTitle: { ...sectionTitleStyle, fontSize: 18 },
   sectionTitleTop: { marginTop: spacing.md },
-  recentTitle: { marginTop: spacing.lg },
   modeRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   modeBtn: {
     flex: 1,
@@ -550,7 +326,7 @@ const styles = StyleSheet.create({
     borderColor: PASSENGER_BRAND,
   },
   modeText: { ...typography.bodySmall, color: colors.textSecondary },
-  modeTextActive: { color: '#fff', fontWeight: '600' },
+  modeTextActive: { color: PASSENGER_DARK, fontWeight: '600' },
   upcomingList: { gap: spacing.sm, marginBottom: spacing.md },
   upcomingCard: {
     flexDirection: 'row',
@@ -582,15 +358,4 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   upcomingEmptyText: { ...typography.bodySmall },
-  recentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  recentText: { flex: 1 },
-  recentPrimary: { ...typography.body, color: colors.text },
-  recentSecondary: { ...typography.caption, color: colors.textSecondary },
 });

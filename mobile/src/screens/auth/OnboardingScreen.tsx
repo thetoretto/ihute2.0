@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,14 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { OnboardingContext } from '../../context/OnboardingContext';
 import { colors, spacing, radii, typography } from '../../utils/theme';
 import { Button } from '../../components';
+
+const ONBOARDING_STORAGE_KEY = '@ihute_has_seen_onboarding';
 
 const SLIDES = [
   {
@@ -35,6 +39,7 @@ const SLIDES = [
 
 export default function OnboardingScreen() {
   const navigation = useNavigation<any>();
+  const onboardingContext = useContext(OnboardingContext);
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const flatRef = useRef<FlatList>(null);
@@ -43,18 +48,25 @@ export default function OnboardingScreen() {
     setIndex(nextIndex);
   };
 
+  const completeOnboarding = () => {
+    AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, 'true').then(() => {
+      onboardingContext?.completeOnboarding();
+      navigation.replace('Auth');
+    });
+  };
+
   const onNext = () => {
     if (index < SLIDES.length - 1) {
       const nextIndex = index + 1;
       flatRef.current?.scrollToIndex({ index: nextIndex });
       setOnboardingIndex(nextIndex);
     } else {
-      navigation.replace('Login');
+      completeOnboarding();
     }
   };
 
   const onSkip = () => {
-    navigation.replace('Login');
+    completeOnboarding();
   };
 
   return (

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { getTrips, getVehicles, getBookings } from '../services/adminData';
 import { useAdminScope } from '../context/AdminScopeContext';
+import { adminSnapshot } from '../data/snapshot';
 
 export default function AgencyManagementPage() {
   const scope = useAdminScope();
@@ -10,12 +11,56 @@ export default function AgencyManagementPage() {
   const vehicles = React.useMemo(() => getVehicles(scope), [scope]);
   const bookings = React.useMemo(() => getBookings(scope), [scope]);
 
+  // Super admin: list all agencies (users with role agency)
+  const allAgencies = React.useMemo(
+    () => adminSnapshot.users.filter((u) => u.roles.includes('agency')),
+    []
+  );
+
   if (!scope?.agencyId) {
+    const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
     return (
       <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
-        <h3 className="text-2xl font-black text-dark mb-2">Agency management</h3>
-        <p className="text-muted">
-          Log in as an agency admin to manage your agency&apos;s trips, vehicles, and employees.
+        <h3 className="text-2xl font-black text-dark mb-2">Agencies</h3>
+        <p className="text-muted text-sm mb-6">
+          All agencies on the platform. Manage drivers and agency accounts from Users.
+        </p>
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-surface">
+                <th className={th}>Name</th>
+                <th className={th}>Email</th>
+                <th className={th}>Phone</th>
+                <th className={th}>Role</th>
+                <th className={th}>Rating</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface">
+              {allAgencies.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-muted">No agencies yet.</td>
+                </tr>
+              ) : (
+                allAgencies.map((agency) => (
+                  <tr key={agency.id} className="group hover:bg-surface/50 transition-colors">
+                    <td className="py-5 font-bold text-sm">{agency.name}</td>
+                    <td className="py-5 text-sm text-dark/80">{agency.email}</td>
+                    <td className="py-5 text-sm text-dark/80">{agency.phone}</td>
+                    <td className="py-5">
+                      <span className="inline-block px-2 py-0.5 rounded-lg text-[11px] font-bold bg-soft text-dark">
+                        Agency
+                      </span>
+                    </td>
+                    <td className="py-5 text-sm">{agency.rating?.toFixed(1) ?? 'N/A'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-muted text-sm mt-6">
+          <Link to="/users" className="font-bold text-dark hover:underline">View all users</Link> (drivers, passengers, agencies) or filter by role on the Users page.
         </p>
       </div>
     );

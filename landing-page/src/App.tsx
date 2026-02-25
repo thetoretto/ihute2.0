@@ -77,7 +77,11 @@ export default function App() {
 
   return (
     <>
-      <Navbar onViewAllTrips={handleViewAllTrips} />
+      <Navbar
+        onViewAllTrips={handleViewAllTrips}
+        onBackHome={handleBackHome}
+        isTripsPage={page === 'trips' || page === 'trip-detail' || page === 'booking-confirm'}
+      />
       <main className="lp-main" role="main">
         {page === 'landing' && (
           <div className="landing-rs">

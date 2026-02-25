@@ -1,15 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Animated, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useThemeColors } from '../context/ThemeContext';
 import { spacing, typography, radii } from '../utils/theme';
 import { useResponsiveTheme } from '../utils/responsiveTheme';
 import { strings } from '../constants/strings';
+
+import { OnboardingContext } from '../context/OnboardingContext';
+import { RootNavigationProvider } from '../context/RootNavigationContext';
+
+const ONBOARDING_STORAGE_KEY = '@ihute_has_seen_onboarding';
 
 function useStackScreenOptions() {
   const c = useThemeColors();
@@ -29,13 +36,14 @@ function useStackScreenOptions() {
 /** Base tab bar config; height and label/icon styles are overridden with responsive values in each tab navigator. */
 function useTabBarScreenOptionsBase() {
   const c = useThemeColors();
+  const insets = useSafeAreaInsets();
   return {
     tabBarStyle: {
       backgroundColor: c.tabBarBackground,
       borderTopColor: 'rgba(254,228,107,0.15)',
       borderTopWidth: 1,
       paddingTop: spacing.sm,
-      paddingBottom: spacing.sm,
+      paddingBottom: Math.max(insets.bottom, spacing.sm),
     },
     tabBarActiveTintColor: c.primary,
     tabBarInactiveTintColor: c.textMuted,
@@ -45,6 +53,28 @@ function useTabBarScreenOptionsBase() {
     headerTitleAlign: 'center' as const,
     animation: 'fade' as const,
     sceneStyle: { backgroundColor: c.background },
+  };
+}
+
+/** Shared tab navigator screenOptions (height, padding, label style, item style). Pass tintColor for role-specific active tint (e.g. c.agency). */
+function useTabNavigatorScreenOptions(opts?: { tintColor?: string; headerTintColor?: string }) {
+  const c = useThemeColors();
+  const responsiveTheme = useResponsiveTheme();
+  const base = useTabBarScreenOptionsBase();
+  const tint = opts?.tintColor ?? c.primary;
+  const headerTint = opts?.headerTintColor ?? c.dark;
+  return {
+    ...base,
+    tabBarActiveTintColor: tint,
+    tabBarInactiveTintColor: c.textMuted,
+    headerTintColor: headerTint,
+    tabBarStyle: {
+      ...base.tabBarStyle,
+      height: responsiveTheme.layout.tabBarHeight,
+      paddingTop: responsiveTheme.spacing.sm,
+    },
+    tabBarLabelStyle: { ...responsiveTheme.typography.caption, fontWeight: '600' as const },
+    tabBarItemStyle: { borderRadius: responsiveTheme.radii.md, marginHorizontal: 2, minHeight: 48 },
   };
 }
 
@@ -61,10 +91,10 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import VerifyOTPScreen from '../screens/auth/VerifyOTPScreen';
 import CompleteProfileScreen from '../screens/auth/CompleteProfileScreen';
+import OnboardingScreen from '../screens/auth/OnboardingScreen';
 
 // Passenger
 import PassengerHomeScreen from '../screens/passenger/PassengerHomeScreen';
-import SearchScreen from '../screens/passenger/SearchScreen';
 import SearchResultsScreen from '../screens/passenger/SearchResultsScreen';
 import RideDetailScreen from '../screens/passenger/RideDetailScreen';
 import PassengerBookingScreen from '../screens/passenger/PassengerBookingScreen';
@@ -90,6 +120,7 @@ import PaymentMethodsScreen from '../screens/shared/PaymentMethodsScreen';
 import WithdrawalMethodsScreen from '../screens/shared/WithdrawalMethodsScreen';
 import NotificationsScreen from '../screens/shared/NotificationsScreen';
 import PrivacyScreen from '../screens/shared/PrivacyScreen';
+import EditProfileScreen from '../screens/shared/EditProfileScreen';
 
 const AuthStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
@@ -133,12 +164,11 @@ function PassengerHomeStack() {
       <Stack.Screen
         name="PassengerHome"
         component={PassengerHomeScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
-      <Stack.Screen name="Search" component={SearchScreen} />
-      <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
+      <Stack.Screen name="SearchResults" component={SearchResultsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="RideDetail" component={RideDetailScreen} />
-      <Stack.Screen name="PassengerBooking" component={PassengerBookingScreen} options={{ title: 'Book trip' }} />
+      <Stack.Screen name="PassengerBooking" component={PassengerBookingScreen} options={{ headerShown: false, title: 'Book trip' }} />
       <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ title: strings.nav.ticketDetails }} />
     </Stack.Navigator>
   );
@@ -151,10 +181,10 @@ function DriverHomeStack() {
       <Stack.Screen
         name="DriverHome"
         component={DriverHomeScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
       <Stack.Screen name="VehicleGarage" component={VehicleGarageScreen} />
-      <Stack.Screen name="PublishRide" component={PublishRideScreen} />
+      <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ title: 'Publish ride' }} />
       <Stack.Screen name="DriverNotifications" component={DriverNotificationsScreen} options={{ title: strings.nav.notifications }} />
       <Stack.Screen name="DriverScanTicket" component={DriverScanTicketScreen} options={{ title: strings.nav.scanTicket }} />
     </Stack.Navigator>
@@ -165,7 +195,7 @@ function DriverPublishStack() {
   const screenOptions = useStackScreenOptions();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ title: 'Publish ride', headerShown: true }} />
     </Stack.Navigator>
   );
 }
@@ -178,7 +208,7 @@ function ScannerHomeStack() {
       <Stack.Screen
         name="DriverHome"
         component={DriverHomeScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
       <Stack.Screen name="DriverScanTicket" component={DriverScanTicketScreen} options={{ title: strings.nav.scanTicket }} />
     </Stack.Navigator>
@@ -255,21 +285,8 @@ function DriverMyRidesStack() {
 function PassengerTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
   const c = useThemeColors();
-  const sharedTabBarScreenOptionsBase = useTabBarScreenOptionsBase();
+  const screenOptions = useTabNavigatorScreenOptions();
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
-  const screenOptions = {
-    ...sharedTabBarScreenOptionsBase,
-    tabBarActiveTintColor: c.primary,
-    tabBarInactiveTintColor: c.textMuted,
-    tabBarStyle: {
-      ...sharedTabBarScreenOptionsBase.tabBarStyle,
-      height: responsiveTheme.layout.tabBarHeight,
-      paddingTop: responsiveTheme.spacing.sm,
-      paddingBottom: responsiveTheme.spacing.sm,
-    },
-    tabBarLabelStyle: { ...responsiveTheme.typography.caption, fontWeight: '600' as const },
-    tabBarItemStyle: { borderRadius: responsiveTheme.radii.md, marginHorizontal: 2, minHeight: 48 },
-  };
   return (
     <Tabs.Navigator screenOptions={screenOptions}>
       <Tabs.Screen
@@ -277,7 +294,7 @@ function PassengerTabsNavigator() {
         component={PassengerHomeStack}
         options={{
           tabBarLabel: strings.tabs.trips,
-          headerTitle: () => <LogoHeader />,
+          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="search" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -286,7 +303,7 @@ function PassengerTabsNavigator() {
         component={PassengerMyRidesStack}
         options={{
           tabBarLabel: strings.tabs.activities,
-          headerTitle: () => <LogoHeader />,
+          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="pulse" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -303,6 +320,7 @@ function PassengerTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: strings.tabs.profile,
+          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="person" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -312,35 +330,17 @@ function PassengerTabsNavigator() {
 
 function DriverTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
-  const sharedTabBarScreenOptionsBase = useTabBarScreenOptionsBase();
   const c = useThemeColors();
+  const screenOptions = useTabNavigatorScreenOptions();
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
-  const screenOptions = {
-    ...sharedTabBarScreenOptionsBase,
-    tabBarStyle: {
-      ...sharedTabBarScreenOptionsBase.tabBarStyle,
-      height: responsiveTheme.layout.tabBarHeight,
-      paddingTop: responsiveTheme.spacing.sm,
-      paddingBottom: responsiveTheme.spacing.sm,
-    },
-    tabBarLabelStyle: { ...responsiveTheme.typography.caption, fontWeight: '600' as const },
-    tabBarItemStyle: { borderRadius: responsiveTheme.radii.md, marginHorizontal: 2, minHeight: 48 },
-  };
   return (
-    <Tabs.Navigator
-      screenOptions={{
-        ...screenOptions,
-        tabBarActiveTintColor: c.primary,
-        tabBarInactiveTintColor: c.textMuted,
-        headerTintColor: c.dark,
-      }}
-    >
+    <Tabs.Navigator screenOptions={screenOptions}>
       <Tabs.Screen
         name="DriverCenter"
         component={DriverHomeStack}
         options={{
           tabBarLabel: 'Home',
-          headerTitle: () => <LogoHeader />,
+          headerShown: false,
           tabBarIcon: ({ focused, color }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={tabBarIconSize} color={focused ? c.primary : color} />
           ),
@@ -351,6 +351,7 @@ function DriverTabsNavigator() {
         component={DriverPublishStack}
         options={{
           tabBarLabel: strings.tabs.publish,
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
             <Ionicons name="add-circle" size={28} color={c.primary} />
           ),
@@ -371,6 +372,7 @@ function DriverTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: strings.tabs.profile,
+          headerShown: false,
           tabBarIcon: ({ focused, color }) => (
             <Ionicons name={focused ? 'person' : 'person-outline'} size={tabBarIconSize} color={focused ? c.primary : color} />
           ),
@@ -383,22 +385,8 @@ function DriverTabsNavigator() {
 function AgencyTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
   const c = useThemeColors();
-  const sharedTabBarScreenOptionsBase = useTabBarScreenOptionsBase();
+  const screenOptions = useTabNavigatorScreenOptions({ tintColor: c.agency, headerTintColor: c.agency });
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
-  const screenOptions = {
-    ...sharedTabBarScreenOptionsBase,
-    tabBarActiveTintColor: c.agency,
-    tabBarInactiveTintColor: c.textMuted,
-    headerTintColor: c.agency,
-    tabBarStyle: {
-      ...sharedTabBarScreenOptionsBase.tabBarStyle,
-      height: responsiveTheme.layout.tabBarHeight,
-      paddingTop: responsiveTheme.spacing.sm,
-      paddingBottom: responsiveTheme.spacing.sm,
-    },
-    tabBarLabelStyle: { ...responsiveTheme.typography.caption, fontWeight: '600' as const },
-    tabBarItemStyle: { borderRadius: responsiveTheme.radii.md, marginHorizontal: 2, minHeight: 48 },
-  };
   return (
     <Tabs.Navigator screenOptions={screenOptions}>
       <Tabs.Screen
@@ -406,7 +394,7 @@ function AgencyTabsNavigator() {
         component={DriverHomeStack}
         options={{
           tabBarLabel: strings.tabs.dashboard,
-          headerTitle: () => <LogoHeader />,
+          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="car" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -415,7 +403,7 @@ function AgencyTabsNavigator() {
         component={ScannerReportStack}
         options={{
           tabBarLabel: strings.tabs.report,
-          headerTitle: () => <LogoHeader />,
+          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="document-text" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -424,6 +412,7 @@ function AgencyTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: strings.tabs.profile,
+          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="person" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -434,22 +423,8 @@ function AgencyTabsNavigator() {
 function ScannerTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
   const c = useThemeColors();
-  const sharedTabBarScreenOptionsBase = useTabBarScreenOptionsBase();
+  const screenOptions = useTabNavigatorScreenOptions({ tintColor: c.agency, headerTintColor: c.agency });
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
-  const screenOptions = {
-    ...sharedTabBarScreenOptionsBase,
-    tabBarActiveTintColor: c.agency,
-    tabBarInactiveTintColor: c.textMuted,
-    headerTintColor: c.agency,
-    tabBarStyle: {
-      ...sharedTabBarScreenOptionsBase.tabBarStyle,
-      height: responsiveTheme.layout.tabBarHeight,
-      paddingTop: responsiveTheme.spacing.sm,
-      paddingBottom: responsiveTheme.spacing.sm,
-    },
-    tabBarLabelStyle: { ...responsiveTheme.typography.caption, fontWeight: '600' as const },
-    tabBarItemStyle: { borderRadius: responsiveTheme.radii.md, marginHorizontal: 2, minHeight: 48 },
-  };
   return (
     <Tabs.Navigator screenOptions={screenOptions}>
       <Tabs.Screen
@@ -457,7 +432,7 @@ function ScannerTabsNavigator() {
         component={ScannerHomeStack}
         options={{
           tabBarLabel: strings.tabs.dashboard,
-          headerTitle: () => <LogoHeader />,
+          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="car" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -466,7 +441,7 @@ function ScannerTabsNavigator() {
         component={ScannerReportStack}
         options={{
           tabBarLabel: strings.tabs.report,
-          headerTitle: () => <LogoHeader />,
+          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="document-text" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -475,6 +450,7 @@ function ScannerTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: strings.tabs.profile,
+          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="person" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -549,17 +525,64 @@ function MainRoleNavigator() {
   );
 }
 
+/** Shared header options for RootStack modal screens so they match the rest of the app on mobile. */
+function useRootHeaderOptions() {
+  const c = useThemeColors();
+  return {
+    headerShown: true as const,
+    headerStyle: { backgroundColor: c.primary },
+    headerTintColor: c.dark,
+    headerTitleStyle: { color: c.dark, ...typography.h3 },
+    headerShadowVisible: false,
+    headerTitleAlign: 'center' as const,
+  };
+}
+
 export default function AppNavigator() {
   const { isAuthenticated, isProfileComplete, isLoading } = useAuth();
   const { currentRole } = useRole();
+  const rootHeaderOptions = useRootHeaderOptions();
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
+  const rootNavRef = useRef<any>(null);
 
-  if (isLoading) {
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_STORAGE_KEY).then((v) => {
+      setHasSeenOnboarding(v === 'true');
+    });
+  }, []);
+
+  const completeOnboarding = React.useCallback(() => {
+    setHasSeenOnboarding(true);
+  }, []);
+
+  if (isLoading || hasSeenOnboarding === null) {
     return null;
   }
 
+  const initialRoute =
+    hasSeenOnboarding === false
+      ? 'Onboarding'
+      : !isAuthenticated
+        ? 'Auth'
+        : !isProfileComplete
+          ? 'CompleteProfileFlow'
+          : 'Main';
+
   return (
-    <NavigationContainer>
-      <RootStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
+    <OnboardingContext.Provider value={hasSeenOnboarding === false ? { completeOnboarding } : null}>
+      <RootNavigationProvider rootNavRef={rootNavRef}>
+        <NavigationContainer ref={rootNavRef}>
+          <RootStack.Navigator
+          initialRouteName={initialRoute}
+          screenOptions={{ headerShown: false, animation: 'fade' }}
+        >
+          {hasSeenOnboarding === false && (
+            <RootStack.Screen
+              name="Onboarding"
+              component={OnboardingScreen}
+              options={{ animation: 'fade' }}
+            />
+          )}
         {!isAuthenticated ? (
           <RootStack.Screen
             name="Auth"
@@ -583,42 +606,47 @@ export default function AppNavigator() {
             <RootStack.Screen
               name="VehicleGarage"
               component={VehicleGarageScreen}
-              options={{ animation: 'slide_from_right' }}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.profile.myVehicles }}
             />
             <RootStack.Screen
               name="Chat"
               component={ChatScreen}
-              options={{ animation: 'slide_from_right' }}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: 'Chat' }}
             />
             <RootStack.Screen
               name="Hotline"
               component={HotlineScreen}
-              options={{ animation: 'slide_from_right' }}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.profile.hotline }}
             />
             <RootStack.Screen
               name="PaymentMethods"
               component={PaymentMethodsScreen}
-              options={{ animation: 'slide_from_right', title: strings.nav.linkedAccounts }}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.linkedAccounts }}
             />
             <RootStack.Screen
               name="WithdrawalMethods"
               component={WithdrawalMethodsScreen}
-              options={{ animation: 'slide_from_right', title: strings.profile.withdrawalMethods }}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.profile.withdrawalMethods }}
             />
             <RootStack.Screen
               name="Notifications"
               component={NotificationsScreen}
-              options={{ animation: 'slide_from_right', title: strings.nav.notifications }}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.notifications }}
             />
             <RootStack.Screen
               name="Privacy"
               component={PrivacyScreen}
-              options={{ animation: 'slide_from_right', title: strings.nav.privacy }}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.privacy }}
+            />
+            <RootStack.Screen
+              name="EditProfile"
+              component={EditProfileScreen}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: 'Edit profile' }}
             />
             <RootStack.Screen
               name="DriverActivityDetails"
               component={DriverActivityDetailsScreen}
-              options={{ animation: 'slide_from_right', title: strings.app.name }}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.app.name }}
             />
             <RootStack.Screen
               name="DriverActivityListStack"
@@ -627,7 +655,9 @@ export default function AppNavigator() {
             />
           </>
         )}
-      </RootStack.Navigator>
-    </NavigationContainer>
+        </RootStack.Navigator>
+        </NavigationContainer>
+      </RootNavigationProvider>
+    </OnboardingContext.Provider>
   );
 }

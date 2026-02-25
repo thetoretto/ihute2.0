@@ -1,7 +1,8 @@
 /**
- * Admin API client. When VITE_API_BASE_URL is set, disputes use the server; otherwise use local adminData.
+ * Admin API client. When VITE_API_BASE_URL is set, disputes and hotpoints use the server; otherwise use local adminData.
+ * Changes (create/update/delete) go to the server so the whole app (mobile, web) sees them.
  */
-import type { Dispute } from '../types';
+import type { Dispute, Hotpoint } from '../types';
 import type { AdminScope } from './adminMetrics';
 
 function getApiBase(): string {
@@ -11,6 +12,71 @@ function getApiBase(): string {
 
 export function isApiConfigured(): boolean {
   return getApiBase().length > 0;
+}
+
+// ---------- Hotpoints (admin CRUD → server store = whole app) ----------
+export async function getHotpointsApi(): Promise<Hotpoint[]> {
+  const base = getApiBase();
+  if (!base) return [];
+  const res = await fetch(`${base}/api/hotpoints`, { method: 'GET', headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(res.statusText || 'Failed to fetch hotpoints');
+  const text = await res.text();
+  if (!text) return [];
+  return JSON.parse(text) as Hotpoint[];
+}
+
+export async function createHotpointApi(data: Omit<Hotpoint, 'id'>): Promise<Hotpoint> {
+  const base = getApiBase();
+  if (!base) throw new Error('API not configured');
+  const res = await fetch(`${base}/api/hotpoints`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    const message = parseError(text, 'Failed to create hotpoint');
+    throw new Error(message);
+  }
+  if (!text) throw new Error('Empty response');
+  return JSON.parse(text) as Hotpoint;
+}
+
+export async function updateHotpointApi(id: string, data: Partial<Omit<Hotpoint, 'id'>>): Promise<Hotpoint> {
+  const base = getApiBase();
+  if (!base) throw new Error('API not configured');
+  const res = await fetch(`${base}/api/hotpoints/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    const message = parseError(text, 'Failed to update hotpoint');
+    throw new Error(message);
+  }
+  if (!text) throw new Error('Empty response');
+  return JSON.parse(text) as Hotpoint;
+}
+
+export async function deleteHotpointApi(id: string): Promise<void> {
+  const base = getApiBase();
+  if (!base) throw new Error('API not configured');
+  const res = await fetch(`${base}/api/hotpoints/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  if (res.status === 204) return;
+  const text = await res.text();
+  const message = parseError(text, 'Failed to delete hotpoint');
+  throw new Error(message);
+}
+
+function parseError(text: string, fallback: string): string {
+  try {
+    const json = text ? JSON.parse(text) : {};
+    if (json?.error && typeof json.error === 'string') return json.error;
+  } catch {
+    if (text) return text;
+  }
+  return fallback;
 }
 
 export async function getDisputes(scope?: AdminScope): Promise<Dispute[]> {

@@ -16,6 +16,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
+import { useRootNavigation } from '../../context/RootNavigationContext';
 import {
   RoleToggle,
   Screen,
@@ -30,9 +31,8 @@ import { getUnreadDriverNotificationCount, getScannerTicketCount } from '../../s
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
+import { cardRadius, listBottomPaddingTab, sectionTitleStyle } from '../../utils/layout';
 import type { DriverTripActivity } from '../../types';
-
-const CARD_RADIUS = 24;
 
 function getGreetingName(displayName: string | null | undefined): string {
   if (!displayName?.trim()) return 'Driver';
@@ -42,6 +42,7 @@ function getGreetingName(displayName: string | null | undefined): string {
 
 export default function DriverHomeScreen() {
   const navigation = useNavigation<any>();
+  const { rootNavigate } = useRootNavigation();
   const { user, logout } = useAuth();
   const { currentRole, switchRole, hasApprovedVehicle, agencySubRole } = useRole();
   const responsive = useResponsiveThemeContext();
@@ -170,7 +171,7 @@ export default function DriverHomeScreen() {
     <Screen
       scroll
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: effectiveSpacing.lg, paddingBottom: effectiveSpacing.xl + 80 }]}
+      contentContainerStyle={[styles.content, { paddingTop: effectiveSpacing.lg, paddingBottom: listBottomPaddingTab }]}
       scrollProps={{
         refreshControl: (
           <RefreshControl
@@ -322,7 +323,7 @@ export default function DriverHomeScreen() {
                 onSwitch={switchRole}
                 hasApprovedVehicle={hasApprovedVehicle}
                 availableRoles={user.roles}
-                onNavigateToVehicleGarage={() => navigation.navigate('VehicleGarage')}
+                onNavigateToVehicleGarage={() => rootNavigate('VehicleGarage')}
               />
             </View>
           ) : null}
@@ -378,7 +379,7 @@ export default function DriverHomeScreen() {
                 </View>
                 <TouchableOpacity
                   style={[styles.startRideBtn, { backgroundColor: c.primary }]}
-                  onPress={() => (navigation.getParent() as any)?.getParent()?.navigate('DriverActivityListStack')}
+                  onPress={() => rootNavigate('DriverActivityListStack')}
                   activeOpacity={0.85}
                 >
                   <Text style={[styles.startRideBtnText, { color: c.onPrimary }]}>View ride</Text>
@@ -390,7 +391,7 @@ export default function DriverHomeScreen() {
               <Text style={[styles.noNextRide, { color: c.textSecondary }]}>No upcoming ride today</Text>
               <TouchableOpacity
                 style={[styles.startRideBtn, { backgroundColor: c.primary, marginTop: spacing.md }]}
-                onPress={() => (navigation.getParent() as any)?.getParent()?.navigate('DriverActivityListStack')}
+                onPress={() => rootNavigate('DriverActivityListStack')}
                 activeOpacity={0.85}
               >
                 <Text style={[styles.startRideBtnText, { color: c.onPrimary }]}>View all activities</Text>
@@ -404,7 +405,7 @@ export default function DriverHomeScreen() {
       {!isScanner && currentRole === 'driver' && activitySummary != null ? (
         <TouchableOpacity
           style={styles.viewAllActivitiesBtn}
-          onPress={() => (navigation.getParent() as any)?.getParent()?.navigate('DriverActivityListStack')}
+          onPress={() => rootNavigate('DriverActivityListStack')}
         >
           <Text style={[styles.viewAllActivitiesText, { color: currentRole === 'agency' ? c.agency : c.passengerDark }]}>View all activities</Text>
           <Ionicons name="chevron-forward" size={18} color={currentRole === 'agency' ? c.agency : c.passengerDark} />
@@ -481,7 +482,7 @@ export default function DriverHomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: spacing.lg },
+  content: {},
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -508,7 +509,7 @@ const styles = StyleSheet.create({
     borderColor: colors.background,
   },
   heroCard: {
-    borderRadius: CARD_RADIUS,
+    borderRadius: cardRadius,
     padding: spacing.lg,
     overflow: 'hidden',
   },
@@ -575,9 +576,9 @@ const styles = StyleSheet.create({
   nextRideSection: { marginBottom: spacing.lg },
   nextRideHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: spacing.sm },
   nextRideBadge: { ...typography.caption, fontWeight: '600' },
-  sectionTitle: { ...typography.h3, color: colors.text },
+  sectionTitle: { ...sectionTitleStyle },
   nextRideCard: {
-    borderRadius: CARD_RADIUS,
+    borderRadius: cardRadius,
     padding: spacing.lg,
     borderWidth: 1,
   },
@@ -617,7 +618,7 @@ const styles = StyleSheet.create({
   agencySection: {},
   agencyCard: {
     padding: spacing.lg,
-    borderRadius: CARD_RADIUS,
+    borderRadius: cardRadius,
     borderWidth: 1,
   },
   agencyCardText: { ...typography.bodySmall, color: colors.textSecondary, marginBottom: spacing.sm },
@@ -627,7 +628,7 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.sm,
     padding: spacing.md,
-    borderRadius: CARD_RADIUS,
+    borderRadius: cardRadius,
     borderWidth: 1,
   },
   activityHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

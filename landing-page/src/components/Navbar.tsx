@@ -1,9 +1,14 @@
 interface NavbarProps {
   onViewAllTrips?: () => void;
+  onBackHome?: () => void;
+  isTripsPage?: boolean;
 }
 
-export default function Navbar({ onViewAllTrips }: NavbarProps) {
-  const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+export default function Navbar({ onViewAllTrips, onBackHome, isTripsPage }: NavbarProps) {
+  const goHome = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onBackHome?.();
+  };
 
   return (
     <nav className="rs-nav">
@@ -11,10 +16,7 @@ export default function Navbar({ onViewAllTrips }: NavbarProps) {
         <a
           href="/"
           className="rs-logo"
-          onClick={(e) => {
-            e.preventDefault();
-            scrollTop();
-          }}
+          onClick={goHome}
           aria-label="ihute home"
         >
           <div className="rs-logo-icon">
@@ -23,27 +25,41 @@ export default function Navbar({ onViewAllTrips }: NavbarProps) {
           <span>ihute</span>
         </a>
 
-        <div className="rs-nav-links">
-          <a href="#how-it-works">How it works</a>
-          <a href="#hot-destinations">Destinations</a>
-          <button
-            type="button"
-            className="rs-nav-cta"
-            onClick={() => onViewAllTrips?.()}
+        {isTripsPage ? (
+          <a
+            href="#"
+            className="rs-nav-back"
+            onClick={(e) => {
+              e.preventDefault();
+              onBackHome?.();
+            }}
           >
-            Search trips
-          </button>
-        </div>
-
-        <button
-          type="button"
-          className="rs-nav-cta rs-nav-cta-mobile"
-          onClick={() => onViewAllTrips?.()}
-          aria-label="Search trips"
-        >
-          <i className="fas fa-search" aria-hidden />
-          <span>Search trips</span>
-        </button>
+            Back to home
+          </a>
+        ) : (
+          <>
+            <div className="rs-nav-links">
+              <a href="#how-it-works">How it works</a>
+              <a href="#hot-destinations">Destinations</a>
+              <button
+                type="button"
+                className="rs-nav-cta"
+                onClick={() => onViewAllTrips?.()}
+              >
+                Search trips
+              </button>
+            </div>
+            <button
+              type="button"
+              className="rs-nav-cta rs-nav-cta-mobile"
+              onClick={() => onViewAllTrips?.()}
+              aria-label="Search trips"
+            >
+              <i className="fas fa-search" aria-hidden />
+              <span>Search trips</span>
+            </button>
+          </>
+        )}
       </div>
     </nav>
   );

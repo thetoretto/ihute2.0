@@ -747,7 +747,7 @@ export default function PublishRideScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl, paddingHorizontal: spacing.lg },
+  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
   introWrap: { paddingVertical: spacing.md },
   introTitle: { ...typography.h2, marginBottom: spacing.xs },
   introSub: { ...typography.bodySmall, marginBottom: spacing.lg },

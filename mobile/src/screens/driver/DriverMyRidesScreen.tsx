@@ -1,184 +1,181 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useLayoutEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  LayoutAnimation,
-  Platform,
-  UIManager,
+  ScrollView,
   RefreshControl,
+  Platform,
   Alert,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
-import { getDriverTripActivities, updateDriverTripStatus } from '../../services/api';
+import { useRootNavigation } from '../../context/RootNavigationContext';
+import { getDriverTripActivities } from '../../services/api';
 import {
   EmptyState,
   Screen,
   Button,
   CarRefreshIndicator,
-  ExpansionDetailsCard,
-  ExpandActionButton,
 } from '../../components';
-import { buttonHeights, colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
+import { useTabbedList } from '../../hooks/useTabbedList';
+import { colors, spacing, typography, radii } from '../../utils/theme';
+import { listBottomPaddingDefault } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { DriverTripActivity } from '../../types';
 
-const CARD_RADIUS = 24;
+const TABS = [
+  { key: 'all' as const, label: 'All' },
+  { key: 'upcoming' as const, label: 'Upcoming' },
+  { key: 'completed' as const, label: 'Completed' },
+];
+
+function formatTimeAgo(departureTime: string): string {
+  return departureTime || '—';
+}
 
 export default function DriverMyRidesScreen() {
   const navigation = useNavigation<any>();
+  const { rootNavigate } = useRootNavigation();
   const { user } = useAuth();
   const { agencySubRole } = useRole();
   const c = useThemeColors();
   const isScanner = user?.agencySubRole === 'agency_scanner' || agencySubRole === 'agency_scanner';
-  const [activities, setActivities] = useState<DriverTripActivity[]>([]);
-  const [tab, setTab] = useState<'upcoming' | 'completed'>('upcoming');
-  const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
-  const [isIncomeVisible, setIsIncomeVisible] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [refreshState, setRefreshState] = useState<'idle' | 'refreshing' | 'done'>('idle');
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const incomeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isIncomeVisible, setIsIncomeVisible] = useState(false);
 
-  useEffect(() => {
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-    return () => {
-      if (incomeTimerRef.current) {
-        clearTimeout(incomeTimerRef.current);
-      }
-    };
-  }, []);
+  const fetchActivities = useCallback(async () => {
+    if (!user) return [];
+    return getDriverTripActivities(user.id);
+  }, [user?.id]);
 
-  const loadTrips = React.useCallback(async () => {
-    setLoadError(null);
-    if (user) {
-      try {
-        const items = await getDriverTripActivities(user.id);
-        setActivities(items);
-      } catch (e) {
-        setLoadError(e instanceof Error ? e.message : 'Could not load activities.');
-      }
-    }
-  }, [user]);
+  const tabbed = useTabbedList({
+    tabs: TABS,
+    initialTab: 'all',
+    fetchData: fetchActivities,
+    filterByTab: (a, tab) =>
+      tab === 'all' || (tab === 'upcoming' && a.trip.status === 'active') || (tab === 'completed' && a.trip.status === 'completed'),
+    deps: [user?.id],
+  });
 
-  useEffect(() => {
-    void loadTrips();
-  }, [loadTrips]);
+  const { tab, setTab, list, error: loadError, refreshing, refresh } = tabbed;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: 'All Activities',
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => {
+            Alert.alert(
+              'Options',
+              undefined,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: isIncomeVisible ? 'Hide income' : 'View income',
+                  onPress: () => {
+                    setIsIncomeVisible((v) => !v);
+                    setTimeout(() => refresh(), 100);
+                  },
+                },
+                !isScanner
+                  ? {
+                      text: 'Scan ticket',
+                      onPress: () => navigation.navigate('DriverScanTicket'),
+                    }
+                  : undefined,
+              ].filter(Boolean) as { text: string; style?: 'cancel'; onPress?: () => void }[]
+            );
+          }}
+          style={headerBtnStyle}
+          hitSlop={12}
+        >
+          <Ionicons name="filter-outline" size={20} color={c.dark} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, c.dark, isIncomeVisible, isScanner, refresh]);
 
   useFocusEffect(
-    React.useCallback(() => {
-      setExpandedTripId(null);
-      setTab('upcoming');
-      void loadTrips();
-    }, [loadTrips])
+    useCallback(() => {
+      setTab('all');
+      void refresh();
+    }, [setTab, refresh])
   );
-
-  const list = activities.filter((a) =>
-    tab === 'upcoming' ? a.trip.status === 'active' : a.trip.status === 'completed'
-  );
-
-  const toggleExpanded = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-    setExpandedTripId((prev) => (prev === id ? null : id));
-  };
 
   const onRefresh = async () => {
-    setRefreshing(true);
     setRefreshState('refreshing');
-    await loadTrips();
+    await refresh();
     setRefreshState('done');
-    setRefreshing(false);
     setTimeout(() => setRefreshState('idle'), 240);
   };
 
-  const maskIncome = (value: number, suffix = 'RWF') =>
-    isIncomeVisible ? `${Number(value).toLocaleString('en-RW', { maximumFractionDigits: 0 })} ${suffix}` : '••••••';
+  const maskAmount = (value: number) =>
+    isIncomeVisible ? `+${Number(value).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF` : '••••••';
 
-  const onToggleIncome = () => {
-    if (isIncomeVisible) {
-      setIsIncomeVisible(false);
-      if (incomeTimerRef.current) {
-        clearTimeout(incomeTimerRef.current);
-      }
-      return;
-    }
-    Alert.alert('View income', 'Reveal income values for 12 seconds?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'View income',
-        onPress: () => {
-          setIsIncomeVisible(true);
-          if (incomeTimerRef.current) {
-            clearTimeout(incomeTimerRef.current);
-          }
-          incomeTimerRef.current = setTimeout(() => setIsIncomeVisible(false), 12000);
-        },
-      },
-    ]);
+  const getActivityIcon = (item: DriverTripActivity) => {
+    const isComplete = item.trip.status === 'completed';
+    return (
+      <View style={[styles.iconBox, { backgroundColor: isComplete ? colors.successTint : c.primaryTint }]}>
+        <Ionicons
+          name={isComplete ? 'checkmark-circle' : 'car'}
+          size={20}
+          color={isComplete ? colors.success : c.primary}
+        />
+      </View>
+    );
   };
 
-  const onSetTripStatus = async (tripId: string, status: 'active' | 'completed') => {
-    if (!user) {
-      return;
-    }
-    try {
-      await updateDriverTripStatus({ tripId, driverId: user.id, status });
-      await loadTrips();
-    } catch (e) {
-      Alert.alert('Status update failed', e instanceof Error ? e.message : 'Could not update trip status.');
-    }
+  const onCardPress = (item: DriverTripActivity) => {
+    navigation.navigate('DriverScanTicket');
   };
 
   return (
-    <Screen style={styles.container}>
+    <Screen style={[styles.container, { backgroundColor: c.background }]}>
       {loadError ? (
         <View style={[styles.errorBanner, { backgroundColor: c.surfaceElevated, borderColor: c.error }]}>
           <Text style={[styles.errorText, { color: c.error }]}>{loadError}</Text>
-          <Button title="Retry" onPress={() => void loadTrips()} />
+          <Button title="Retry" onPress={() => void refresh()} />
         </View>
       ) : null}
-      <View style={styles.actionsRow}>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: c.primary, borderColor: c.primaryButtonBorder }]}
-          onPress={() => navigation.navigate('DriverScanTicket')}
-        >
-          <Text style={[styles.actionBtnText, { color: c.onPrimary }]}>Scan ticket</Text>
-        </TouchableOpacity>
-        {!isScanner ? (
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: c.surface, borderColor: c.border }]} onPress={onToggleIncome}>
-            <Text style={[styles.actionBtnText, { color: c.primary }]}>
-              {isIncomeVisible ? 'Hide income' : 'View income'}
+
+      {/* Pill tabs - reference style */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabsScroll}
+        style={styles.tabsWrapper}
+      >
+        {TABS.map((t) => (
+          <TouchableOpacity
+            key={t.key}
+            onPress={() => setTab(t.key)}
+            style={[
+              styles.tabPill,
+              { backgroundColor: tab === t.key ? c.dark : c.card, borderColor: c.border },
+            ]}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.tabPillText,
+                { color: tab === t.key ? c.primary : c.textSecondary },
+                tab === t.key && styles.tabPillTextActive,
+              ]}
+            >
+              {t.label}
             </Text>
           </TouchableOpacity>
-        ) : null}
-      </View>
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tab, tab === 'upcoming' && { backgroundColor: c.primary }]}
-          onPress={() => setTab('upcoming')}
-        >
-          <Text style={[styles.tabText, { color: c.textSecondary }, tab === 'upcoming' && { color: c.onPrimary, fontWeight: '600' }]}>
-            Upcoming
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, tab === 'completed' && { backgroundColor: c.primary }]}
-          onPress={() => setTab('completed')}
-        >
-          <Text style={[styles.tabText, { color: c.textSecondary }, tab === 'completed' && { color: c.onPrimary, fontWeight: '600' }]}>
-            Completed
-          </Text>
-        </TouchableOpacity>
-      </View>
+        ))}
+      </ScrollView>
+
       {list.length === 0 ? (
         <EmptyState
-          title={tab === 'upcoming' ? 'No upcoming rides' : 'No completed rides'}
+          title={tab === 'upcoming' ? 'No upcoming rides' : tab === 'completed' ? 'No completed rides' : 'No activities yet'}
           subtitle="Publish a ride to get started."
         />
       ) : (
@@ -186,11 +183,11 @@ export default function DriverMyRidesScreen() {
           key={tab}
           data={list}
           keyExtractor={(item) => item.trip.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: listBottomPaddingDefault + 72 }]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={onRefresh}
+              onRefresh={() => void onRefresh()}
               colors={[c.primary]}
               tintColor={c.primary}
               progressBackgroundColor={c.surface}
@@ -201,157 +198,134 @@ export default function DriverMyRidesScreen() {
           alwaysBounceVertical={false}
           decelerationRate="fast"
           removeClippedSubviews={Platform.OS === 'android'}
+          ListHeaderComponent={
+            <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>Today</Text>
+          }
           renderItem={({ item }) => (
-            <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }, cardShadow]}>
-              <View style={styles.routeRow}>
-                <View style={styles.routeCol}>
-                  <View style={[styles.routeLine, { backgroundColor: c.border }]} />
-                  <View style={styles.routeItem}>
-                    <View style={[styles.routeDot, { borderColor: c.primary }]} />
-                    <View style={styles.routeTextWrap}>
-                      <Text style={[styles.routeLabel, { color: c.textSecondary }]}>From</Text>
-                      <Text style={[styles.routeValue, { color: c.text }]} numberOfLines={1}>
-                        {item.trip.departureHotpoint?.name ?? '—'}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.routeItem}>
-                    <View style={[styles.routeDot, { borderColor: c.primary }]} />
-                    <View style={styles.routeTextWrap}>
-                      <Text style={[styles.routeLabel, { color: c.textSecondary }]}>To</Text>
-                      <Text style={[styles.routeValue, { color: c.text }]} numberOfLines={1}>
-                        {item.trip.destinationHotpoint?.name ?? '—'}
-                      </Text>
-                    </View>
-                  </View>
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+              onPress={() => onCardPress(item)}
+              activeOpacity={0.7}
+            >
+              {getActivityIcon(item)}
+              <View style={styles.cardBody}>
+                <View style={styles.cardRow}>
+                  <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>
+                    {item.trip.departureHotpoint?.name ?? '—'} → {item.trip.destinationHotpoint?.name ?? '—'}
+                  </Text>
+                  <Text style={[styles.cardAmount, { color: colors.success }]}>
+                    {maskAmount(item.collectedAmount)}
+                  </Text>
                 </View>
-                <View style={styles.cardMeta}>
-                  <Text style={[styles.cardPrice, { color: c.text }]}>{maskIncome(item.collectedAmount)}</Text>
-                  <Text style={[styles.cardTime, { color: c.textSecondary }]}>{item.trip.departureTime}</Text>
-                  <ExpandActionButton
-                    expanded={expandedTripId === item.trip.id}
-                    onPress={() => toggleExpanded(item.trip.id)}
-                  />
-                </View>
-              </View>
-              <View style={[styles.cardDivider, { backgroundColor: c.border }]} />
-              <View style={styles.cardFooter}>
-                <Text style={[styles.cardFooterText, { color: c.textSecondary }]}>
-                  Booked {item.bookedSeats} • Remaining {item.remainingSeats}
+                <Text style={[styles.cardDesc, { color: c.textSecondary }]}>
+                  {item.bookedSeats} passengers • {item.trip.departureTime}
                 </Text>
-                {!isScanner ? (
-                  <TouchableOpacity
-                    style={[styles.statusActionBtn, { backgroundColor: c.primary }]}
-                    onPress={() => void onSetTripStatus(item.trip.id, item.trip.status === 'active' ? 'completed' : 'active')}
-                  >
-                    <Text style={[styles.statusActionText, { color: c.onPrimary }]}>
-                      {item.trip.status === 'active' ? 'Mark completed' : 'Mark active'}
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
+                <View style={styles.cardTimeRow}>
+                  <Ionicons name="time-outline" size={12} color={c.textMuted} />
+                  <Text style={[styles.cardTime, { color: c.textMuted }]}>
+                    {formatTimeAgo(item.trip.departureTime)}
+                  </Text>
+                </View>
               </View>
-              {expandedTripId === item.trip.id ? (
-                <ExpansionDetailsCard
-                  tone="driver"
-                  title="Trip analytics"
-                  rows={[
-                    { icon: 'calendar', label: 'Departure', value: item.trip.departureTime },
-                    {
-                      icon: 'swap-horizontal',
-                      label: 'Trip type',
-                      value: item.trip.type === 'insta' ? 'Instant' : 'Scheduled',
-                    },
-                    {
-                      icon: 'flag',
-                      label: 'Status',
-                      value: item.trip.status.toUpperCase(),
-                    },
-                    {
-                      icon: 'cash',
-                      label: 'Collected',
-                      value: isIncomeVisible ? `${Number(item.collectedAmount).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF` : 'HIDDEN',
-                    },
-                  ]}
-                />
-              ) : null}
-            </View>
+              <Ionicons name="chevron-forward" size={18} color={c.textMuted} style={styles.chevron} />
+            </TouchableOpacity>
           )}
         />
       )}
+
+      {/* FAB - reference style */}
+      {!isScanner && (
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: c.primary, bottom: listBottomPaddingDefault + 8 }]}
+          onPress={() => {
+            navigation.goBack();
+            setTimeout(() => {
+              rootNavigate('Main', { screen: 'DriverPublish', params: { screen: 'PublishRide' } });
+            }, 100);
+          }}
+          activeOpacity={0.9}
+        >
+          <Ionicons name="add" size={26} color={c.onPrimary} />
+        </TouchableOpacity>
+      )}
+
       <CarRefreshIndicator state={refreshState} />
     </Screen>
   );
 }
 
+const headerBtnStyle = { padding: spacing.sm, marginRight: spacing.xs };
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  actionsRow: {
+  tabsWrapper: { marginBottom: spacing.sm },
+  tabsScroll: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingTop: spacing.lg,
   },
-  actionBtn: {
+  tabPill: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radii.full,
     borderWidth: 1,
-    borderRadius: 16,
-    minHeight: buttonHeights.small,
-    paddingHorizontal: spacing.md,
-    justifyContent: 'center',
   },
-  actionBtnText: { ...typography.caption, fontWeight: '700' },
-  tabs: {
-    flexDirection: 'row',
-    paddingTop: spacing.md,
-    gap: spacing.sm,
+  tabPillText: { ...typography.bodySmall, fontWeight: '700' },
+  tabPillTextActive: { fontWeight: '800' },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    marginBottom: spacing.sm,
+    marginHorizontal: spacing.xs,
   },
-  tab: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 16,
-  },
-  tabText: { ...typography.body },
   card: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    padding: spacing.lg,
-    borderRadius: CARD_RADIUS,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: 24,
     borderWidth: 1,
+    marginBottom: spacing.md,
   },
-  routeRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  routeCol: { flex: 1, position: 'relative' },
-  routeLine: {
-    position: 'absolute',
-    left: 7,
-    top: 10,
-    bottom: 10,
-    width: 2,
-  },
-  routeItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm, zIndex: 1 },
-  routeDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.background, borderWidth: 4 },
-  routeTextWrap: { flex: 1 },
-  routeLabel: { ...typography.caption },
-  routeValue: { ...typography.bodySmall, fontWeight: '600' },
-  cardMeta: { alignItems: 'flex-end' },
-  cardPrice: { ...typography.h3 },
-  cardTime: { ...typography.caption },
-  cardDivider: { height: 1, marginVertical: spacing.md },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },
-  cardFooterText: { ...typography.caption },
-  statusActionBtn: {
-    borderRadius: 12,
-    minHeight: buttonHeights.small,
-    paddingHorizontal: spacing.sm,
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.sm,
+    alignItems: 'center',
     justifyContent: 'center',
+    marginRight: spacing.md,
   },
-  statusActionText: { ...typography.caption, fontWeight: '600' },
-  listContent: { paddingBottom: spacing.xl },
+  cardBody: { flex: 1, minWidth: 0 },
+  cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.sm },
+  cardTitle: { ...typography.body, fontWeight: '700', flex: 1 },
+  cardAmount: { ...typography.bodySmall, fontWeight: '800' },
+  cardDesc: { ...typography.bodySmall, marginTop: 2 },
+  cardTimeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.sm },
+  cardTime: { ...typography.caption, fontSize: 10, fontWeight: '600' },
+  chevron: { marginLeft: spacing.xs },
+  listContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
   errorBanner: {
     marginBottom: spacing.md,
     padding: spacing.md,
-    borderRadius: 16,
+    borderRadius: radii.md,
     borderWidth: 1,
     gap: spacing.sm,
   },
   errorText: { ...typography.body },
+  fab: {
+    position: 'absolute',
+    right: spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
 });

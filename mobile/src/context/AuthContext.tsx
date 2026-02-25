@@ -41,6 +41,7 @@ interface AuthContextValue {
     email?: string;
     phone?: string;
     password?: string;
+    avatarUri?: string;
   }) => Promise<void>;
   logout: () => void;
 }
@@ -154,6 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email?: string;
       phone?: string;
       password?: string;
+      avatarUri?: string;
     }) => {
       if (!user) return;
       const updated = await updateUserProfile(user.id, data);

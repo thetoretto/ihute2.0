@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
+import { useRootNavigation } from '../../context/RootNavigationContext';
 import { getDriverRatingSummary } from '../../services/api';
 import { Button, Screen, RatingDisplay, formatRatingValue } from '../../components';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
@@ -20,6 +22,8 @@ function getRoleAccent(role: string, isScanner: boolean, c: ReturnType<typeof us
 
 export default function ProfileScreen() {
   const navigation = useNavigation<any>();
+  const { rootNavigate } = useRootNavigation();
+  const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { currentRole, agencySubRole } = useRole();
   const responsive = useResponsiveThemeContext();
@@ -57,12 +61,22 @@ export default function ProfileScreen() {
   const accent = getRoleAccent(currentRole, isScanner, themeColors);
 
   return (
-    <Screen scroll style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={[styles.content, { paddingTop: effectiveSpacing.lg, paddingBottom: effectiveSpacing.xl }]}>
+    <Screen scroll style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={[styles.content, { paddingTop: effectiveSpacing.lg + insets.top, paddingBottom: effectiveSpacing.xl }]}>
       {/* Unified header for all roles */}
       <View style={[styles.headerCard, { paddingVertical: effectiveSpacing.lg, paddingHorizontal: effectiveSpacing.md, backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
-        <View style={[styles.avatar, styles.avatarPlaceholder, styles.avatarRing, { backgroundColor: themeColors.surface, borderColor: accent }]}>
-          <Ionicons name="person" size={48} color={themeColors.textMuted} />
-        </View>
+        <TouchableOpacity
+          style={[styles.avatar, styles.avatarRing, { borderColor: accent }]}
+          onPress={() => rootNavigate('EditProfile')}
+          activeOpacity={0.85}
+        >
+          {user?.avatarUri ? (
+            <Image source={{ uri: user.avatarUri }} style={styles.avatarImage} />
+          ) : (
+            <View style={[styles.avatarPlaceholder, { backgroundColor: themeColors.surface }]}>
+              <Ionicons name="person" size={48} color={themeColors.textMuted} />
+            </View>
+          )}
+        </TouchableOpacity>
         <Text style={[styles.name, effectiveTypography.h1, { color: themeColors.text }]}>{user?.name ?? strings.common.guest}</Text>
         <View style={[styles.badge, { backgroundColor: themeColors.surface }]}>
           <Text style={[styles.badgeText, { color: accent }]}>{roleLabel}</Text>
@@ -93,6 +107,14 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: themeColors.text }]}>{strings.profile.account}</Text>
+        <TouchableOpacity
+          style={[styles.row, { backgroundColor: themeColors.card }]}
+          onPress={() => rootNavigate('EditProfile')}
+        >
+          <Ionicons name="create-outline" size={24} color={themeColors.textSecondary} />
+          <Text style={[styles.rowText, { color: themeColors.text }]}>Edit profile</Text>
+          <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.row, { backgroundColor: themeColors.card }]}
           onPress={() =>
@@ -163,7 +185,7 @@ export default function ProfileScreen() {
             <Text style={[styles.sectionTitle, { color: themeColors.text }]}>{strings.profile.app}</Text>
             <TouchableOpacity
               style={[styles.row, { backgroundColor: themeColors.card }]}
-              onPress={() => (navigation.getParent() as any)?.getParent()?.navigate('DriverActivityListStack')}
+              onPress={() => rootNavigate('DriverActivityListStack')}
             >
               <Ionicons name="stats-chart-outline" size={24} color={themeColors.textSecondary} />
               <Text style={[styles.rowText, { color: themeColors.text }]}>{strings.profile.viewAllActivities}</Text>
@@ -171,9 +193,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.row, { backgroundColor: themeColors.card }]}
-              onPress={() =>
-                (navigation.getParent() as any)?.getParent()?.navigate('VehicleGarage')
-              }
+              onPress={() => rootNavigate('VehicleGarage')}
             >
               <Ionicons name="car-sport-outline" size={24} color={themeColors.textSecondary} />
               <Text style={[styles.rowText, { color: themeColors.text }]}>{strings.profile.myVehicles}</Text>
@@ -218,8 +238,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   divider: { height: 1, marginVertical: spacing.sm },
-  avatar: { width: 80, height: 80, borderRadius: 40 },
-  avatarPlaceholder: { justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: 80, height: 80, borderRadius: 40, overflow: 'hidden' },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarPlaceholder: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
   avatarRing: { borderWidth: 2 },
   name: { ...typography.h1, marginTop: spacing.md },
   badge: {

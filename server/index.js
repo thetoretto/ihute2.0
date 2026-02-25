@@ -9,9 +9,63 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({ origin: true }));
 app.use(express.json());
 
-// ---------- Hotpoints ----------
+// ---------- Hotpoints (public list) ----------
 app.get('/api/hotpoints', (req, res) => {
   res.json(store.hotpointsStore);
+});
+
+// ---------- Admin: Hotpoints CRUD (changes apply to whole app) ----------
+app.post('/api/hotpoints', (req, res) => {
+  const { name, address, latitude, longitude, country } = req.body || {};
+  if (!name || latitude == null || longitude == null) {
+    return res.status(400).json({ error: 'name, latitude, and longitude are required' });
+  }
+  const id = `hp${Date.now()}`;
+  const hotpoint = {
+    id,
+    name: String(name).trim(),
+    address: address != null ? String(address).trim() : '',
+    latitude: Number(latitude),
+    longitude: Number(longitude),
+    country: country != null ? String(country).trim() : undefined,
+  };
+  store.hotpointsStore.push(hotpoint);
+  res.status(201).json(hotpoint);
+});
+
+app.put('/api/hotpoints/:id', (req, res) => {
+  const index = store.hotpointsStore.findIndex((h) => h.id === req.params.id);
+  if (index < 0) return res.status(404).json({ error: 'Hotpoint not found' });
+  const { name, address, latitude, longitude, country } = req.body || {};
+  const current = store.hotpointsStore[index];
+  const updated = {
+    ...current,
+    ...(name != null && { name: String(name).trim() }),
+    ...(address !== undefined && { address: String(address).trim() }),
+    ...(latitude != null && { latitude: Number(latitude) }),
+    ...(longitude != null && { longitude: Number(longitude) }),
+    ...(country !== undefined && { country: country ? String(country).trim() : undefined }),
+  };
+  store.hotpointsStore[index] = updated;
+  res.json(updated);
+});
+
+app.delete('/api/hotpoints/:id', (req, res) => {
+  const id = req.params.id;
+  const inUse = store.tripsStore.some(
+    (t) =>
+      (t.departureHotpoint?.id || t.departureHotpoint) === id ||
+      (t.destinationHotpoint?.id || t.destinationHotpoint) === id
+  );
+  if (inUse) {
+    return res.status(400).json({
+      error: 'Cannot delete: hot point is in use by one or more trips.',
+    });
+  }
+  const index = store.hotpointsStore.findIndex((h) => h.id === id);
+  if (index < 0) return res.status(404).json({ error: 'Hotpoint not found' });
+  store.hotpointsStore.splice(index, 1);
+  res.status(204).end();
 });
 
 // ---------- Users ----------
@@ -784,6 +838,26 @@ app.patch('/api/mock-store', (req, res) => {
 // ---------- Health ----------
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`ihute API server running at http://0.0.0.0:${PORT}`);
+const PORT_MAX_OFFSET = 10;
+let tryPort = PORT;
+
+function startListening() {
+  server.listen(tryPort, '0.0.0.0', () => {
+    if (tryPort !== PORT) console.warn(`Port ${PORT} in use; using http://0.0.0.0:${tryPort}`);
+    else console.log(`ihute API server running at http://0.0.0.0:${tryPort}`);
+  });
+}
+
+const server = require('http').createServer(app);
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE' && tryPort < PORT + PORT_MAX_OFFSET) {
+    tryPort++;
+    startListening();
+  } else if (err.code === 'EADDRINUSE') {
+    console.error(`No free port in range ${PORT}-${PORT + PORT_MAX_OFFSET}. Stop the process using port ${PORT} or set PORT.`);
+    process.exit(1);
+  } else {
+    throw err;
+  }
 });
+startListening();

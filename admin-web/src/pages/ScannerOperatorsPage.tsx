@@ -21,11 +21,10 @@ export default function ScannerOperatorsPage() {
       <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
         <h3 className="text-2xl font-black text-dark mb-2">Scanner operators</h3>
         <p className="text-muted text-sm mb-2">
-          Scanner operators are employees who can scan tickets for agency trips. Log in as an agency
-          admin to manage your agency&apos;s scanner operators.
+          Scanner operators are agency users: they belong to an agency and are created by that agency&apos;s admin. They can scan tickets for agency trips.
         </p>
         <p className="text-muted text-sm">
-          As system admin, you see all scanner operators across agencies in the Users page.
+          Log in as an agency admin to manage your agency&apos;s scanner operators. As system admin, you can see all scanner operators across agencies on the Users page.
         </p>
       </div>
     );
@@ -34,11 +33,14 @@ export default function ScannerOperatorsPage() {
   return (
     <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
       <h3 className="text-2xl font-black text-dark mb-2">Scanner operators</h3>
+      <p className="text-muted text-sm mb-2">
+        Scanner operators are your agency&apos;s users. They are created by you (the agency admin) and can scan tickets and view trip capacity. They cannot edit trips or manage vehicles.
+      </p>
       <p className="text-muted text-sm mb-6">
-        Employees who can scan tickets and view trip capacity. They cannot edit trips or manage vehicles.
+        To add a new scanner operator, go to <Link to="/users" className="text-primary font-bold underline">Users</Link> and create a user with the scanner role for your agency.
       </p>
       {scannerOperators.length === 0 ? (
-        <p className="text-muted text-sm mb-6">No scanner operators yet. Add employees with scanner role in Users.</p>
+        <p className="text-muted text-sm mb-6">No scanner operators yet. Create them from the Users page (add a user with scanner role for your agency).</p>
       ) : (
         <div className="w-full overflow-x-auto mb-8">
           <table className="w-full text-left">

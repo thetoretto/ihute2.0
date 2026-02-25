@@ -3,12 +3,11 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { getUserVehicles } from '../../services/api';
-import { Button, Screen } from '../../components';
+import { Button, EmptyState, Screen } from '../../components';
 import { buttonHeights, colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
+import { cardRadius, listBottomPaddingDefault } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { Vehicle } from '../../types';
-
-const CARD_RADIUS = 24;
 
 export default function VehicleGarageScreen() {
   const { user } = useAuth();
@@ -21,17 +20,17 @@ export default function VehicleGarageScreen() {
     }
   }, [user]);
 
-  const statusColor = (status: Vehicle['approvalStatus']) => {
+  const   statusColor = (status: Vehicle['approvalStatus']) => {
     switch (status) {
-      case 'approved': return colors.success;
-      case 'pending': return colors.warning;
-      case 'rejected': return colors.error;
+      case 'approved': return c.success;
+      case 'pending': return c.warning;
+      case 'rejected': return c.error;
       default: return c.textSecondary;
     }
   };
 
   return (
-    <Screen style={styles.container}>
+    <Screen style={[styles.container, { backgroundColor: c.background }]}>
       <Button
         title="Add Vehicle"
         onPress={() => {
@@ -52,10 +51,10 @@ export default function VehicleGarageScreen() {
         style={styles.addBtn}
       />
       {vehicles.length === 0 ? (
-        <View style={[styles.emptyState, { backgroundColor: c.card, borderColor: c.border }, cardShadow]}>
-          <Text style={[styles.emptyTitle, { color: c.text }]}>No vehicles yet</Text>
-          <Text style={[styles.emptySub, { color: c.textSecondary }]}>Add your first vehicle to unlock driver features.</Text>
-        </View>
+        <EmptyState
+          title="No vehicles yet"
+          subtitle="Add your first vehicle to unlock driver features."
+        />
       ) : null}
       <FlatList
         data={vehicles}
@@ -110,7 +109,7 @@ export default function VehicleGarageScreen() {
                 }
                 style={[styles.actionBtn, { borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }]}
               >
-                <Text style={styles.actionDangerText}>Delete</Text>
+                <Text style={[styles.actionDangerText, { color: c.error }]}>Delete</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -123,17 +122,9 @@ export default function VehicleGarageScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: spacing.lg },
   addBtn: { marginBottom: spacing.lg },
-  emptyState: {
-    padding: spacing.xl,
-    borderRadius: CARD_RADIUS,
-    borderWidth: 1,
-    marginBottom: spacing.md,
-  },
-  emptyTitle: { ...typography.body, fontWeight: '600' },
-  emptySub: { ...typography.caption, marginTop: spacing.xs },
   card: {
     padding: spacing.lg,
-    borderRadius: CARD_RADIUS,
+    borderRadius: cardRadius,
     borderWidth: 1,
     marginBottom: spacing.md,
   },
@@ -154,6 +145,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionText: { ...typography.caption, fontWeight: '600' },
-  actionDangerText: { ...typography.caption, color: colors.error, fontWeight: '600' },
-  listContent: { paddingBottom: spacing.xl },
+  actionDangerText: { ...typography.caption, fontWeight: '600' },
+  listContent: { paddingBottom: listBottomPaddingDefault },
 });
