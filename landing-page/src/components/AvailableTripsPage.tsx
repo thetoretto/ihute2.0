@@ -96,8 +96,8 @@ function TripCardV2({
           <div className="trip-card-v2-to">
             <strong>{trip.destinationHotpoint.name}</strong>
             {trip.type === 'insta' && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                <Zap size={12} style={{ color: 'var(--lp-primary)' }} />
+              <span className="trip-card-v2-insta">
+                <Zap size={12} />
                 <small>Insta</small>
               </span>
             )}
@@ -141,14 +141,14 @@ function TripCardV2({
             <div className="trip-card-v2-detail-item">
               <p>Vehicle</p>
               <p>
-                <Car size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                <Car size={14} />
                 {trip.vehicle.make} {trip.vehicle.model}
               </p>
             </div>
             <div className="trip-card-v2-detail-item">
               <p>Amenities</p>
               <p>
-                <Wind size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                <Wind size={14} />
                 {paymentStr}
               </p>
             </div>
@@ -364,7 +364,7 @@ export default function AvailableTripsPage({
 
             <div className="trips-feed-list">
               {loading ? (
-                <p style={{ textAlign: 'center', padding: 48, color: 'var(--lp-muted)' }}>
+                <p className="trips-feed-loading">
                   Loading trips…
                 </p>
               ) : (

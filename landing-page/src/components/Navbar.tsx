@@ -19,9 +19,7 @@ export default function Navbar({ onViewAllTrips, onBackHome, isTripsPage }: Navb
           onClick={goHome}
           aria-label="ihute home"
         >
-          <div className="rs-logo-icon">
-            <i className="fas fa-paper-plane" aria-hidden />
-          </div>
+          <img src="/B%26Y.svg" alt="" className="rs-logo-img" />
           <span>ihute</span>
         </a>
 

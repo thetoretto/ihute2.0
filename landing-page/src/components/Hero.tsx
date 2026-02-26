@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { mockHotpoints } from '@shared/mocks';
 import DateTimePicker from './DateTimePicker';
+import SearchSelect from './SearchSelect';
 import type { TripSearchCriteria } from './AvailableTripsPage';
 
 interface HeroProps {
@@ -56,50 +57,45 @@ export default function Hero({ onSearch }: HeroProps) {
         >
           <div className="rs-search-cell">
             <label htmlFor="from" className="rs-search-label">From</label>
-            <select
+            <SearchSelect
               id="from"
-              className="rs-search-input"
+              options={cities}
               value={from}
-              onChange={(e) => setFrom(e.target.value)}
+              onChange={setFrom}
+              placeholder="Departure city"
               aria-label="Departure city"
-            >
-              <option value="">Departure city</option>
-              {cities.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            />
           </div>
           <div className="rs-search-cell">
             <label htmlFor="to" className="rs-search-label">To</label>
-            <select
+            <SearchSelect
               id="to"
-              className="rs-search-input"
+              options={cities}
               value={to}
-              onChange={(e) => setTo(e.target.value)}
+              onChange={setTo}
+              placeholder="Arrival city"
               aria-label="Arrival city"
-            >
-              <option value="">Arrival city</option>
-              {cities.filter((c) => c.id !== from).map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="rs-search-cell">
-            <DateTimePicker
-              label="When"
-              mode="date"
-              value={dateOutbound}
-              onChange={(d) => setDateOutbound(d)}
-              minDate={new Date()}
-              placeholder="Date"
+              excludeId={from}
             />
           </div>
-          <div className="rs-search-cell rs-search-btn-wrap">
-            <button type="submit" className="rs-search-btn" disabled={!from || !to}>
-              <i className="fas fa-search" aria-hidden />
-              <span>Search Rides</span>
-            </button>
+          <div className="rs-search-cell">
+            <label className="rs-search-label">When</label>
+            <div className="rs-search-select-wrap rs-search-dropdown-wrap">
+              <DateTimePicker
+                variant="search"
+                label="When"
+                mode="date"
+                value={dateOutbound}
+                onChange={(d) => setDateOutbound(d)}
+                minDate={new Date()}
+                placeholder="Date"
+              />
+            </div>
           </div>
+          <button type="submit" className="rs-search-btn rs-search-btn-cell">
+            <i className="fas fa-search" aria-hidden />
+            <span>Search Rides</span>
+          </button>
         </form>
       </div>
     </section>

@@ -34,7 +34,8 @@ export default function BookingConfirmPage({ bookingId, onGoHome, onSearchAgain 
 
   return (
     <section className="trips-page trips-page-v2">
-      <div className="lp-container" style={{ maxWidth: 560 }}>
+      <div className="lp-container">
+        <div className="bc-ticket-wrap">
         <div className="bc-ticket">
           <div className="bc-ticket-header">
             <div className="bc-ticket-header-icon">
@@ -110,6 +111,7 @@ export default function BookingConfirmPage({ bookingId, onGoHome, onSearchAgain 
               Share Ticket
             </button>
           </div>
+        </div>
         </div>
 
         <button

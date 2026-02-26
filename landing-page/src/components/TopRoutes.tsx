@@ -13,7 +13,7 @@ export default function TopRoutes() {
     <section className="lp-section routes-section" id="top-routes">
       <div className="lp-container">
         <div className="lp-heading-block">
-          <IconRoute className="section-icon" aria-hidden style={{ marginBottom: 8 }} />
+          <IconRoute className="section-icon" aria-hidden />
           <h2 className="lp-title">Top Carpool route</h2>
           <p className="lp-subtitle">Popular routes with frequent rides.</p>
         </div>

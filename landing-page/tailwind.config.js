@@ -4,18 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#FEE46B',
-        dark: '#171C22',
-        surface: '#F8F3EF',
-        accent: '#DF0827',
-        muted: '#94A9BC',
-        soft: '#E6DBEB',
+        primary: 'var(--lp-primary)',
+        dark: 'var(--lp-text)',
+        surface: 'var(--lp-bg-main)',
+        accent: 'var(--lp-error)',
+        muted: 'var(--lp-muted)',
+        soft: 'var(--lp-line-soft)',
       },
       borderRadius: {
         'xl-mobile': '32px',
       },
       boxShadow: {
-        soft: '0 8px 30px rgb(0 0 0 / 0.04)',
+        soft: 'var(--lp-shadow-soft)',
       },
     },
   },

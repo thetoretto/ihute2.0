@@ -27,7 +27,7 @@ export default function HelpCenter() {
     <section className="lp-section help-section" id="help-centre">
       <div className="lp-container">
         <div className="lp-heading-block">
-          <IconHelp className="section-icon" aria-hidden style={{ marginBottom: 8 }} />
+          <IconHelp className="section-icon" aria-hidden />
           <h2 className="lp-title">Carpool Help Centre</h2>
           <p className="lp-subtitle">Find answers to common questions about booking and rides.</p>
         </div>

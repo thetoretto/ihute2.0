@@ -10,7 +10,7 @@ export default function PopularDestinations() {
     <section className="lp-section destination-section" id="destinations">
       <div className="lp-container">
         <div className="lp-heading-block">
-          <IconMapPin className="section-icon" aria-hidden style={{ marginBottom: 8 }} />
+          <IconMapPin className="section-icon" aria-hidden />
           <h2 className="lp-title">Where do you want to go</h2>
           <p className="lp-subtitle">Choose a destination and find rides that suit you.</p>
         </div>

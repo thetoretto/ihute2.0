@@ -3,9 +3,7 @@ export default function Footer() {
     <footer className="rs-footer">
       <div className="rs-footer-inner">
         <a href="/" className="rs-footer-logo" aria-label="ihute home">
-          <div className="rs-logo-icon">
-            <i className="fas fa-paper-plane" aria-hidden />
-          </div>
+          <img src="/B%26Y.svg" alt="" className="rs-logo-img" />
           <span>ihute</span>
         </a>
         <p className="rs-footer-copy">

@@ -3,6 +3,8 @@ import { Calendar, Clock, ChevronLeft, ChevronRight, X, Check } from 'lucide-rea
 
 export type DateTimePickerMode = 'date' | 'time' | 'datetime';
 
+export type DateTimePickerVariant = 'default' | 'search';
+
 export interface DateTimePickerProps {
   value: Date | null;
   onChange: (date: Date) => void;
@@ -11,6 +13,8 @@ export interface DateTimePickerProps {
   label?: string;
   disabled?: boolean;
   placeholder?: string;
+  variant?: DateTimePickerVariant;
+  id?: string;
 }
 
 function formatDate(date: Date) {
@@ -48,6 +52,8 @@ export default function DateTimePicker({
   label = 'Date & Time',
   disabled = false,
   placeholder = 'Select date',
+  variant = 'default',
+  id,
 }: DateTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<'date' | 'time'>(
@@ -136,31 +142,46 @@ export default function DateTimePicker({
     return d.getTime() < min.getTime();
   };
 
+  const isSearchVariant = variant === 'search';
+
   return (
     <div className="w-full">
-      {label ? (
+      {!isSearchVariant && label ? (
         <label className="block text-sm font-medium text-muted mb-2 ml-1">
           {label}
         </label>
       ) : null}
-      <button
-        type="button"
-        onClick={openPicker}
-        disabled={disabled}
-        className="w-full bg-white border border-soft p-4 rounded-2xl shadow-sm flex items-center justify-between active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <div className="flex flex-col items-start">
-          <span className="text-lg font-semibold text-dark">
-            {displayText}
-          </span>
-          {mode === 'datetime' && value && (
-            <span className="text-muted text-sm">{formatTime(value)}</span>
-          )}
-        </div>
-        <div className="bg-soft p-2 rounded-xl">
-          <Calendar className="text-primary w-6 h-6" />
-        </div>
-      </button>
+      {isSearchVariant ? (
+        <button
+          type="button"
+          id={id}
+          onClick={openPicker}
+          disabled={disabled}
+          className={`rs-search-date-trigger ${!value ? 'empty' : ''}`}
+          aria-label={label || 'Select date'}
+        >
+          {displayText}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={openPicker}
+          disabled={disabled}
+          className="w-full bg-white border border-soft p-4 rounded-2xl shadow-sm flex items-center justify-between active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <div className="flex flex-col items-start">
+            <span className="text-lg font-semibold text-dark">
+              {displayText}
+            </span>
+            {mode === 'datetime' && value && (
+              <span className="text-muted text-sm">{formatTime(value)}</span>
+            )}
+          </div>
+          <div className="bg-soft p-2 rounded-xl">
+            <Calendar className="text-primary w-6 h-6" />
+          </div>
+        </button>
+      )}
 
       {isOpen && (
         <div
@@ -171,9 +192,9 @@ export default function DateTimePicker({
       )}
 
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 transform transition-transform duration-300 ease-out bg-white rounded-t-[32px] shadow-2xl safe-area-bottom ${
-          isOpen ? 'translate-y-0' : 'translate-y-full'
-        }`}
+        className={`fixed inset-x-0 bottom-0 z-50 transform transition-transform duration-300 ease-out safe-area-bottom ${
+          isSearchVariant ? 'rs-search-date-dropdown rounded-t-2xl max-w-md mx-auto mb-4 left-4 right-4' : 'bg-white rounded-t-[32px] shadow-2xl'
+        } ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
       >
         <div className="p-6 max-w-md mx-auto">
           <div className="flex items-center justify-between mb-6">
