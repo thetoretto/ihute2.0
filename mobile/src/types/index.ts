@@ -12,6 +12,7 @@ export type {
   BookingStatus,
   Booking,
   DriverTripActivity,
+  DriverInstantQueueEntry,
   BookingTicket,
   TicketQrValidationResult,
   DriverRating,

@@ -15,13 +15,10 @@ import { PaymentMethodIcons, Screen } from '../../components';
 import { getTrip, getTripsStore, bookTrip } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
-import { colors, spacing, typography } from '../../utils/theme';
+import { colors, spacing, typography, radii, buttonHeights } from '../../utils/theme';
+import { screenContentPadding } from '../../utils/layout';
 import { formatRwf } from '../../../../shared/src';
 import type { Trip, PaymentMethod } from '../../types';
-
-const PASSENGER_BRAND = colors.passengerBrand;
-const PASSENGER_DARK = colors.passengerDark;
-const PASSENGER_BG_LIGHT = colors.passengerBgLight;
 
 type Params = {
   PassengerBooking: { tripId: string };
@@ -155,8 +152,8 @@ export default function PassengerBookingScreen() {
   if (!trip) {
     return (
       <Screen style={styles.center}>
-        <ActivityIndicator size="large" color={PASSENGER_BRAND} />
-        <Text style={styles.loadingText}>Loading trip...</Text>
+        <ActivityIndicator size="large" color={c.primary} />
+        <Text style={[styles.loadingText, { color: c.textSecondary }]}>Loading trip...</Text>
       </Screen>
     );
   }
@@ -168,15 +165,15 @@ export default function PassengerBookingScreen() {
   const renderSeatMap = () => {
     let seatCounter = 1;
     return (
-      <View style={styles.seatMapContainer}>
-        <View style={styles.windshield} />
+      <View style={[styles.seatMapContainer, { backgroundColor: c.surface, borderColor: c.border }]}>
+        <View style={[styles.windshield, { backgroundColor: c.textMuted }]} />
         {layout.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.seatRow}>
             {row.map((seatType, seatIndex) => {
               if (seatType === 0) {
                 return (
                   <View key={`d-${rowIndex}-${seatIndex}`} style={styles.driverCell}>
-                    <Ionicons name="car-sport-outline" size={24} color={colors.textMuted} />
+                    <Ionicons name="car-sport-outline" size={24} color={c.textMuted} />
                   </View>
                 );
               }
@@ -186,41 +183,72 @@ export default function PassengerBookingScreen() {
                 <TouchableOpacity
                   key={seatId}
                   onPress={() => toggleSeat(seatId)}
-                  style={[styles.seatBtn, isSelected && styles.seatBtnSelected]}
+                  style={[
+                    styles.seatBtn,
+                    { borderColor: c.border },
+                    isSelected && { backgroundColor: c.primary, borderColor: c.primary },
+                  ]}
                   activeOpacity={0.8}
                 >
-                  <Ionicons
-                    name="person-outline"
-                    size={22}
-                    color={isSelected ? PASSENGER_DARK : colors.textMuted}
-                  />
+                  <Ionicons name="person-outline" size={22} color={isSelected ? c.text : c.textMuted} />
                 </TouchableOpacity>
               );
             })}
           </View>
         ))}
-        <View style={styles.rearMarker} />
+        <View style={[styles.rearMarker, { backgroundColor: c.border }]} />
       </View>
     );
   };
 
+  const stepLabels = ['Trip', 'Seats', 'Payment'] as const;
+
   return (
-    <View style={styles.container}>
-      {/* Header: same look as native stack header (primary bg, dark text) */}
-      <View style={[styles.header, { backgroundColor: c.primary, paddingTop: insets.top, borderBottomWidth: 0 }]}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
+      {/* Header: card-style to match RideDetail */}
+      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.borderLight, paddingTop: insets.top }]}>
         <TouchableOpacity
           onPress={goBack}
           style={[styles.headerBtn, step === 1 && styles.headerBtnInvisible]}
           disabled={step === 1}
+          hitSlop={12}
+          accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={24} color={c.dark} />
+          <View style={[styles.headerBtnInner, { backgroundColor: c.background || c.ghostBg }]}>
+            <Ionicons name="chevron-back" size={20} color={c.text} />
+          </View>
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: c.dark }]}>
-          {step === 1 && 'Select Vehicle'}
-          {step === 2 && 'Choose Seats'}
-          {step === 3 && 'Confirm Booking'}
+        <Text style={[styles.headerTitle, { color: c.text }]}>
+          {step === 1 && 'Review trip'}
+          {step === 2 && 'Choose seats'}
+          {step === 3 && 'Confirm booking'}
         </Text>
         <View style={styles.headerSpacer} />
+      </View>
+
+      {/* Step indicator */}
+      <View style={[styles.stepperWrap, { borderBottomColor: c.borderLight }]}>
+        <View style={styles.stepperRow}>
+          {[1, 2, 3].map((s) => (
+            <View key={s} style={styles.stepperItem}>
+              <View
+                style={[
+                  styles.stepperDot,
+                  { backgroundColor: step >= s ? c.primary : c.border },
+                  step === s && styles.stepperDotActive,
+                ]}
+              />
+              {s < 3 && <View style={[styles.stepperLine, { backgroundColor: step > s ? c.primary : c.border }]} />}
+            </View>
+          ))}
+        </View>
+        <View style={styles.stepperLabels}>
+          {stepLabels.map((label, i) => (
+            <Text key={label} style={[styles.stepperLabel, { color: step >= i + 1 ? c.text : c.textMuted }]}>
+              {label}
+            </Text>
+          ))}
+        </View>
       </View>
 
       <ScrollView
@@ -228,48 +256,55 @@ export default function PassengerBookingScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Step 1: Trip info + vehicle */}
+        {/* Step 1: Route timeline (match RideDetail) + vehicle */}
         {step === 1 && (
           <View style={styles.stepContent}>
-            <View style={styles.infoCard}>
-              <Text style={styles.infoLabel}>PICK-UP LOCATION</Text>
-              <View style={styles.infoValueRow}>
-                <View style={styles.infoDot} />
-                <Text style={styles.infoValue}>{trip.departureHotpoint.name}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <View>
-                  <Text style={styles.infoLabel}>DATE</Text>
-                  <Text style={styles.infoSub}>{departureDate}</Text>
+            <View style={styles.timelineSection}>
+              <View style={styles.timelineLeft}>
+                <View style={styles.timelineDotsWrap}>
+                  <View style={[styles.timelineDashed, { borderColor: c.border }]} />
+                  <View style={[styles.timelineDot, styles.timelineDotTop, { backgroundColor: c.primary }]} />
+                  <View style={[styles.timelineDot, styles.timelineDotBottom, { backgroundColor: c.primary }]} />
                 </View>
-                <View>
-                  <Text style={styles.infoLabel}>TIME</Text>
-                  <Text style={styles.infoSub}>{trip.departureTime}</Text>
+                <View style={styles.timelineLabels}>
+                  <View style={styles.timelineItem}>
+                    <Text style={[styles.timelineTime, { color: c.text }]}>{trip.departureTime?.slice(0, 5) || '—'}</Text>
+                    <Text style={[styles.timelinePlace, { color: c.textMuted }]}>{trip.departureHotpoint.name}</Text>
+                  </View>
+                  <View style={styles.timelineItem}>
+                    <Text style={[styles.timelineTime, { color: c.text }]}>{trip.arrivalTime?.slice(0, 5) || '—'}</Text>
+                    <Text style={[styles.timelinePlace, { color: c.textMuted }]}>{trip.destinationHotpoint.name}</Text>
+                  </View>
                 </View>
               </View>
-              <View style={styles.infoBlob} />
+              <View style={styles.timelinePriceWrap}>
+                <Text style={[styles.timelinePrice, { color: c.primary }]}>{formatRwf(trip.pricePerSeat)}</Text>
+                <Text style={[styles.perSeatLabel, { color: c.textMuted }]}>Per seat</Text>
+              </View>
+            </View>
+            <View style={[styles.timelineMeta, { backgroundColor: c.background || c.ghostBg }]}>
+              <Text style={[styles.timelineMetaText, { color: c.text }]}>{departureDate} • {trip.seatsAvailable} seats</Text>
             </View>
 
             <View style={styles.vehicleSection}>
               <View style={styles.vehicleSectionHeader}>
-                <Text style={styles.vehicleSectionTitle}>Available Vehicles</Text>
-                <Text style={styles.vehicleSectionBadge}>1 Option</Text>
+                <Text style={[styles.vehicleSectionTitle, { color: c.text }]}>Vehicle</Text>
               </View>
-              <TouchableOpacity style={[styles.vehicleCard, styles.vehicleCardSelected]} activeOpacity={0.9}>
-                <View style={styles.vehicleIconWrap}>
-                  <Ionicons name="car-sport" size={28} color={PASSENGER_DARK} />
+              <TouchableOpacity style={[styles.vehicleCard, { backgroundColor: c.card, borderColor: c.primary }]} activeOpacity={0.9}>
+                <View style={[styles.vehicleIconWrap, { backgroundColor: c.primaryTint }]}>
+                  <Ionicons name="car-sport" size={28} color={c.primary} />
                 </View>
                 <View style={styles.vehicleTextWrap}>
-                  <Text style={styles.vehicleName}>
+                  <Text style={[styles.vehicleName, { color: c.text }]}>
                     {trip.vehicle.make} {trip.vehicle.model}
                   </Text>
-                  <Text style={styles.vehicleDesc}>
+                  <Text style={[styles.vehicleDesc, { color: c.textMuted }]}>
                     {trip.seatsAvailable} seats • {trip.vehicle.color}
                   </Text>
                 </View>
                 <View style={styles.vehiclePriceWrap}>
-                  <Text style={styles.vehiclePrice}>{formatRwf(trip.pricePerSeat)}</Text>
-                  <Text style={styles.vehiclePriceUnit}>seat</Text>
+                  <Text style={[styles.vehiclePrice, { color: c.text }]}>{formatRwf(trip.pricePerSeat)}</Text>
+                  <Text style={[styles.vehiclePriceUnit, { color: c.textMuted }]}>seat</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -280,27 +315,27 @@ export default function PassengerBookingScreen() {
         {step === 2 && (
           <View style={styles.stepContent}>
             <View style={styles.seatHeader}>
-              <Text style={styles.seatHeaderTitle}>
+              <Text style={[styles.seatHeaderTitle, { color: c.text }]}>
                 {trip.vehicle.make} {trip.vehicle.model}
               </Text>
-              <View style={styles.seatHeaderBadge}>
-                <Ionicons name="people" size={12} color={PASSENGER_BRAND} />
-                <Text style={styles.seatHeaderBadgeText}>{trip.seatsAvailable} Total Seats</Text>
+              <View style={[styles.seatHeaderBadge, { backgroundColor: c.primaryTint }]}>
+                <Ionicons name="people" size={12} color={c.primary} />
+                <Text style={[styles.seatHeaderBadgeText, { color: c.primary }]}>{trip.seatsAvailable} seats</Text>
               </View>
             </View>
             {renderSeatMap()}
             <View style={styles.legendRow}>
               <View style={styles.legendItem}>
-                <View style={[styles.legendBox, styles.legendFree]} />
-                <Text style={styles.legendText}>Free</Text>
+                <View style={[styles.legendBox, styles.legendFree, { borderColor: c.border }]} />
+                <Text style={[styles.legendText, { color: c.textMuted }]}>Free</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendBox, styles.legendPicked]} />
-                <Text style={styles.legendText}>Picked</Text>
+                <View style={[styles.legendBox, styles.legendPicked, { backgroundColor: c.primary }]} />
+                <Text style={[styles.legendText, { color: c.textMuted }]}>Selected</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendBox, styles.legendStaff]} />
-                <Text style={styles.legendText}>Staff</Text>
+                <View style={[styles.legendBox, styles.legendStaff, { backgroundColor: c.border }]} />
+                <Text style={[styles.legendText, { color: c.textMuted }]}>Driver</Text>
               </View>
             </View>
           </View>
@@ -310,38 +345,38 @@ export default function PassengerBookingScreen() {
         {step === 3 && (
           <View style={styles.stepContent}>
             <View style={styles.summaryHeader}>
-              <View style={styles.summaryIconWrap}>
-                <Ionicons name="shield-checkmark" size={40} color={colors.success} />
+              <View style={[styles.summaryIconWrap, { backgroundColor: c.successTint }]}>
+                <Ionicons name="shield-checkmark" size={40} color={c.success} />
               </View>
-              <Text style={styles.summaryTitle}>Booking Summary</Text>
-              <Text style={styles.summarySub}>Everything looks great!</Text>
+              <Text style={[styles.summaryTitle, { color: c.text }]}>Booking summary</Text>
+              <Text style={[styles.summarySub, { color: c.textMuted }]}>Review and pay</Text>
             </View>
-            <View style={styles.summaryBox}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Vehicle Class</Text>
-                <Text style={styles.summaryValue}>
+            <View style={[styles.summaryBox, { backgroundColor: c.surface, borderColor: c.border }]}>
+              <View style={[styles.summaryRow, { borderBottomColor: c.border }]}>
+                <Text style={[styles.summaryLabel, { color: c.textMuted }]}>Vehicle</Text>
+                <Text style={[styles.summaryValue, { color: c.text }]}>
                   {trip.vehicle.make} {trip.vehicle.model}
                 </Text>
               </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Selected Seats</Text>
-                <Text style={[styles.summaryValue, styles.summaryValueBrand]}>
+              <View style={[styles.summaryRow, { borderBottomColor: c.border }]}>
+                <Text style={[styles.summaryLabel, { color: c.textMuted }]}>Seats</Text>
+                <Text style={[styles.summaryValue, { color: c.primary }]}>
                   {selectedSeats.map((s) => s.replace('s-', '#')).join(', ')}
                 </Text>
               </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Pricing Breakdown</Text>
-                <Text style={styles.summaryValue}>
+              <View style={[styles.summaryRow, { borderBottomColor: c.border }]}>
+                <Text style={[styles.summaryLabel, { color: c.textMuted }]}>Price</Text>
+                <Text style={[styles.summaryValue, { color: c.text }]}>
                   {formatRwf(trip.pricePerSeat)} × {selectedSeats.length}
                 </Text>
               </View>
               <View style={[styles.summaryRow, styles.summaryRowTotal]}>
-                <Text style={styles.summaryTotalLabel}>Total Amount</Text>
-                <Text style={styles.summaryTotalPrice}>{formatRwf(totalPrice)}</Text>
+                <Text style={[styles.summaryTotalLabel, { color: c.text }]}>Total</Text>
+                <Text style={[styles.summaryTotalPrice, { color: c.primary }]}>{formatRwf(totalPrice)}</Text>
               </View>
             </View>
             <View style={styles.paymentSection}>
-              <Text style={styles.paymentLabel}>Payment method</Text>
+              <Text style={[styles.paymentLabel, { color: c.text }]}>Payment method</Text>
               <PaymentMethodIcons
                 methods={trip.paymentMethods}
                 selected={paymentMethod}
@@ -352,198 +387,197 @@ export default function PassengerBookingScreen() {
         )}
       </ScrollView>
 
-      {/* Footer CTA */}
-      <View style={styles.footer}>
+      {/* Footer CTA with safe area */}
+      <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.borderLight, paddingBottom: insets.bottom + spacing.md }]}>
         {step === 1 && (
           <TouchableOpacity
-            style={styles.ctaPrimary}
+            style={[styles.ctaPrimary, { backgroundColor: c.primary }]}
             onPress={() => setStep(2)}
             activeOpacity={0.9}
           >
-            <Text style={styles.ctaPrimaryText}>Configure Trip</Text>
-            <Ionicons name="chevron-forward" size={20} color="#fff" />
+            <Text style={[styles.ctaPrimaryText, { color: c.text }]}>Continue</Text>
+            <Ionicons name="chevron-forward" size={20} color={c.text} />
           </TouchableOpacity>
         )}
         {step === 2 && (
           <View style={styles.footerRow}>
             <View>
-              <Text style={styles.subtotalLabel}>Subtotal</Text>
-              <Text style={styles.subtotalValue}>{formatRwf(totalPrice)}</Text>
+              <Text style={[styles.subtotalLabel, { color: c.textMuted }]}>Subtotal</Text>
+              <Text style={[styles.subtotalValue, { color: c.text }]}>{formatRwf(totalPrice)}</Text>
             </View>
             <TouchableOpacity
-              style={[styles.ctaContinue, selectedSeats.length === 0 && styles.ctaContinueDisabled]}
+              style={[
+                styles.ctaContinue,
+                { backgroundColor: c.primary },
+                selectedSeats.length === 0 && { backgroundColor: c.border, opacity: 0.5 },
+              ]}
               onPress={() => setStep(3)}
               disabled={selectedSeats.length === 0}
               activeOpacity={0.9}
             >
-              <Text style={styles.ctaContinueText}>Continue</Text>
+              <Text style={[styles.ctaContinueText, { color: c.text }]}>Continue</Text>
             </TouchableOpacity>
           </View>
         )}
         {step === 3 && (
           <TouchableOpacity
-            style={[styles.ctaPayment, isBooking && styles.ctaPaymentDisabled]}
+            style={[
+              styles.ctaPayment,
+              { backgroundColor: c.success },
+              (isBooking || paymentMethod == null) && { opacity: paymentMethod == null ? 0.5 : 0.9 },
+            ]}
             onPress={handleCompletePayment}
             disabled={isBooking || paymentMethod == null}
             activeOpacity={0.9}
           >
             {isBooking ? (
               <>
-                <ActivityIndicator size="small" color="#fff" />
-                <Text style={styles.ctaPaymentText}>Processing...</Text>
+                <ActivityIndicator size="small" color={c.onAccent} />
+                <Text style={[styles.ctaPaymentText, { color: c.onAccent }]}>Processing...</Text>
               </>
             ) : (
               <>
-                <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                <Text style={styles.ctaPaymentText}>Complete Payment</Text>
+                <Ionicons name="checkmark-circle" size={20} color={c.onAccent} />
+                <Text style={[styles.ctaPaymentText, { color: c.onAccent }]}>Complete payment</Text>
               </>
             )}
           </TouchableOpacity>
         )}
-        <View style={styles.homeIndicator} />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: PASSENGER_BG_LIGHT },
+  container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { ...typography.body, color: colors.textSecondary, marginTop: spacing.md },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: screenContentPadding,
     paddingVertical: spacing.md,
     minHeight: 56,
+    borderBottomWidth: 1,
   },
-  headerBtn: { padding: spacing.sm, marginLeft: -spacing.sm },
+  headerBtn: { padding: spacing.xs, minWidth: 44, minHeight: 44, justifyContent: 'center' },
+  headerBtnInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerBtnInvisible: { opacity: 0 },
-  headerTitle: {
-    ...typography.body,
-    fontWeight: '700',
-    color: PASSENGER_DARK,
-    flex: 1,
-    textAlign: 'center',
-  },
+  headerTitle: { ...typography.bodySmall, fontWeight: '800', flex: 1, textAlign: 'center' },
   headerSpacer: { width: 40 },
+  stepperWrap: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: screenContentPadding,
+    borderBottomWidth: 1,
+  },
+  stepperRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  stepperItem: { flexDirection: 'row', alignItems: 'center' },
+  stepperDot: { width: 10, height: 10, borderRadius: 5 },
+  stepperDotActive: { width: 12, height: 12, borderRadius: 6 },
+  stepperLine: { width: 24, height: 2, marginHorizontal: 4 },
+  stepperLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs,
+    paddingHorizontal: 0,
+  },
+  stepperLabel: { ...typography.caption, fontSize: 10, flex: 1, textAlign: 'center' },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 200 },
+  scrollContent: { paddingHorizontal: screenContentPadding, paddingTop: spacing.md, paddingBottom: 220 },
   stepContent: { paddingBottom: spacing.xl },
 
-  // Step 1
-  infoCard: {
-    backgroundColor: PASSENGER_BRAND,
-    borderRadius: 28,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  infoLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    color: 'rgba(23,28,34,0.8)',
-    marginBottom: 4,
-  },
-  infoValueRow: {
+  // Step 1 timeline (match RideDetail)
+  timelineSection: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  infoValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: PASSENGER_DARK,
-    marginLeft: 8,
-  },
-  infoDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: PASSENGER_DARK,
-    marginRight: 8,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    gap: spacing.xl * 2,
-    marginTop: spacing.sm,
-  },
-  infoSub: { fontSize: 14, fontWeight: '600', color: PASSENGER_DARK },
-  infoBlob: {
-    position: 'absolute',
-    top: -24,
-    right: -24,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  vehicleSection: { marginTop: spacing.sm },
-  vehicleSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-    paddingHorizontal: 4,
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
   },
-  vehicleSectionTitle: { ...typography.body, fontWeight: '700', color: PASSENGER_DARK },
-  vehicleSectionBadge: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: PASSENGER_BRAND,
-    letterSpacing: 1,
+  timelineLeft: { flexDirection: 'row', flex: 1, minWidth: 0 },
+  timelineDotsWrap: {
+    width: 24,
+    marginRight: spacing.sm,
+    position: 'relative',
+    alignItems: 'center',
   },
+  timelineDashed: {
+    position: 'absolute',
+    left: 11,
+    top: 4,
+    bottom: 4,
+    width: 0,
+    borderLeftWidth: 2,
+    borderStyle: 'dashed',
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.card,
+    position: 'absolute',
+    left: 6,
+  },
+  timelineDotTop: { top: 0 },
+  timelineDotBottom: { bottom: 0 },
+  timelineLabels: { flex: 1, minWidth: 0 },
+  timelineItem: { marginBottom: spacing.lg },
+  timelineTime: { ...typography.h3, fontSize: 20, fontWeight: '800' },
+  timelinePlace: { ...typography.bodySmall, fontWeight: '600', marginTop: 2 },
+  timelinePriceWrap: { alignItems: 'flex-end' },
+  timelinePrice: { ...typography.h2, fontSize: 24, fontWeight: '800' },
+  perSeatLabel: { ...typography.caption, fontWeight: '800', textTransform: 'uppercase', fontSize: 10, marginTop: 2 },
+  timelineMeta: { borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.lg },
+  timelineMetaText: { ...typography.bodySmall, fontWeight: '600' },
+  vehicleSection: { marginTop: spacing.sm },
+  vehicleSectionHeader: { marginBottom: spacing.sm },
+  vehicleSectionTitle: { ...typography.body, fontWeight: '700' },
   vehicleCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: 20,
+    borderRadius: radii.md,
     borderWidth: 2,
-    borderColor: 'rgba(0,0,0,0.06)',
-  },
-  vehicleCardSelected: {
-    borderColor: PASSENGER_BRAND,
-    backgroundColor: 'rgba(0,175,245,0.06)',
   },
   vehicleIconWrap: {
     width: 56,
     height: 56,
-    borderRadius: 14,
-    backgroundColor: PASSENGER_BRAND,
+    borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
   vehicleTextWrap: { flex: 1 },
-  vehicleName: { ...typography.body, fontWeight: '700', color: PASSENGER_DARK },
-  vehicleDesc: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },
+  vehicleName: { ...typography.body, fontWeight: '700' },
+  vehicleDesc: { fontSize: 11, marginTop: 2 },
   vehiclePriceWrap: { alignItems: 'flex-end' },
-  vehiclePrice: { ...typography.body, fontWeight: '800', color: PASSENGER_DARK },
-  vehiclePriceUnit: { fontSize: 9, fontWeight: '700', color: colors.textMuted, letterSpacing: 0.5 },
+  vehiclePrice: { ...typography.body, fontWeight: '800' },
+  vehiclePriceUnit: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
 
   // Step 2
   seatHeader: { alignItems: 'center', marginBottom: spacing.md },
-  seatHeaderTitle: { ...typography.body, fontWeight: '700', color: PASSENGER_DARK, fontSize: 18 },
+  seatHeaderTitle: { ...typography.body, fontWeight: '700', fontSize: 18 },
   seatHeaderBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(0,175,245,0.12)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: radii.button,
     marginTop: 6,
   },
-  seatHeaderBadgeText: { fontSize: 10, fontWeight: '700', color: PASSENGER_BRAND, letterSpacing: 0.5 },
+  seatHeaderBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
   seatMapContainer: {
-    backgroundColor: PASSENGER_BG_LIGHT,
-    borderRadius: 28,
+    borderRadius: radii.lg,
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: 'rgba(0,0,0,0.08)',
     padding: spacing.lg,
     alignItems: 'center',
     marginBottom: spacing.md,
@@ -552,7 +586,6 @@ const styles = StyleSheet.create({
   windshield: {
     width: 80,
     height: 6,
-    backgroundColor: colors.textMuted,
     borderRadius: 3,
     marginBottom: spacing.lg,
     opacity: 0.4,
@@ -575,20 +608,15 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: 'rgba(0,0,0,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  seatBtnSelected: {
-    backgroundColor: PASSENGER_BRAND,
-    borderColor: PASSENGER_BRAND,
-  },
+  seatBtnSelected: {},
   rearMarker: {
     width: 64,
     height: 4,
-    backgroundColor: 'rgba(0,0,0,0.1)',
     borderRadius: 2,
     marginTop: spacing.md,
     opacity: 0.5,
@@ -601,10 +629,10 @@ const styles = StyleSheet.create({
   },
   legendItem: { alignItems: 'center', gap: 6 },
   legendBox: { width: 12, height: 12, borderRadius: 3 },
-  legendFree: { backgroundColor: '#fff', borderWidth: 2, borderColor: 'rgba(0,0,0,0.15)' },
-  legendPicked: { backgroundColor: PASSENGER_BRAND },
-  legendStaff: { backgroundColor: 'rgba(0,0,0,0.12)' },
-  legendText: { fontSize: 9, fontWeight: '700', color: colors.textMuted, letterSpacing: 0.5 },
+  legendFree: { backgroundColor: colors.surface, borderWidth: 2 },
+  legendPicked: {},
+  legendStaff: {},
+  legendText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
 
   // Step 3
   summaryHeader: { alignItems: 'center', marginBottom: spacing.lg },
@@ -612,20 +640,17 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(46,125,50,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  summaryTitle: { ...typography.h2, fontWeight: '700', color: PASSENGER_DARK, marginBottom: 4 },
-  summarySub: { ...typography.bodySmall, color: colors.textSecondary },
+  summaryTitle: { ...typography.h2, fontWeight: '700', marginBottom: 4 },
+  summarySub: { ...typography.bodySmall },
   summaryBox: {
-    backgroundColor: PASSENGER_BG_LIGHT,
-    borderRadius: 24,
+    borderRadius: radii.lg,
     padding: spacing.lg,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
   },
   summaryRow: {
     flexDirection: 'row',
@@ -633,20 +658,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
   },
   summaryRowTotal: {
     borderBottomWidth: 0,
     paddingTop: spacing.md,
     marginTop: spacing.xs,
   },
-  summaryLabel: { ...typography.bodySmall, color: colors.textSecondary },
-  summaryValue: { ...typography.body, fontWeight: '700', color: PASSENGER_DARK },
-  summaryValueBrand: { color: PASSENGER_BRAND },
-  summaryTotalLabel: { ...typography.body, fontWeight: '800', color: PASSENGER_DARK },
-  summaryTotalPrice: { fontSize: 22, fontWeight: '800', color: PASSENGER_BRAND },
+  summaryLabel: { ...typography.bodySmall },
+  summaryValue: { ...typography.body, fontWeight: '700' },
+  summaryValueBrand: {},
+  summaryTotalLabel: { ...typography.body, fontWeight: '800' },
+  summaryTotalPrice: { fontSize: 22, fontWeight: '800' },
   paymentSection: { marginTop: spacing.sm },
-  paymentLabel: { ...typography.body, fontWeight: '600', color: PASSENGER_DARK, marginBottom: spacing.sm },
+  paymentLabel: { ...typography.body, fontWeight: '600', marginBottom: spacing.sm },
 
   // Footer
   footer: {
@@ -655,72 +679,56 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: spacing.lg,
-    backgroundColor: 'rgba(255,255,255,0.92)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.04)',
   },
   ctaPrimary: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    height: 56,
-    backgroundColor: PASSENGER_DARK,
-    borderRadius: 20,
+    minHeight: buttonHeights.large + 4,
+    borderRadius: radii.md,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
   },
-  ctaPrimaryText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  ctaPrimaryText: { fontSize: 16, fontWeight: '700' },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
   },
-  subtotalLabel: { fontSize: 10, fontWeight: '700', color: colors.textMuted, letterSpacing: 0.5 },
-  subtotalValue: { fontSize: 20, fontWeight: '800', color: PASSENGER_DARK },
+  subtotalLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+  subtotalValue: { fontSize: 20, fontWeight: '800' },
   ctaContinue: {
     flex: 1,
-    height: 56,
-    backgroundColor: PASSENGER_BRAND,
-    borderRadius: 20,
+    minHeight: buttonHeights.large + 4,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: PASSENGER_BRAND,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
   },
-  ctaContinueDisabled: {
-    backgroundColor: 'rgba(0,0,0,0.08)',
-    shadowOpacity: 0,
-  },
-  ctaContinueText: { fontSize: 16, fontWeight: '700', color: PASSENGER_DARK },
+  ctaContinueDisabled: {},
+  ctaContinueText: { fontSize: 16, fontWeight: '700' },
   ctaPayment: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    height: 56,
-    backgroundColor: colors.success,
-    borderRadius: 20,
-    shadowColor: colors.success,
+    minHeight: buttonHeights.large + 4,
+    borderRadius: radii.md,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
   },
   ctaPaymentDisabled: { opacity: 0.8 },
-  ctaPaymentText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  homeIndicator: {
-    width: 128,
-    height: 4,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: spacing.md,
-  },
+  ctaPaymentText: { ...typography.body, fontWeight: '700', color: colors.onAccent },
 });

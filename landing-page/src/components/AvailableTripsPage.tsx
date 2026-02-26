@@ -203,6 +203,7 @@ export default function AvailableTripsPage({
         fromId: fromId || undefined,
         toId: toId || undefined,
         date: date ? date.toISOString().slice(0, 10) : undefined,
+        type: 'scheduled',
       });
       setApiTrips(data);
       setTripsStore(data);

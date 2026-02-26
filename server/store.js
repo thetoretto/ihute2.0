@@ -39,6 +39,9 @@ const scannedBookingIds = new Set(); // bookingId when ticket validated
 const conversationsStore = [];
 const messagesByConversationId = {};
 
+// Driver drive mode (instant queue): one entry per driver when "drive mode" is on
+const driverDriveModeStore = [];
+
 // Helpers that resolve from store (by id for mutable lookup)
 function findUser(id) {
   return usersStore.find((u) => u.id === id);
@@ -73,6 +76,23 @@ function resolveBooking(booking) {
   return { ...booking, trip: resolveTrip(trip), passenger };
 }
 
+function resolveDriveModeEntry(entry) {
+  if (!entry) return null;
+  const driver = findUser(entry.driverId);
+  const vehicle = entry.vehicleId ? findVehicle(entry.vehicleId) : null;
+  const from = findHotpoint(entry.fromHotpointId);
+  const to = findHotpoint(entry.toHotpointId);
+  return {
+    driver,
+    vehicle: vehicle || undefined,
+    from,
+    to,
+    seatsAvailable: entry.seatsAvailable,
+    pricePerSeat: entry.pricePerSeat,
+    updatedAt: entry.updatedAt,
+  };
+}
+
 module.exports = {
   hotpointsStore,
   usersStore,
@@ -91,6 +111,7 @@ module.exports = {
   scannedBookingIds,
   conversationsStore,
   messagesByConversationId,
+  driverDriveModeStore,
   findUser,
   findTrip,
   findBooking,
@@ -98,5 +119,6 @@ module.exports = {
   findVehicle,
   resolveTrip,
   resolveBooking,
+  resolveDriveModeEntry,
   deepClone,
 };

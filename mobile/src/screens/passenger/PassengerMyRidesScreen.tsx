@@ -34,11 +34,8 @@ import { useTabbedList } from '../../hooks/useTabbedList';
 import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
 import { listBottomPaddingTab, cardRadius } from '../../utils/layout';
 import { useResponsiveTheme } from '../../utils/responsiveTheme';
+import { useThemeColors } from '../../context/ThemeContext';
 import type { Booking } from '../../types';
-
-const PASSENGER_BRAND = colors.passengerBrand;
-const PASSENGER_DARK = colors.passengerDark;
-const PASSENGER_BG_LIGHT = colors.passengerBgLight;
 
 const TABS = [
   { key: 'upcoming' as const, label: 'Upcoming' },
@@ -49,6 +46,7 @@ const TABS = [
 export default function PassengerMyRidesScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
+  const c = useThemeColors();
   const responsiveTheme = useResponsiveTheme();
   const rs = responsiveTheme.spacing;
   const rTypography = responsiveTheme.typography;
@@ -223,9 +221,9 @@ export default function PassengerMyRidesScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => void onRefresh()}
-              colors={[PASSENGER_BRAND]}
-              tintColor={PASSENGER_BRAND}
-              progressBackgroundColor={PASSENGER_BG_LIGHT}
+              colors={[c.primary]}
+              tintColor={c.primary}
+              progressBackgroundColor={c.background}
             />
           }
           overScrollMode="always"
@@ -285,14 +283,14 @@ export default function PassengerMyRidesScreen() {
                       style={styles.actionBtn}
                       onPress={() => navigation.navigate('TicketDetail', { bookingId: item.id })}
                     >
-                      <Ionicons name="document-text-outline" size={14} color={PASSENGER_BRAND} />
+                      <Ionicons name="document-text-outline" size={14} color={c.primary} />
                       <Text style={styles.actionText}>View full ticket</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.actionBtn}
                       onPress={() => void onDownloadTicket(item.id)}
                     >
-                      <Ionicons name="download-outline" size={14} color={PASSENGER_BRAND} />
+                      <Ionicons name="download-outline" size={14} color={c.primary} />
                       <Text style={styles.actionText}>Download PDF</Text>
                     </TouchableOpacity>
                     {item.status === 'upcoming' ? (
@@ -323,7 +321,7 @@ export default function PassengerMyRidesScreen() {
                                   : 'star-outline'
                               }
                               size={18}
-                              color={PASSENGER_BRAND}
+                              color={c.primary}
                             />
                           </TouchableOpacity>
                         ))}
@@ -345,7 +343,7 @@ export default function PassengerMyRidesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.surface },
   tabs: {
     flexDirection: 'row',
     paddingTop: spacing.lg,
@@ -357,15 +355,15 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.sm,
-    borderRadius: 14,
+    borderRadius: radii.md,
     alignItems: 'center',
-    backgroundColor: PASSENGER_BG_LIGHT,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
+    borderColor: colors.cardBorder,
   },
-  tabActive: { backgroundColor: PASSENGER_BRAND, borderColor: PASSENGER_BRAND },
+  tabActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   tabText: { ...typography.bodySmall, color: colors.textSecondary, fontWeight: '600' },
-  tabTextActive: { color: PASSENGER_DARK, fontWeight: '600' },
+  tabTextActive: { ...typography.bodySmall, color: colors.dark, fontWeight: '600' },
   card: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.sm,
@@ -374,7 +372,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: cardRadius,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
+    borderColor: colors.cardBorder,
   },
   headerRow: {
     flexDirection: 'row',
@@ -383,14 +381,14 @@ const styles = StyleSheet.create({
   },
   routeBlock: { flex: 1, minWidth: 0 },
   badge: {
-    fontSize: 10,
+    ...typography.caption,
     fontWeight: '700',
     letterSpacing: 1,
     color: colors.success,
     marginBottom: 4,
     textTransform: 'uppercase',
   },
-  route: { ...typography.body, color: PASSENGER_DARK, fontWeight: '700' },
+  route: { ...typography.body, color: colors.dark, fontWeight: '700' },
   time: { ...typography.caption, color: colors.textSecondary, marginTop: 4 },
   seats: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
   actionRow: {
@@ -405,14 +403,14 @@ const styles = StyleSheet.create({
     minHeight: buttonHeights.small,
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
-    borderRadius: 14,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: PASSENGER_BRAND,
-    backgroundColor: 'rgba(0,175,245,0.12)',
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryTint,
   },
   actionText: {
     ...typography.caption,
-    color: PASSENGER_DARK,
+    color: colors.dark,
     fontWeight: '600',
   },
   actionDangerText: {

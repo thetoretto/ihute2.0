@@ -19,17 +19,7 @@ import { selectorStyles } from '../../utils/selectorStyles';
 import { formatRwf } from '../../../../shared/src';
 import type { Hotpoint, Vehicle, PaymentMethod } from '../../types';
 
-const INSTANT_STEPS = ['Intro', 'Ride Type', 'Vehicle', 'Route', 'Details', 'Payment', 'Review'];
-const SCHEDULED_STEPS = [
-  'Intro',
-  'Ride Type',
-  'Vehicle',
-  'Route',
-  'Schedule',
-  'Details',
-  'Payment',
-  'Review',
-];
+const PUBLISH_STEPS = ['Intro', 'Vehicle', 'Route', 'Schedule', 'Details', 'Payment', 'Review'];
 const SCHEDULED_AGENCY_STEPS = [
   'Intro',
   'Vehicle',
@@ -72,7 +62,6 @@ export default function PublishRideScreen() {
   const [hotpoints, setHotpoints] = useState<Hotpoint[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 
-  const [rideType, setRideType] = useState<'insta' | 'scheduled'>('insta');
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [departure, setDeparture] = useState<Hotpoint | null>(null);
   const [destination, setDestination] = useState<Hotpoint | null>(null);
@@ -94,21 +83,12 @@ export default function PublishRideScreen() {
   const [driverNote, setDriverNote] = useState('');
   const [amenities, setAmenities] = useState<string[]>(['ac', 'music']);
   const isAgency = currentRole === 'agency';
-  const steps =
-    rideType === 'scheduled' && isAgency
-      ? SCHEDULED_AGENCY_STEPS
-      : rideType === 'scheduled'
-        ? SCHEDULED_STEPS
-        : INSTANT_STEPS;
+  const steps = isAgency ? SCHEDULED_AGENCY_STEPS : PUBLISH_STEPS;
   const currentStep = steps[step];
   const seatsMax = isAgency ? (vehicle?.seats ?? 18) : 6;
   const priceMin = 5000;
   const priceMax = 200000;
   const priceStep = 1000;
-
-  useEffect(() => {
-    if (isAgency) setRideType('scheduled');
-  }, [isAgency]);
 
   useEffect(() => {
     if (step > steps.length - 1) {
@@ -127,7 +107,6 @@ export default function PublishRideScreen() {
 
   const resetForm = () => {
     setStep(0);
-    setRideType(isAgency ? 'scheduled' : 'insta');
     setVehicle(null);
     setDeparture(null);
     setDestination(null);
@@ -197,13 +176,13 @@ export default function PublishRideScreen() {
     try {
       const now = new Date();
       const fallbackTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      const depTime = rideType === 'scheduled' ? scheduledTime || fallbackTime : fallbackTime;
+      const depTime = scheduledTime || fallbackTime;
       const depHour = Number.parseInt(depTime.split(':')[0] || '0', 10);
       const depMin = Number.parseInt(depTime.split(':')[1] || '0', 10);
       const arrHour = (depHour + 3) % 24;
       const arrTime = `${arrHour.toString().padStart(2, '0')}:${depMin.toString().padStart(2, '0')}`;
       const baseTrip = {
-        type: rideType,
+        type: 'scheduled' as const,
         departureHotpoint: departure,
         destinationHotpoint: destination,
         departureTime: depTime,
@@ -220,7 +199,7 @@ export default function PublishRideScreen() {
       };
 
       const useRepetition =
-        isAgency && rideType === 'scheduled' && scheduledDate && scheduledTime && repetitionInterval > 0;
+        isAgency && scheduledDate && scheduledTime && repetitionInterval > 0;
 
       if (useRepetition) {
         const trips = await publishTrips(
@@ -234,10 +213,7 @@ export default function PublishRideScreen() {
         );
         Alert.alert('Rides published!', `${trips.length} trip(s) created.`);
       } else {
-        const tripPayload =
-          rideType === 'scheduled' && scheduledDate
-            ? { ...baseTrip, departureDate: scheduledDate }
-            : baseTrip;
+        const tripPayload = { ...baseTrip, departureDate: scheduledDate };
         await publishTrip(tripPayload);
         Alert.alert('Ride published!');
       }
@@ -323,31 +299,6 @@ export default function PublishRideScreen() {
         </Text>
       </View>
       <Text style={styles.stepTitle}>{currentStep}</Text>
-
-      {currentStep === 'Ride Type' && (
-        <View style={styles.stepContent}>
-          <TouchableOpacity
-            style={[styles.option, { backgroundColor: c.card, borderColor: c.border }, rideType === 'insta' && { backgroundColor: c.primary, borderColor: c.primary }]}
-            onPress={() => setRideType('insta')}
-          >
-            <View style={styles.optionRow}>
-              <Ionicons name="flash-outline" size={18} color={rideType === 'insta' ? c.onPrimary : c.primary} />
-              <Text style={[styles.optionText, { color: c.text }, rideType === 'insta' && { color: c.onPrimary }]}>InstaRide</Text>
-            </View>
-            <Text style={[styles.optionSub, { color: c.textSecondary }, rideType === 'insta' && { color: c.onPrimary, opacity: 0.9 }]}>Publish immediately for riders nearby.</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.option, { backgroundColor: c.card, borderColor: c.border }, rideType === 'scheduled' && { backgroundColor: c.primary, borderColor: c.primary }]}
-            onPress={() => setRideType('scheduled')}
-          >
-            <View style={styles.optionRow}>
-              <Ionicons name="calendar-outline" size={18} color={rideType === 'scheduled' ? c.onPrimary : c.primary} />
-              <Text style={[styles.optionText, { color: c.text }, rideType === 'scheduled' && { color: c.onPrimary }]}>Scheduled</Text>
-            </View>
-            <Text style={[styles.optionSub, { color: c.textSecondary }, rideType === 'scheduled' && { color: c.onPrimary, opacity: 0.9 }]}>Plan and publish in advance.</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {currentStep === 'Vehicle' && (
         <View style={styles.stepContent}>
@@ -652,28 +603,24 @@ export default function PublishRideScreen() {
           <View style={styles.reviewCard}>
             <Text style={styles.reviewTitle}>Trip details before posting</Text>
             <View style={styles.reviewRow}>
-              <Ionicons name={rideType === 'insta' ? 'flash-outline' : 'calendar-outline'} size={16} color={colors.primary} />
-              <Text style={styles.reviewText}>{rideType === 'insta' ? 'InstaRide' : 'Scheduled'}</Text>
+              <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+              <Text style={styles.reviewText}>Scheduled</Text>
             </View>
-            {rideType === 'scheduled' ? (
-              <>
-                <View style={styles.reviewRow}>
-                  <Ionicons name="calendar-outline" size={16} color={colors.primary} />
-                  <Text style={styles.reviewText}>{scheduledDate || 'No date selected'}</Text>
-                </View>
-                <View style={styles.reviewRow}>
-                  <Ionicons name="time-outline" size={16} color={colors.primary} />
-                  <Text style={styles.reviewText}>{scheduledTime || 'No time selected'}</Text>
-                </View>
-                {isAgency && repetitionInterval > 0 ? (
-                  <View style={styles.reviewRow}>
-                    <Ionicons name="repeat-outline" size={16} color={colors.primary} />
-                    <Text style={styles.reviewText}>
-                      Every {repetitionInterval} min{repetitionEndTime ? ` until ${repetitionEndTime}` : ''}
-                    </Text>
-                  </View>
-                ) : null}
-              </>
+            <View style={styles.reviewRow}>
+              <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+              <Text style={styles.reviewText}>{scheduledDate || 'No date selected'}</Text>
+            </View>
+            <View style={styles.reviewRow}>
+              <Ionicons name="time-outline" size={16} color={colors.primary} />
+              <Text style={styles.reviewText}>{scheduledTime || 'No time selected'}</Text>
+            </View>
+            {isAgency && repetitionInterval > 0 ? (
+              <View style={styles.reviewRow}>
+                <Ionicons name="repeat-outline" size={16} color={colors.primary} />
+                <Text style={styles.reviewText}>
+                  Every {repetitionInterval} min{repetitionEndTime ? ` until ${repetitionEndTime}` : ''}
+                </Text>
+              </View>
             ) : null}
             <View style={styles.reviewRow}>
               <Ionicons name="navigate-outline" size={16} color={colors.primary} />
@@ -733,7 +680,7 @@ export default function PublishRideScreen() {
           ]}
           onPress={nextStep}
         >
-          <Ionicons name="navigate" size={20} color="#FFFFFF" />
+          <Ionicons name="navigate" size={20} color={colors.onAccent} />
           <Text style={styles.publishBtnText}>
             {currentStep === 'Review' ? 'Publish Trip' : 'Continue'}
           </Text>
@@ -759,7 +706,7 @@ const styles = StyleSheet.create({
   introStepValue: { ...typography.bodySmall, fontWeight: '600' },
   introStepDivider: { borderBottomWidth: 1, marginLeft: 48 + spacing.md },
   introContinueBtn: { paddingVertical: 16, borderRadius: 20, alignItems: 'center' },
-  introContinueText: { ...typography.body, fontWeight: '700', color: '#FFFFFF' },
+  introContinueText: { ...typography.body, fontWeight: '700', color: colors.onAccent },
   stepMetaRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -987,7 +934,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 20,
   },
-  publishBtnText: { ...typography.body, fontWeight: '700', color: '#FFFFFF' },
+  publishBtnText: { ...typography.body, fontWeight: '700', color: colors.onAccent },
   nextBtn: {
     width: buttonHeights.large,
     height: buttonHeights.large,

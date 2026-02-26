@@ -54,7 +54,7 @@ export default function Button({
     agency: {
       backgroundColor: c.agency,
       borderWidth: 1,
-      borderColor: 'rgba(99,102,241,0.5)',
+      borderColor: c.agencyBorder,
     },
     danger: {
       backgroundColor: c.accent,
@@ -72,9 +72,9 @@ export default function Button({
           : variant === 'ghost'
             ? c.ghostText
             : variant === 'agency'
-              ? '#FFFFFF'
+              ? c.onAccent
               : variant === 'danger'
-                ? '#FFFFFF'
+                ? c.onAccent
                 : c.text;
   return (
     <TouchableOpacity

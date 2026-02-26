@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography } from '../utils/theme';
+import { colors, spacing, typography, radii } from '../utils/theme';
 import type { PaymentMethod } from '../types';
 
 const PAYMENT_ICONS: Record<PaymentMethod, keyof typeof Ionicons.glyphMap> = {
@@ -65,9 +65,11 @@ const styles = StyleSheet.create({
   },
   iconWrapper: {
     alignItems: 'center',
+    justifyContent: 'center',
     padding: spacing.sm,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     minWidth: 70,
+    minHeight: 44,
   },
   iconSelected: {
     backgroundColor: colors.surface,

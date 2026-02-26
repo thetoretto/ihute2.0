@@ -62,6 +62,33 @@ export const colors = {
   agency: '#6366f1',
   agencyDark: '#4f46e5',
   agencyTint: 'rgba(99,102,241,0.14)',
+  agencyBorder: 'rgba(99,102,241,0.5)',
+
+  /** Modal/sheet overlay (backdrop). */
+  overlayModal: 'rgba(0,0,0,0.4)',
+  /** Subtle card border. */
+  cardBorder: 'rgba(0,0,0,0.06)',
+  /** Text on dark backgrounds (hero, tab bar). */
+  onDarkText: '#FFFFFF',
+  onDarkTextMuted: 'rgba(255,255,255,0.7)',
+  /** Star rating icon color. */
+  starRating: '#FBBF24',
+  /** Tab bar top border. */
+  tabBarBorder: 'rgba(254,228,107,0.15)',
+  /** Error background tint (chips, status). */
+  errorTint: 'rgba(223,8,39,0.12)',
+  /** Warning background tint. */
+  warningTint: 'rgba(183,121,31,0.12)',
+  /** On accent/agency/danger button text. */
+  onAccent: '#FFFFFF',
+  /** Decorative blob on dark backgrounds (e.g. hero). */
+  decorativeLight: 'rgba(255,255,255,0.06)',
+  /** Button/surface on dark (hero). */
+  surfaceOnDark: 'rgba(255,255,255,0.15)',
+  /** Pill/surface on dark (subtle). */
+  surfaceOnDarkSubtle: 'rgba(255,255,255,0.1)',
+  /** Orb on dark (very subtle). */
+  surfaceOnDarkOrb: 'rgba(255,255,255,0.05)',
 } as const;
 
 /** Dark theme colors. Use with ThemeContext for light/dark switching. */
@@ -87,6 +114,19 @@ export const colorsDark = {
   passengerDark: '#171C22',
   passengerBgLight: '#1E252D',
   passengerOnBrand: '#171C22',
+  overlayModal: 'rgba(0,0,0,0.5)',
+  cardBorder: 'rgba(241,245,249,0.12)',
+  onDarkText: '#FFFFFF',
+  onDarkTextMuted: 'rgba(255,255,255,0.7)',
+  starRating: '#FBBF24',
+  tabBarBorder: 'rgba(254,228,107,0.2)',
+  errorTint: 'rgba(223,8,39,0.18)',
+  warningTint: 'rgba(183,121,31,0.18)',
+  onAccent: '#FFFFFF',
+  decorativeLight: 'rgba(255,255,255,0.08)',
+  surfaceOnDark: 'rgba(255,255,255,0.18)',
+  surfaceOnDarkSubtle: 'rgba(255,255,255,0.12)',
+  surfaceOnDarkOrb: 'rgba(255,255,255,0.06)',
 } as const;
 
 export type ColorScheme = 'light' | 'dark';

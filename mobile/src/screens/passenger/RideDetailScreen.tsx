@@ -7,7 +7,8 @@ import { Screen } from '../../components';
 import { getTripsStore, getTrip } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
-import { colors, spacing, typography, radii } from '../../utils/theme';
+import { colors, spacing, typography, radii, buttonHeights } from '../../utils/theme';
+import { screenContentPadding } from '../../utils/layout';
 import { formatRwf } from '../../../../shared/src';
 import type { Trip } from '../../types';
 
@@ -78,7 +79,7 @@ export default function RideDetailScreen() {
     <View style={[styles.container, { backgroundColor: c.card }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.borderLight, paddingTop: insets.top }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn} hitSlop={12}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn} hitSlop={12} accessibilityLabel="Go back">
           <View style={[styles.headerBtnInner, { backgroundColor: c.background || c.ghostBg }]}>
             <Ionicons name="chevron-back" size={20} color={c.text} />
           </View>
@@ -147,7 +148,7 @@ export default function RideDetailScreen() {
               )}
             </View>
           </View>
-          <TouchableOpacity style={[styles.messageBtn, { backgroundColor: c.primaryTint || 'rgba(254,228,107,0.2)' }]} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.messageBtn, { backgroundColor: c.primaryTint }]} activeOpacity={0.8}>
             <Ionicons name="chatbubble-outline" size={20} color={c.primary} />
           </TouchableOpacity>
         </View>
@@ -189,11 +190,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: screenContentPadding,
     paddingVertical: spacing.md,
+    minHeight: 56,
     borderBottomWidth: 1,
   },
-  headerBtn: { padding: spacing.xs },
+  headerBtn: { padding: spacing.xs, minWidth: 44, minHeight: 44, justifyContent: 'center' },
   headerBtnInner: {
     width: 40,
     height: 40,
@@ -203,7 +205,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { ...typography.bodySmall, fontWeight: '800' },
   scroll: { flex: 1 },
-  content: { padding: spacing.lg },
+  content: { padding: screenContentPadding },
   timelineSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -287,13 +289,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: screenContentPadding,
     paddingTop: spacing.md,
     borderTopWidth: 1,
   },
   bookBtn: {
-    paddingVertical: spacing.lg,
-    borderRadius: 16,
+    minHeight: buttonHeights.large + 4,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },

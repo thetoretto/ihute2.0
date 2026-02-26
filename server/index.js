@@ -268,6 +268,69 @@ app.get('/api/vehicles', (req, res) => {
   res.json(list);
 });
 
+// ---------- Driver drive mode (instant queue) ----------
+app.put('/api/driver/drive-mode', (req, res) => {
+  const body = req.body || {};
+  const driverId = body.driverId || body.userId;
+  if (!driverId) return res.status(400).json({ error: 'driverId or userId is required' });
+  const driver = store.findUser(driverId);
+  if (!driver) return res.status(404).json({ error: 'Driver not found' });
+  const fromId = body.fromId || body.fromHotpointId;
+  const toId = body.toId || body.toHotpointId;
+  const seatsAvailable = body.seatsAvailable;
+  const pricePerSeat = body.pricePerSeat;
+  if (!fromId || !toId) return res.status(400).json({ error: 'fromId and toId are required' });
+  if (seatsAvailable == null || seatsAvailable < 1) return res.status(400).json({ error: 'seatsAvailable must be at least 1' });
+  if (pricePerSeat == null || pricePerSeat < 0) return res.status(400).json({ error: 'pricePerSeat is required and must be >= 0' });
+  const fromHotpoint = store.findHotpoint(fromId);
+  const toHotpoint = store.findHotpoint(toId);
+  if (!fromHotpoint) return res.status(400).json({ error: 'From hotpoint not found' });
+  if (!toHotpoint) return res.status(400).json({ error: 'To hotpoint not found' });
+  const vehicleId = body.vehicleId || null;
+  if (vehicleId && !store.findVehicle(vehicleId)) return res.status(400).json({ error: 'Vehicle not found' });
+  const updatedAt = new Date().toISOString();
+  const existing = store.driverDriveModeStore.findIndex((e) => e.driverId === driverId);
+  const entry = {
+    driverId,
+    vehicleId: vehicleId || undefined,
+    fromHotpointId: fromId,
+    toHotpointId: toId,
+    seatsAvailable: Number(seatsAvailable),
+    pricePerSeat: Number(pricePerSeat),
+    updatedAt,
+  };
+  if (existing >= 0) store.driverDriveModeStore[existing] = entry;
+  else store.driverDriveModeStore.push(entry);
+  res.json(store.resolveDriveModeEntry(entry));
+});
+
+app.delete('/api/driver/drive-mode', (req, res) => {
+  const driverId = req.body?.driverId || req.body?.userId || req.query.userId;
+  if (!driverId) return res.status(400).json({ error: 'driverId or userId is required' });
+  const idx = store.driverDriveModeStore.findIndex((e) => e.driverId === driverId);
+  if (idx >= 0) store.driverDriveModeStore.splice(idx, 1);
+  res.status(204).end();
+});
+
+app.get('/api/driver/drive-mode/status', (req, res) => {
+  const userId = req.query.userId;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+  const entry = store.driverDriveModeStore.find((e) => e.driverId === userId);
+  if (!entry) return res.json({ inDriveMode: false });
+  res.json({
+    inDriveMode: true,
+    ...store.resolveDriveModeEntry(entry),
+  });
+});
+
+app.get('/api/driver/instant-queue', (req, res) => {
+  const { toId, fromId } = req.query;
+  let list = [...store.driverDriveModeStore];
+  if (toId) list = list.filter((e) => (e.toHotpointId || e.to) === toId);
+  if (fromId) list = list.filter((e) => (e.fromHotpointId || e.from) === fromId);
+  res.json(list.map(store.resolveDriveModeEntry));
+});
+
 // ---------- Trips ----------
 function filterTripsForSearch(trips, fromId, toId, date, type) {
   let list = trips.filter((t) => t.status === 'active');
@@ -313,9 +376,10 @@ app.post('/api/trips', (req, res) => {
   const dep = store.findHotpoint(body.departureHotpointId || body.departureHotpoint?.id);
   const dest = store.findHotpoint(body.destinationHotpointId || body.destinationHotpoint?.id);
   if (!driver || !vehicle || !dep || !dest) return res.status(400).json({ error: 'Missing driver, vehicle, or hotpoints' });
+  if (body.type === 'insta') return res.status(400).json({ error: 'New trips must be scheduled; use drive mode for instant availability' });
   const trip = {
     id,
-    type: body.type || 'insta',
+    type: body.type || 'scheduled',
     departureHotpoint: dep,
     destinationHotpoint: dest,
     departureTime: body.departureTime || '09:00',

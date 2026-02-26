@@ -2,7 +2,7 @@
  * Single API facade: when EXPO_PUBLIC_USE_REAL_API is true, calls the local API server;
  * otherwise delegates to mockApi and mockPersistence.
  */
-import type { User, Trip } from '../types';
+import type { User, Trip, DriverInstantQueueEntry } from '../types';
 
 const USE_REAL_API = process.env.EXPO_PUBLIC_USE_REAL_API === 'true';
 const API_BASE = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
@@ -116,6 +116,41 @@ export async function updateDriverTripStatus(params: { tripId: string; driverId:
 export async function getDriverActivitySummary(userId: string) {
   if (USE_REAL_API) return request<Awaited<ReturnType<typeof mockApi.getDriverActivitySummary>>>('GET', `/api/driver/activity-summary?userId=${encodeURIComponent(userId)}`);
   return mockApi.getDriverActivitySummary(userId);
+}
+
+export type DriverDriveModeStatus =
+  | { inDriveMode: false }
+  | ({ inDriveMode: true } & DriverInstantQueueEntry);
+
+export async function getDriverDriveModeStatus(userId: string): Promise<DriverDriveModeStatus> {
+  if (USE_REAL_API) return request<DriverDriveModeStatus>('GET', `/api/driver/drive-mode/status?userId=${encodeURIComponent(userId)}`);
+  return { inDriveMode: false };
+}
+
+export async function setDriverDriveMode(params: {
+  driverId: string;
+  fromId: string;
+  toId: string;
+  seatsAvailable: number;
+  pricePerSeat: number;
+  vehicleId?: string;
+}): Promise<DriverInstantQueueEntry> {
+  if (USE_REAL_API) return request<DriverInstantQueueEntry>('PUT', '/api/driver/drive-mode', params);
+  throw new Error('Drive mode requires real API');
+}
+
+export async function clearDriverDriveMode(driverId: string): Promise<void> {
+  if (USE_REAL_API) return request('DELETE', '/api/driver/drive-mode', { driverId });
+}
+
+export async function getInstantQueue(params?: { toId?: string; fromId?: string }): Promise<DriverInstantQueueEntry[]> {
+  if (USE_REAL_API) {
+    const q = new URLSearchParams();
+    if (params?.toId) q.set('toId', params.toId);
+    if (params?.fromId) q.set('fromId', params.fromId);
+    return request('GET', `/api/driver/instant-queue?${q.toString()}`);
+  }
+  return [];
 }
 
 export async function publishTrip(tripData: Parameters<typeof mockApi.publishTrip>[0]) {

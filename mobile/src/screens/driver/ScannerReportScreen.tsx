@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryTint,
   },
   statusScanned: { backgroundColor: colors.successTint },
-  statusCancelled: { backgroundColor: 'rgba(223, 8, 39, 0.12)' },
+  statusCancelled: { backgroundColor: colors.errorTint },
   statusText: { ...typography.caption, color: colors.text, fontWeight: '600', textTransform: 'capitalize' },
   scannedAt: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
   emptyWrap: { alignItems: 'center', paddingVertical: spacing.xxl },

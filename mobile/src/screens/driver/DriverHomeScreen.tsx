@@ -11,6 +11,10 @@ import {
   Alert,
   Switch,
   Image,
+  Modal,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,14 +29,24 @@ import {
   ExpandActionButton,
   formatRatingValue,
   Button,
+  HotpointPicker,
 } from '../../components';
-import { getDriverTripActivities, getDriverRatingSummary, getDriverActivitySummary } from '../../services/api';
+import {
+  getDriverTripActivities,
+  getDriverRatingSummary,
+  getDriverActivitySummary,
+  getDriverDriveModeStatus,
+  setDriverDriveMode,
+  clearDriverDriveMode,
+  getHotpoints,
+} from '../../services/api';
 import { getUnreadDriverNotificationCount, getScannerTicketCount } from '../../services/api';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
 import { cardRadius, listBottomPaddingTab, sectionTitleStyle } from '../../utils/layout';
-import type { DriverTripActivity } from '../../types';
+import type { DriverTripActivity, Hotpoint } from '../../types';
+import type { DriverDriveModeStatus } from '../../services/api';
 
 function getGreetingName(displayName: string | null | undefined): string {
   if (!displayName?.trim()) return 'Driver';
@@ -54,7 +68,14 @@ export default function DriverHomeScreen() {
   const [ratingSummary, setRatingSummary] = useState<{ average: number; count: number } | null>(null);
   const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
   const [isIncomeVisible, setIsIncomeVisible] = useState(false);
-  const [driverModeOn, setDriverModeOn] = useState(true);
+  const [driverModeOn, setDriverModeOn] = useState(false);
+  const [driveModeModalVisible, setDriveModeModalVisible] = useState(false);
+  const [driveModeFrom, setDriveModeFrom] = useState<Hotpoint | null>(null);
+  const [driveModeTo, setDriveModeTo] = useState<Hotpoint | null>(null);
+  const [driveModeSeats, setDriveModeSeats] = useState(3);
+  const [driveModeCost, setDriveModeCost] = useState('');
+  const [hotpoints, setHotpoints] = useState<Hotpoint[]>([]);
+  const [driveModeStatus, setDriveModeStatus] = useState<DriverDriveModeStatus | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [scannerTicketCount, setScannerTicketCount] = useState(0);
@@ -78,6 +99,20 @@ export default function DriverHomeScreen() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    getHotpoints().then(setHotpoints);
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id || currentRole !== 'driver' || isScanner) return;
+    getDriverDriveModeStatus(user.id)
+      .then((status) => {
+        setDriverModeOn(status.inDriveMode);
+        setDriveModeStatus(status.inDriveMode ? status : null);
+      })
+      .catch(() => {});
+  }, [user?.id, currentRole, isScanner]);
 
   const loadTrips = useCallback(async () => {
     if (!user) return;
@@ -242,7 +277,7 @@ export default function DriverHomeScreen() {
               <View style={styles.heroPill}>
                 <Text style={styles.heroPillLabel}>RATING</Text>
                 <Text style={styles.heroPillValue}>
-                  {formatRatingValue(ratingSummary?.average, '0.0')} <Ionicons name="star" size={10} color="#FBBF24" />
+                  {formatRatingValue(ratingSummary?.average, '0.0')} <Ionicons name="star" size={10} color={colors.starRating} />
                 </Text>
               </View>
             </View>
@@ -306,16 +341,132 @@ export default function DriverHomeScreen() {
               </View>
               <View>
                 <Text style={[styles.driverModeTitle, { color: c.text }]}>Driver mode</Text>
-                <Text style={[styles.driverModeSub, { color: c.textSecondary }]}>Visible to passengers</Text>
+                <Text style={[styles.driverModeSub, { color: c.textSecondary }]}>
+                  {driverModeOn && driveModeStatus && driveModeStatus.inDriveMode
+                    ? `I will be here ${driveModeStatus.from?.name ?? '—'} going there ${driveModeStatus.to?.name ?? '—'}`
+                    : 'Visible to passengers'}
+                </Text>
               </View>
             </View>
             <Switch
               value={driverModeOn}
-              onValueChange={setDriverModeOn}
+              onValueChange={(val) => {
+                if (val) {
+                  setDriveModeModalVisible(true);
+                } else {
+                  if (user?.id) {
+                    clearDriverDriveMode(user.id).then(() => {
+                      setDriverModeOn(false);
+                      setDriveModeStatus(null);
+                    }).catch(() => setDriverModeOn(false));
+                  } else {
+                    setDriverModeOn(false);
+                  }
+                }
+              }}
               trackColor={{ false: c.border, true: c.primary }}
               thumbColor={c.background}
             />
           </View>
+          <Modal visible={driveModeModalVisible} animationType="slide" transparent>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
+              <View style={[styles.driveModeSheet, { backgroundColor: c.background }]}>
+                <Text style={[styles.driveModeModalTitle, { color: c.text }]}>Set your route</Text>
+                <Text style={[styles.driveModeModalSub, { color: c.textSecondary }]}>From?, To?, Car capacity, Cost (all required)</Text>
+                <ScrollView keyboardShouldPersistTaps="handled" style={styles.driveModeModalScroll}>
+                  <View style={[styles.routePickerRow, { borderBottomColor: c.border }]}>
+                    <Text style={[styles.driveModeLabel, { color: c.textSecondary }]}>From?</Text>
+                    <HotpointPicker
+                      value={driveModeFrom}
+                      hotpoints={hotpoints}
+                      onSelect={setDriveModeFrom}
+                      placeholder="From?"
+                      triggerStyle={[styles.driveModeTrigger, { borderBottomColor: c.border }]}
+                    />
+                  </View>
+                  <View style={[styles.routePickerRow, { borderBottomColor: c.border }]}>
+                    <Text style={[styles.driveModeLabel, { color: c.textSecondary }]}>To?</Text>
+                    <HotpointPicker
+                      value={driveModeTo}
+                      hotpoints={hotpoints}
+                      onSelect={setDriveModeTo}
+                      placeholder="To?"
+                      triggerStyle={[styles.driveModeTrigger, { borderBottomColor: c.border }]}
+                    />
+                  </View>
+                  <View style={[styles.routePickerRow, { borderBottomColor: c.border }]}>
+                    <Text style={[styles.driveModeLabel, { color: c.textSecondary }]}>Car capacity</Text>
+                    <TextInput
+                      style={[styles.driveModeInput, { color: c.text, borderColor: c.border }]}
+                      placeholder="e.g. 4"
+                      placeholderTextColor={c.textSecondary}
+                      value={driveModeSeats === 0 ? '' : String(driveModeSeats)}
+                      keyboardType="number-pad"
+                      onChangeText={(t) => setDriveModeSeats(Math.max(0, parseInt(t, 10) || 0))}
+                    />
+                  </View>
+                  <View style={[styles.routePickerRow, { borderBottomColor: c.border }]}>
+                    <Text style={[styles.driveModeLabel, { color: c.textSecondary }]}>Cost</Text>
+                    <TextInput
+                      style={[styles.driveModeInput, { color: c.text, borderColor: c.border }]}
+                      placeholder="Price per seat (RWF)"
+                      placeholderTextColor={c.textSecondary}
+                      value={driveModeCost}
+                      keyboardType="number-pad"
+                      onChangeText={setDriveModeCost}
+                    />
+                  </View>
+                </ScrollView>
+                <View style={styles.driveModeModalFooter}>
+                  <TouchableOpacity
+                    style={[styles.driveModeCancelBtn, { borderColor: c.border }]}
+                    onPress={() => setDriveModeModalVisible(false)}
+                  >
+                    <Text style={[styles.driveModeCancelText, { color: c.text }]}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.driveModeSubmitBtn, { backgroundColor: c.primary }]}
+                    onPress={async () => {
+                      if (!user?.id || !driveModeFrom || !driveModeTo) {
+                        Alert.alert('Required', 'Please set From?, To?, Car capacity, and Cost.');
+                        return;
+                      }
+                      const seats = driveModeSeats >= 1 ? driveModeSeats : 0;
+                      const cost = parseInt(driveModeCost, 10);
+                      if (seats < 1 || isNaN(cost) || cost < 0) {
+                        Alert.alert('Required', 'Car capacity must be at least 1 and Cost must be a valid number.');
+                        return;
+                      }
+                      try {
+                        await setDriverDriveMode({
+                          driverId: user.id,
+                          fromId: driveModeFrom.id,
+                          toId: driveModeTo.id,
+                          seatsAvailable: seats,
+                          pricePerSeat: cost,
+                        });
+                        setDriverModeOn(true);
+                        setDriveModeStatus({
+                          inDriveMode: true,
+                          from: driveModeFrom,
+                          to: driveModeTo,
+                          seatsAvailable: seats,
+                          pricePerSeat: cost,
+                          driver: user,
+                          updatedAt: new Date().toISOString(),
+                        });
+                        setDriveModeModalVisible(false);
+                      } catch (e) {
+                        Alert.alert('Error', e instanceof Error ? e.message : 'Could not turn on drive mode.');
+                      }
+                    }}
+                  >
+                    <Text style={[styles.driveModeSubmitText, { color: c.onPrimary }]}>Turn on drive mode</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </KeyboardAvoidingView>
+          </Modal>
           {user?.roles?.length && user.roles.length > 1 ? (
             <View style={{ marginBottom: effectiveSpacing.md }}>
               <RoleToggle
@@ -514,15 +665,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   heroInner: { zIndex: 1 },
-  heroLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginBottom: 4 },
-  heroAmount: { fontSize: 28, fontWeight: '700', color: '#FFFFFF', marginBottom: 8 },
-  heroViewBtn: { alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12 },
-  heroViewBtnText: { fontSize: 12, fontWeight: '600', color: '#FFFFFF' },
+  heroLabel: { ...typography.caption, color: colors.onDarkTextMuted, marginBottom: 4 },
+  heroAmount: { ...typography.h1, color: colors.onDarkText, marginBottom: 8 },
+  heroViewBtn: { alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: spacing.sm, backgroundColor: colors.surfaceOnDark, borderRadius: radii.md },
+  heroViewBtnText: { ...typography.caption, fontWeight: '600', color: colors.onDarkText },
   heroPills: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
-  heroPill: { flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12, alignItems: 'center' },
-  heroPillLabel: { fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.7)', letterSpacing: 0.5 },
-  heroPillValue: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
-  heroOrb: { position: 'absolute', right: -40, bottom: -40, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.05)' },
+  heroPill: { flex: 1, backgroundColor: colors.surfaceOnDarkSubtle, borderRadius: radii.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm, alignItems: 'center' },
+  heroPillLabel: { ...typography.caption, fontSize: 10, fontWeight: '600', color: colors.onDarkTextMuted, letterSpacing: 0.5 },
+  heroPillValue: { ...typography.bodySmall, fontWeight: '700', color: colors.onDarkText },
+  heroOrb: { position: 'absolute', right: -40, bottom: -40, width: 160, height: 160, borderRadius: 80, backgroundColor: colors.surfaceOnDarkOrb },
   actionButtonsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   primaryActionBtn: {
     flexDirection: 'row',
@@ -573,6 +724,35 @@ const styles = StyleSheet.create({
   driverModeIconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   driverModeTitle: { ...typography.bodySmall, fontWeight: '600' },
   driverModeSub: { ...typography.caption, marginTop: 2 },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: colors.overlayModal,
+  },
+  driveModeSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: spacing.lg,
+    maxHeight: '85%',
+  },
+  driveModeModalTitle: { ...typography.h3, marginBottom: spacing.xs },
+  driveModeModalSub: { ...typography.caption, color: colors.textSecondary, marginBottom: spacing.md },
+  driveModeModalScroll: { maxHeight: 320 },
+  routePickerRow: { marginBottom: spacing.sm, paddingBottom: spacing.sm, borderBottomWidth: 1 },
+  driveModeLabel: { ...typography.caption, marginBottom: spacing.xs },
+  driveModeTrigger: { borderBottomWidth: 1, paddingVertical: spacing.sm },
+  driveModeInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    ...typography.body,
+  },
+  driveModeModalFooter: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
+  driveModeCancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1, alignItems: 'center' },
+  driveModeCancelText: { ...typography.bodySmall, fontWeight: '600' },
+  driveModeSubmitBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  driveModeSubmitText: { ...typography.bodySmall, fontWeight: '700' },
   nextRideSection: { marginBottom: spacing.lg },
   nextRideHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: spacing.sm },
   nextRideBadge: { ...typography.caption, fontWeight: '600' },

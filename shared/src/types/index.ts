@@ -41,6 +41,17 @@ export interface Vehicle {
   ownerId?: string;
 }
 
+/** Entry for a driver in "drive mode" on the instant queue (one per driver). */
+export interface DriverInstantQueueEntry {
+  driver: User;
+  vehicle?: Vehicle;
+  from: Hotpoint;
+  to: Hotpoint;
+  seatsAvailable: number;
+  pricePerSeat: number;
+  updatedAt: string;
+}
+
 export type TripType = 'insta' | 'scheduled';
 export type TripStatus = 'active' | 'full' | 'cancelled' | 'completed';
 

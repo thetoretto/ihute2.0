@@ -40,7 +40,7 @@ function useTabBarScreenOptionsBase() {
   return {
     tabBarStyle: {
       backgroundColor: c.tabBarBackground,
-      borderTopColor: 'rgba(254,228,107,0.15)',
+      borderTopColor: c.tabBarBorder,
       borderTopWidth: 1,
       paddingTop: spacing.sm,
       paddingBottom: Math.max(insets.bottom, spacing.sm),
@@ -96,6 +96,7 @@ import OnboardingScreen from '../screens/auth/OnboardingScreen';
 // Passenger
 import PassengerHomeScreen from '../screens/passenger/PassengerHomeScreen';
 import SearchResultsScreen from '../screens/passenger/SearchResultsScreen';
+import InstantQueueScreen from '../screens/passenger/InstantQueueScreen';
 import RideDetailScreen from '../screens/passenger/RideDetailScreen';
 import PassengerBookingScreen from '../screens/passenger/PassengerBookingScreen';
 import PassengerMyRidesScreen from '../screens/passenger/PassengerMyRidesScreen';
@@ -167,6 +168,7 @@ function PassengerHomeStack() {
         options={{ headerShown: true }}
       />
       <Stack.Screen name="SearchResults" component={SearchResultsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="InstantQueue" component={InstantQueueScreen} options={{ title: 'Drivers available now' }} />
       <Stack.Screen name="RideDetail" component={RideDetailScreen} />
       <Stack.Screen name="PassengerBooking" component={PassengerBookingScreen} options={{ headerShown: false, title: 'Book trip' }} />
       <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ title: strings.nav.ticketDetails }} />

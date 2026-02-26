@@ -18,12 +18,7 @@ import { buttonHeights, colors, spacing, typography, radii } from '../../utils/t
 import { listBottomPaddingTab, sectionTitleStyle } from '../../utils/layout';
 import { strings } from '../../constants/strings';
 import { searchTrips, getUserBookings } from '../../services/api';
-import { getMockStore, updateMockStore } from '../../services/api';
-import type { Trip, TripType, Booking } from '../../types';
-
-const PASSENGER_BRAND = colors.passengerBrand;
-const PASSENGER_DARK = colors.passengerDark;
-const PASSENGER_BG_LIGHT = colors.passengerBgLight;
+import type { Trip, Booking } from '../../types';
 
 export default function PassengerHomeScreen() {
   const navigation = useNavigation<any>();
@@ -32,26 +27,15 @@ export default function PassengerHomeScreen() {
   const responsive = useResponsiveThemeContext();
   const c = useThemeColors();
   const effectiveSpacing = responsive?.spacing ?? spacing;
-  const [tripType, setTripType] = React.useState<TripType>('insta');
   const [availableTrips, setAvailableTrips] = React.useState<Trip[]>([]);
   const [upcomingBookings, setUpcomingBookings] = React.useState<Booking[]>([]);
   const [refreshing, setRefreshing] = React.useState(false);
   const [refreshState, setRefreshState] = React.useState<'idle' | 'refreshing' | 'done'>('idle');
 
-  React.useEffect(() => {
-    const hydratePreferences = async () => {
-      const store = await getMockStore();
-      if (store.passengerPrefs?.tripType) {
-        setTripType(store.passengerPrefs.tripType);
-      }
-    };
-    void hydratePreferences();
-  }, []);
-
   const loadTrips = React.useCallback(async () => {
-    const items = await searchTrips({ type: tripType });
+    const items = await searchTrips({ type: 'scheduled' });
     setAvailableTrips(items.slice(0, 6));
-  }, [tripType]);
+  }, []);
 
   const loadBookings = React.useCallback(async () => {
     if (user?.id) {
@@ -67,12 +51,6 @@ export default function PassengerHomeScreen() {
   React.useEffect(() => {
     void loadBookings();
   }, [loadBookings]);
-
-  React.useEffect(() => {
-    void updateMockStore({
-      passengerPrefs: { tripType },
-    });
-  }, [tripType]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -95,9 +73,9 @@ export default function PassengerHomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[PASSENGER_BRAND]}
-            tintColor={PASSENGER_BRAND}
-            progressBackgroundColor={PASSENGER_BG_LIGHT}
+            colors={[c.primary]}
+            tintColor={c.primary}
+            progressBackgroundColor={c.background}
           />
         ),
         overScrollMode: 'always',
@@ -149,10 +127,26 @@ export default function PassengerHomeScreen() {
           <Text style={styles.heroSubtitle}>Find rides with verified drivers at the best prices.</Text>
           <View style={styles.heroBtn}>
             <Text style={styles.heroBtnText}>Find trips</Text>
-            <Ionicons name="arrow-forward" size={16} color={PASSENGER_DARK} />
+            <Ionicons name="arrow-forward" size={16} color={c.onPrimary} />
           </View>
         </View>
         <View style={styles.heroBlob} />
+      </TouchableOpacity>
+
+      {/* Drivers available now (instant queue) */}
+      <TouchableOpacity
+        style={[styles.instantQueueCard, { backgroundColor: c.card, borderColor: c.borderLight }]}
+        onPress={() => navigation.navigate('InstantQueue')}
+        activeOpacity={0.9}
+      >
+        <View style={styles.instantQueueLeft}>
+          <Ionicons name="car-sport" size={24} color={c.primary} />
+          <View>
+            <Text style={[styles.instantQueueTitle, { color: c.text }]}>Drivers available now</Text>
+            <Text style={[styles.instantQueueSub, { color: c.textSecondary }]}>See who's in drive mode, filter by route</Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
       </TouchableOpacity>
 
       {/* Upcoming Trips */}
@@ -187,28 +181,10 @@ export default function PassengerHomeScreen() {
         </View>
       )}
 
-      {/* Available now / scheduled toggle + list */}
+      {/* Scheduled trips */}
       <Text style={[styles.sectionTitle, styles.sectionTitleTop, { color: c.text }]}>
-        {tripType === 'insta' ? 'Available now' : 'Scheduled available trips'}
+        Scheduled trips
       </Text>
-      <View style={styles.modeRow}>
-        <TouchableOpacity
-          style={[styles.modeBtn, { backgroundColor: c.surface, borderColor: c.border }, tripType === 'insta' && styles.modeBtnActive]}
-          onPress={() => setTripType('insta')}
-        >
-          <Text style={[styles.modeText, { color: c.textSecondary }, tripType === 'insta' && styles.modeTextActive]}>
-            Instant booking
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.modeBtn, { backgroundColor: c.surface, borderColor: c.border }, tripType === 'scheduled' && styles.modeBtnActive]}
-          onPress={() => setTripType('scheduled')}
-        >
-          <Text style={[styles.modeText, { color: c.textSecondary }, tripType === 'scheduled' && styles.modeTextActive]}>
-            Scheduled available
-          </Text>
-        </TouchableOpacity>
-      </View>
       {availableTrips.map((trip) => (
         <RideCard
           key={trip.id}
@@ -224,7 +200,7 @@ export default function PassengerHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.surface },
   content: {},
   blob1: {
     position: 'absolute',
@@ -233,7 +209,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: PASSENGER_BRAND,
+    backgroundColor: colors.primary,
     opacity: 0.08,
   },
   blob2: {
@@ -243,7 +219,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: '#7DE2D1',
+    backgroundColor: colors.successLight,
     opacity: 0.08,
   },
   header: {
@@ -253,10 +229,10 @@ const styles = StyleSheet.create({
   },
   headerLeft: {},
   welcomeLabel: {
-    fontSize: 12,
+    ...typography.caption,
     fontWeight: '700',
     letterSpacing: 1.2,
-    color: PASSENGER_BRAND,
+    color: colors.primary,
     marginBottom: 2,
     textTransform: 'uppercase',
   },
@@ -266,17 +242,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   avatarWrap: {},
-  avatar: { width: 56, height: 56, borderRadius: 20 },
+  avatar: { width: 56, height: 56, borderRadius: radii.md },
   avatarPlaceholder: {
-    backgroundColor: PASSENGER_BG_LIGHT,
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
+    borderColor: colors.cardBorder,
   },
   heroCard: {
-    backgroundColor: PASSENGER_DARK,
-    borderRadius: 28,
+    backgroundColor: colors.dark,
+    borderRadius: radii.lg,
     padding: spacing.lg,
     marginBottom: spacing.lg,
     overflow: 'hidden',
@@ -285,19 +261,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   heroContent: { position: 'relative', zIndex: 1 },
-  heroTitle: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  heroSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: spacing.md },
+  heroTitle: { ...typography.h2, color: colors.onDarkText, marginBottom: 4 },
+  heroSubtitle: { ...typography.bodySmall, color: colors.onDarkTextMuted, marginBottom: spacing.md },
   heroBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: PASSENGER_BRAND,
-    paddingVertical: 12,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    borderRadius: 14,
-    gap: 8,
+    borderRadius: radii.md,
+    gap: spacing.sm,
   },
-  heroBtnText: { fontSize: 14, fontWeight: '700', color: PASSENGER_DARK },
+  heroBtnText: { ...typography.bodySmall, fontWeight: '700', color: colors.onPrimary },
   heroBlob: {
     position: 'absolute',
     right: -24,
@@ -305,8 +281,20 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: colors.decorativeLight,
   },
+  instantQueueCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    borderRadius: radii.button,
+    borderWidth: 1,
+    marginBottom: spacing.lg,
+  },
+  instantQueueLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
+  instantQueueTitle: { ...typography.body, fontWeight: '600' },
+  instantQueueSub: { ...typography.caption, marginTop: 2 },
   sectionTitle: { ...sectionTitleStyle, fontSize: 18 },
   sectionTitleTop: { marginTop: spacing.md },
   modeRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
@@ -321,24 +309,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modeBtnActive: {
-    backgroundColor: PASSENGER_BRAND,
+    backgroundColor: colors.primary,
     borderWidth: 1,
-    borderColor: PASSENGER_BRAND,
+    borderColor: colors.primary,
   },
   modeText: { ...typography.bodySmall, color: colors.textSecondary },
-  modeTextActive: { color: PASSENGER_DARK, fontWeight: '600' },
+  modeTextActive: { ...typography.bodySmall, color: colors.dark, fontWeight: '600' },
   upcomingList: { gap: spacing.sm, marginBottom: spacing.md },
   upcomingCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: spacing.md,
-    borderRadius: 24,
+    borderRadius: radii.lg,
     borderWidth: 1,
   },
   upcomingLeft: { flex: 1 },
   upcomingBadge: {
-    fontSize: 10,
+    ...typography.caption,
     fontWeight: '700',
     letterSpacing: 1,
     color: colors.success,
@@ -347,11 +335,18 @@ const styles = StyleSheet.create({
   },
   upcomingRoute: { ...typography.body, fontWeight: '700' },
   upcomingMeta: { ...typography.caption, marginTop: 2 },
-  upcomingChevron: { width: 40, height: 40, borderRadius: 20, backgroundColor: PASSENGER_BG_LIGHT, alignItems: 'center', justifyContent: 'center' },
+  upcomingChevron: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.button,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   upcomingEmpty: {
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderRadius: 28,
+    borderRadius: radii.lg,
     paddingVertical: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',

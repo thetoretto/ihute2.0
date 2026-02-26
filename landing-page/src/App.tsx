@@ -8,8 +8,9 @@ import Footer                from './components/Footer';
 import AvailableTripsPage, { type TripSearchCriteria } from './components/AvailableTripsPage';
 import TripDetailPage        from './components/TripDetailPage';
 import BookingConfirmPage    from './components/BookingConfirmPage';
+import InstantQueuePage      from './components/InstantQueuePage';
 
-type Page = 'landing' | 'trips' | 'trip-detail' | 'booking-confirm';
+type Page = 'landing' | 'trips' | 'trip-detail' | 'booking-confirm' | 'instant-queue';
 
 const DEFAULT_CRITERIA: TripSearchCriteria = { fromId: '', toId: '', date: '', travelers: 1 };
 
@@ -75,12 +76,19 @@ export default function App() {
     window.scrollTo(0, 0);
   }
 
+  function handleViewInstantQueue() {
+    setPage('instant-queue');
+    window.scrollTo(0, 0);
+  }
+
   return (
     <>
       <Navbar
         onViewAllTrips={handleViewAllTrips}
+        onViewInstantQueue={handleViewInstantQueue}
         onBackHome={handleBackHome}
         isTripsPage={page === 'trips' || page === 'trip-detail' || page === 'booking-confirm'}
+        isInstantQueuePage={page === 'instant-queue'}
       />
       <main className="lp-main" role="main">
         {page === 'landing' && (
@@ -116,6 +124,10 @@ export default function App() {
             onGoHome={handleBackHome}
             onSearchAgain={() => { setPage('trips'); window.scrollTo(0, 0); }}
           />
+        )}
+
+        {page === 'instant-queue' && (
+          <InstantQueuePage onBackHome={handleBackHome} />
         )}
       </main>
       <Footer />

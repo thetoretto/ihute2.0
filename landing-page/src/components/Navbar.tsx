@@ -1,14 +1,18 @@
 interface NavbarProps {
   onViewAllTrips?: () => void;
+  onViewInstantQueue?: () => void;
   onBackHome?: () => void;
   isTripsPage?: boolean;
+  isInstantQueuePage?: boolean;
 }
 
-export default function Navbar({ onViewAllTrips, onBackHome, isTripsPage }: NavbarProps) {
+export default function Navbar({ onViewAllTrips, onViewInstantQueue, onBackHome, isTripsPage, isInstantQueuePage }: NavbarProps) {
   const goHome = (e: React.MouseEvent) => {
     e.preventDefault();
     onBackHome?.();
   };
+
+  const showBack = isTripsPage || isInstantQueuePage;
 
   return (
     <nav className="rs-nav">
@@ -23,7 +27,7 @@ export default function Navbar({ onViewAllTrips, onBackHome, isTripsPage }: Navb
           <span>ihute</span>
         </a>
 
-        {isTripsPage ? (
+        {showBack ? (
           <a
             href="#"
             className="rs-nav-back"
@@ -46,6 +50,15 @@ export default function Navbar({ onViewAllTrips, onBackHome, isTripsPage }: Navb
               >
                 Search trips
               </button>
+              {onViewInstantQueue && (
+                <button
+                  type="button"
+                  className="rs-nav-link-cta"
+                  onClick={onViewInstantQueue}
+                >
+                  Drivers available now
+                </button>
+              )}
             </div>
             <button
               type="button"

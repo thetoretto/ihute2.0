@@ -96,7 +96,7 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
                 {trip.driver.name}
               </Text>
               {trip.driver.rating != null && (
-                <View style={[styles.searchResultsRatingWrap, { backgroundColor: c.primaryTint || 'rgba(254,228,107,0.2)' }]}>
+                <View style={[styles.searchResultsRatingWrap, { backgroundColor: c.primaryTint }]}>
                   <Ionicons name="star" size={10} color={c.primary} />
                   <Text style={[styles.searchResultsRating, { color: c.text }]}>{trip.driver.rating}</Text>
                 </View>

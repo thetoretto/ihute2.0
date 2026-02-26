@@ -22,14 +22,13 @@ import {
 } from '../../components';
 import { searchTrips, getHotpoints } from '../../services/api';
 import { spacing, typography, radii, colors } from '../../utils/theme';
-import { listBottomPaddingTab } from '../../utils/layout';
+import { listBottomPaddingTab, screenContentPadding } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import { selectorStyles } from '../../utils/selectorStyles';
 import type { Trip, Hotpoint } from '../../types';
 
 const DEFAULT_FILTERS = {
   maxPrice: 100000,
-  onlyInstant: false,
   minSeats: 1,
 };
 
@@ -80,13 +79,12 @@ export default function SearchResultsScreen() {
       const filtered = t.filter(
         (item) =>
           item.pricePerSeat <= filters.maxPrice &&
-          item.seatsAvailable >= filters.minSeats &&
-          (!filters.onlyInstant || item.type === 'insta')
+          item.seatsAvailable >= filters.minSeats
       );
       setTrips(filtered);
       if (showLoading) setLoading(false);
     },
-    [filters.maxPrice, filters.minSeats, filters.onlyInstant, fromId, toId]
+    [filters.maxPrice, filters.minSeats, fromId, toId]
   );
 
   useEffect(() => {
@@ -196,6 +194,11 @@ export default function SearchResultsScreen() {
         data={filteredAndSortedTrips}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          filteredAndSortedTrips.length > 0 ? (
+            <Text style={[styles.listHeaderLabel, { color: c.textMuted }]}>Select a trip</Text>
+          ) : null
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -265,7 +268,7 @@ export default function SearchResultsScreen() {
       {/* Sort bottom sheet */}
       <Modal visible={sortSheetVisible} animationType="slide" transparent>
         <TouchableWithoutFeedback onPress={() => setSortSheetVisible(false)}>
-          <View style={styles.sortOverlay} />
+          <View style={[styles.sortOverlay, { backgroundColor: c.overlayModal }]} />
         </TouchableWithoutFeedback>
         <View style={[styles.sortSheet, { backgroundColor: c.card }]}>
           <View style={[styles.sortSheetHandle, { backgroundColor: c.border }]} />
@@ -276,7 +279,7 @@ export default function SearchResultsScreen() {
               style={[
                 styles.sortOptionBtn,
                 { borderColor: sortBy === opt.value ? c.primary : c.borderLight },
-                sortBy === opt.value && { backgroundColor: c.primaryTint || 'rgba(254,228,107,0.15)' },
+                sortBy === opt.value && { backgroundColor: c.primaryTint },
               ]}
               onPress={() => {
                 setSortBy(opt.value);
@@ -297,7 +300,7 @@ export default function SearchResultsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.passengerBgLight },
   stickyHeader: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: screenContentPadding,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
@@ -334,9 +337,16 @@ const styles = StyleSheet.create({
   sortBtnText: { ...typography.caption, fontWeight: '800' },
   ridesCount: { ...typography.caption, fontWeight: '800', textTransform: 'uppercase', fontSize: 10 },
   listContent: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: screenContentPadding,
     paddingTop: spacing.md,
     paddingBottom: listBottomPaddingTab,
+  },
+  listHeaderLabel: {
+    ...typography.caption,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    fontSize: 10,
+    marginBottom: spacing.sm,
   },
   emptyWrap: {
     flex: 1,
@@ -348,7 +358,6 @@ const styles = StyleSheet.create({
   emptyText: { ...typography.body, fontWeight: '700' },
   sortOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   sortSheet: {
     borderTopLeftRadius: 32,

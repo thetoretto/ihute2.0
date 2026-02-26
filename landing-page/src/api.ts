@@ -2,7 +2,7 @@
  * Fetch trips from the same API server the mobile app uses.
  * Set VITE_API_BASE_URL in .env (e.g. http://localhost:3000) to enable; otherwise no requests are sent.
  */
-import type { Trip, Booking } from '@shared/types';
+import type { Trip, Booking, DriverInstantQueueEntry } from '@shared/types';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 
@@ -27,6 +27,18 @@ export async function fetchTripsFromApi(params: SearchTripsParams = {}): Promise
   const text = await res.text();
   if (!text) return [];
   return JSON.parse(text) as Trip[];
+}
+
+export async function fetchInstantQueue(params: { toId?: string; fromId?: string } = {}): Promise<DriverInstantQueueEntry[]> {
+  const q = new URLSearchParams();
+  if (params.toId) q.set('toId', params.toId);
+  if (params.fromId) q.set('fromId', params.fromId);
+  const url = `${API_BASE}/api/driver/instant-queue?${q.toString()}`;
+  const res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(res.statusText || 'Failed to fetch instant queue');
+  const text = await res.text();
+  if (!text) return [];
+  return JSON.parse(text) as DriverInstantQueueEntry[];
 }
 
 export interface CreateBookingParams {
