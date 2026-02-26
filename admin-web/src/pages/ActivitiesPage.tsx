@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { getTrips, getBookings } from '../services/adminData';
+import { getTripsAsync, getBookingsAsync } from '../services/adminApiData';
 import { useAdminScope } from '../context/AdminScopeContext';
 import DateTimePicker from '../components/DateTimePicker';
+import type { Trip, Booking } from '../types';
 
 type StatusFilter = 'all' | 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
 type TripCategoryFilter = 'all' | 'public' | 'private';
@@ -18,9 +19,18 @@ export default function ActivitiesPage() {
   const [tripCategoryFilter, setTripCategoryFilter] = useState<TripCategoryFilter>('all');
   const [dateFrom, setDateFrom] = useState<Date | null>(null);
   const [dateTo, setDateTo] = useState<Date | null>(null);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
 
-  const trips = useMemo(() => getTrips(scope), [scope]);
-  const bookings = useMemo(() => getBookings(scope), [scope]);
+  const refresh = useCallback(async () => {
+    const [t, b] = await Promise.all([getTripsAsync(scope), getBookingsAsync(scope)]);
+    setTrips(t);
+    setBookings(b);
+  }, [scope]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const routeOptions = useMemo(() => {
     const set = new Set<string>();

@@ -11,6 +11,7 @@ import { Button, Screen, RatingDisplay, formatRatingValue } from '../../componen
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeContext, useThemeColors } from '../../context/ThemeContext';
 import { spacing, typography, radii } from '../../utils/theme';
+import { openWhatsAppDispute } from '../../utils/whatsapp';
 import { strings } from '../../constants/strings';
 
 function getRoleAccent(role: string, isScanner: boolean, c: ReturnType<typeof useThemeColors>) {
@@ -215,6 +216,14 @@ export default function ProfileScreen() {
               <Text style={[styles.hotlineText, { color: accent }]}>{strings.profile.hotline}</Text>
               <Ionicons name="chevron-forward" size={20} color={accent} />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.hotlineRow, styles.hotlineRowSecond, { backgroundColor: themeColors.card }]}
+              onPress={() => openWhatsAppDispute()}
+            >
+              <Ionicons name="logo-whatsapp" size={24} color={accent} />
+              <Text style={[styles.hotlineText, { color: accent }]}>{strings.profile.disputeViaWhatsApp}</Text>
+              <Ionicons name="chevron-forward" size={20} color={accent} />
+            </TouchableOpacity>
           </View>
           <View style={[styles.divider, { backgroundColor: themeColors.border }]} />
         </>
@@ -280,6 +289,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     gap: spacing.md,
   },
+  hotlineRowSecond: { marginTop: spacing.sm },
   hotlineText: { flex: 1, ...typography.body },
   logoutWrap: { marginTop: spacing.md, paddingVertical: spacing.md, borderRadius: radii.md },
 });

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   CreditCard,
@@ -15,7 +15,13 @@ import {
   getEarningsByPeriod,
   getEarningsByRoute,
 } from '../services/adminMetrics';
-import { getBookings, getDisputes } from '../services/adminData';
+import { getDisputes as getDisputesApi, isApiConfigured } from '../services/api';
+import { getTrips, getBookings, getDisputes as getDisputesLocal } from '../services/adminData';
+import {
+  getTripsAsync,
+  getBookingsAsync,
+  getUsersAsync,
+} from '../services/adminApiData';
 import { useAdminScope } from '../context/AdminScopeContext';
 import { adminSnapshot } from '../data/snapshot';
 import BarChartTrend from '../components/BarChartTrend';
@@ -23,25 +29,64 @@ import DonutChartBreakdown from '../components/DonutChartBreakdown';
 import type { TrendDataPoint } from '../components/BarChartTrend';
 import type { BreakdownItem } from '../components/DonutChartBreakdown';
 import { formatRwf } from '@shared';
-import type { Dispute } from '../types';
+import type { Dispute, Trip, Booking, User } from '../types';
 
-function getReporterDisplay(reporterId: string): string {
-  const user = adminSnapshot.users.find((u) => u.id === reporterId);
+function getReporterDisplay(reporterId: string, users: User[]): string {
+  const user = users.find((u) => u.id === reporterId);
   return user ? user.email || user.name : reporterId;
 }
 
 export default function DashboardPage() {
   const scope = useAdminScope();
   const [trendRange, setTrendRange] = useState<'day' | 'week'>('week');
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [loading, setLoading] = useState(isApiConfigured());
 
-  const metrics = getDashboardMetrics(scope);
-  const byPeriod = useMemo(
-    () => getEarningsByPeriod(trendRange, scope),
-    [scope, trendRange]
+  const refresh = useCallback(async () => {
+    if (isApiConfigured()) {
+      setLoading(true);
+      try {
+        const [t, b, u, d] = await Promise.all([
+          getTripsAsync(scope),
+          getBookingsAsync(scope),
+          getUsersAsync(scope),
+          getDisputesApi(scope),
+        ]);
+        setTrips(t);
+        setBookings(b);
+        setUsers(u);
+        setDisputes(d);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setTrips(getTrips(scope));
+      setBookings(getBookings(scope));
+      setUsers(adminSnapshot.users);
+      setDisputes(getDisputesLocal(scope));
+    }
+  }, [scope]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const metrics = useMemo(
+    () => getDashboardMetrics(scope, trips.length || bookings.length || users.length ? { trips, bookings, users } : undefined),
+    [scope, trips, bookings, users]
   );
-  const byRoute = useMemo(() => getEarningsByRoute(scope), [scope]);
-  const bookings = useMemo(() => getBookings(scope), [scope]);
-  const disputes = useMemo(() => getDisputes(scope), [scope]);
+  const byPeriod = useMemo(
+    () => getEarningsByPeriod(trendRange, scope, bookings.length ? { bookings } : undefined),
+    [scope, trendRange, bookings]
+  );
+  const byRoute = useMemo(
+    () => getEarningsByRoute(scope, bookings.length ? { bookings } : undefined),
+    [scope, bookings]
+  );
+  const usersForDisplay = users.length > 0 ? users : adminSnapshot.users;
 
   const trendData: TrendDataPoint[] = useMemo(
     () => byPeriod.slice(-12),
@@ -327,7 +372,7 @@ export default function DashboardPage() {
                   >
                     <div>
                       <p className="text-[11px] text-muted">
-                        {getReporterDisplay(d.reporterId)}
+                        {getReporterDisplay(d.reporterId, usersForDisplay)}
                       </p>
                       <p className="font-bold text-sm">
                         {d.type}: {d.description.slice(0, 40)}

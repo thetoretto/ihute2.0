@@ -8,6 +8,7 @@ import type {
   PaymentStatus,
   TripType,
   DriverTripActivity,
+  ActivityLogEntry,
   BookingTicket,
   DriverRating,
   TicketQrValidationResult,
@@ -308,6 +309,133 @@ export async function getDriverActivitySummary(userId: string): Promise<{
     remainingSeats,
     income,
   });
+}
+
+/** Parse a trip "created" timestamp from trip id (e.g. t1234567890) or use departure. */
+function tripCreatedTimestamp(trip: Trip): string {
+  const match = trip.id.match(/^t(\d+)/);
+  if (match) {
+    const ms = parseInt(match[1], 10);
+    if (!Number.isNaN(ms)) return new Date(ms).toISOString();
+  }
+  const date = trip.departureDate || new Date().toISOString().slice(0, 10);
+  const time = (trip.departureTime || '00:00').slice(0, 5);
+  return new Date(`${date}T${time}:00`).toISOString();
+}
+
+export async function getDriverActivityLog(userId: string): Promise<ActivityLogEntry[]> {
+  const user = mockUsers.find((u) => u.id === userId);
+  const driverId =
+    user?.agencySubRole === 'agency_scanner' && user.agencyId ? user.agencyId : userId;
+  const trips = getTripsStore().filter((t) => t.driver.id === driverId);
+  const bookings = getBookingsStore();
+  const entries: ActivityLogEntry[] = [];
+  const route = (t: Trip) => `${t.departureHotpoint?.name ?? '—'} → ${t.destinationHotpoint?.name ?? '—'}`;
+
+  for (const trip of trips) {
+    const tripRoute = route(trip);
+    const createdTs = tripCreatedTimestamp(trip);
+    entries.push({
+      id: `log-trip-${trip.id}`,
+      kind: 'trip_created',
+      timestamp: createdTs,
+      tripId: trip.id,
+      trip,
+      title: 'Trip created',
+      subtitle: tripRoute,
+      metadata: { route: tripRoute },
+    });
+    if (trip.status === 'completed') {
+      entries.push({
+        id: `log-completed-${trip.id}`,
+        kind: 'trip_completed',
+        timestamp: createdTs,
+        tripId: trip.id,
+        trip,
+        title: 'Trip completed',
+        subtitle: tripRoute,
+        metadata: { route: tripRoute },
+      });
+    }
+    if (trip.status === 'cancelled') {
+      entries.push({
+        id: `log-cancelled-${trip.id}`,
+        kind: 'trip_cancelled',
+        timestamp: createdTs,
+        tripId: trip.id,
+        trip,
+        title: 'Trip cancelled',
+        subtitle: tripRoute,
+        metadata: { route: tripRoute },
+      });
+    }
+    if (trip.status === 'full') {
+      entries.push({
+        id: `log-full-${trip.id}`,
+        kind: 'car_full',
+        timestamp: createdTs,
+        tripId: trip.id,
+        trip,
+        title: 'Car full',
+        subtitle: tripRoute,
+        metadata: { route: tripRoute },
+      });
+    }
+  }
+
+  for (const booking of bookings) {
+    if (booking.trip.driver.id !== driverId) continue;
+    const tripRoute = route(booking.trip);
+    entries.push({
+      id: `log-booking-${booking.id}`,
+      kind: 'booking_created',
+      timestamp: booking.createdAt,
+      tripId: booking.trip.id,
+      bookingId: booking.id,
+      trip: booking.trip,
+      title: `${booking.seats} seat${booking.seats !== 1 ? 's' : ''} booked`,
+      subtitle: tripRoute,
+      metadata: { passengerName: booking.passenger.name, seats: booking.seats, route: tripRoute },
+    });
+    if (booking.status === 'cancelled') {
+      entries.push({
+        id: `log-booking-cancelled-${booking.id}`,
+        kind: 'booking_cancelled',
+        timestamp: booking.createdAt,
+        tripId: booking.trip.id,
+        bookingId: booking.id,
+        trip: booking.trip,
+        title: 'Booking cancelled',
+        subtitle: `${booking.passenger.name} • ${tripRoute}`,
+        metadata: { passengerName: booking.passenger.name, seats: booking.seats, route: tripRoute },
+      });
+    }
+  }
+
+  const scannerPast = await getScannerTicketReport('past');
+  const scannerToday = await getScannerTicketReport('today');
+  const scannerUpcoming = await getScannerTicketReport('upcoming');
+  const reportItems = [...scannerPast, ...scannerToday, ...scannerUpcoming].filter(
+    (item) => item.status === 'scanned' && item.scannedAt
+  );
+  for (const item of reportItems) {
+    const booking = bookings.find((b) => b.id === item.bookingId);
+    if (!booking || booking.trip.driver.id !== driverId) continue;
+    entries.push({
+      id: `log-scan-${item.id}`,
+      kind: 'ticket_scanned',
+      timestamp: item.scannedAt!,
+      bookingId: item.bookingId,
+      tripId: booking.trip.id,
+      trip: booking.trip,
+      title: 'Ticket scanned',
+      subtitle: `${item.passengerName} • ${item.route}`,
+      metadata: { passengerName: item.passengerName, route: item.route },
+    });
+  }
+
+  entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return delay(entries);
 }
 
 export async function publishTrip(tripData: Omit<Trip, 'id'>): Promise<Trip> {

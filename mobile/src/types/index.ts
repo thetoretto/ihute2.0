@@ -12,6 +12,8 @@ export type {
   BookingStatus,
   Booking,
   DriverTripActivity,
+  ActivityLogEntryKind,
+  ActivityLogEntry,
   DriverInstantQueueEntry,
   BookingTicket,
   TicketQrValidationResult,

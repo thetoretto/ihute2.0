@@ -1,5 +1,7 @@
-import React, { useMemo } from 'react';
-import { adminSnapshot } from '../data/snapshot';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { getTripsAsync, getBookingsAsync } from '../services/adminApiData';
+import { useAdminScope } from '../context/AdminScopeContext';
+import type { Trip, Booking } from '../types';
 
 interface RouteRow {
   originId: string;
@@ -12,13 +14,27 @@ interface RouteRow {
 }
 
 export default function RoutesPage() {
+  const scope = useAdminScope();
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+
+  const refresh = useCallback(async () => {
+    const [t, b] = await Promise.all([getTripsAsync(scope), getBookingsAsync(scope)]);
+    setTrips(t);
+    setBookings(b);
+  }, [scope]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
   const routes = useMemo(() => {
     const map = new Map<string, { originName: string; destName: string; tripCount: number; bookingCount: number; lastActivity: string }>();
-    for (const trip of adminSnapshot.trips) {
+    for (const trip of trips) {
       const key = `${trip.departureHotpoint.id}:${trip.destinationHotpoint.id}`;
-      const bookingCount = adminSnapshot.bookings.filter((b) => b.trip.id === trip.id).length;
-      const lastDate = adminSnapshot.bookings
-        .filter((b) => b.trip.id === trip.id)
+      const tripBookings = bookings.filter((b) => (b.trip?.id || (b.trip as { id?: string })?.id) === trip.id);
+      const bookingCount = tripBookings.length;
+      const lastDate = tripBookings
         .map((b) => b.createdAt)
         .sort()
         .pop() ?? trip.departureTime;
@@ -52,7 +68,7 @@ export default function RoutesPage() {
     });
     rows.sort((a, b) => b.tripCount - a.tripCount);
     return rows;
-  }, []);
+  }, [trips, bookings]);
 
   const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
   return (

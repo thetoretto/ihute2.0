@@ -1,20 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { getTrips, getVehicles, getBookings } from '../services/adminData';
+import { getTripsAsync, getVehiclesAsync, getBookingsAsync, getUsersAsync } from '../services/adminApiData';
 import { useAdminScope } from '../context/AdminScopeContext';
 import { adminSnapshot } from '../data/snapshot';
+import type { Trip, Vehicle, Booking, User } from '../types';
 
 export default function AgencyManagementPage() {
   const scope = useAdminScope();
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
-  const trips = React.useMemo(() => getTrips(scope), [scope]);
-  const vehicles = React.useMemo(() => getVehicles(scope), [scope]);
-  const bookings = React.useMemo(() => getBookings(scope), [scope]);
+  const refresh = useCallback(async () => {
+    const [t, v, b, u] = await Promise.all([
+      getTripsAsync(scope),
+      getVehiclesAsync(scope),
+      getBookingsAsync(scope),
+      getUsersAsync(scope),
+    ]);
+    setTrips(t);
+    setVehicles(v);
+    setBookings(b);
+    setUsers(u);
+  }, [scope]);
 
-  // Super admin: list all agencies (users with role agency)
-  const allAgencies = React.useMemo(
-    () => adminSnapshot.users.filter((u) => u.roles.includes('agency')),
-    []
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const allAgencies = useMemo(
+    () => (users.length > 0 ? users : adminSnapshot.users).filter((u) => (u.roles || []).includes('agency')),
+    [users]
   );
 
   if (!scope?.agencyId) {

@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components';
 import { useAuth } from '../../context/AuthContext';
+import { useThemeColors } from '../../context/ThemeContext';
 import { getDriverActivitySummary } from '../../services/api';
-import { colors, spacing, radii, typography } from '../../utils/theme';
+import { spacing, radii, typography } from '../../utils/theme';
 
 interface Summary {
   doneCount: number;
@@ -16,6 +17,7 @@ interface Summary {
 
 export default function DriverActivityDetailsScreen() {
   const { user } = useAuth();
+  const c = useThemeColors();
   const [summary, setSummary] = React.useState<Summary | null>(null);
   const [loading, setLoading] = React.useState(false);
 
@@ -38,18 +40,18 @@ export default function DriverActivityDetailsScreen() {
 
   if (!summary && loading) {
     return (
-      <Screen style={styles.container}>
-        <Text style={styles.loading}>Loading activity details...</Text>
+      <Screen style={[styles.container, { backgroundColor: c.background }]}>
+        <Text style={[styles.loading, { color: c.textSecondary }]}>Loading activity details...</Text>
       </Screen>
     );
   }
 
   if (!summary) {
     return (
-      <Screen style={styles.container}>
-        <Text style={styles.loading}>No activity summary yet.</Text>
-        <TouchableOpacity style={styles.refreshBtn} onPress={() => void load()}>
-          <Text style={styles.refreshBtnText}>Refresh</Text>
+      <Screen style={[styles.container, { backgroundColor: c.background }]}>
+        <Text style={[styles.loading, { color: c.textSecondary }]}>No activity summary yet.</Text>
+        <TouchableOpacity style={[styles.refreshBtn, { borderColor: c.borderLight, backgroundColor: c.surface }]} onPress={() => void load()}>
+          <Text style={[styles.refreshBtnText, { color: c.primary }]}>Refresh</Text>
         </TouchableOpacity>
       </Screen>
     );
@@ -64,22 +66,22 @@ export default function DriverActivityDetailsScreen() {
   ];
 
   return (
-    <Screen scroll style={styles.container} contentContainerStyle={styles.content}>
+    <Screen scroll style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.title}>Driver activity details</Text>
-          <Text style={styles.subtitle}>Live mock metrics from your current trips</Text>
+          <Text style={[styles.title, { color: c.text }]}>Driver activity details</Text>
+          <Text style={[styles.subtitle, { color: c.textSecondary }]}>Live mock metrics from your current trips</Text>
         </View>
-        <TouchableOpacity style={styles.refreshBtn} onPress={() => void load()}>
-          <Text style={styles.refreshBtnText}>{loading ? 'Refreshing...' : 'Refresh'}</Text>
+        <TouchableOpacity style={[styles.refreshBtn, { borderColor: c.borderLight, backgroundColor: c.surface }]} onPress={() => void load()}>
+          <Text style={[styles.refreshBtnText, { color: c.primary }]}>{loading ? 'Refreshing...' : 'Refresh'}</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.grid}>
         {cards.map((card) => (
-          <View key={card.label} style={styles.card}>
-            <Ionicons name={card.icon as any} size={18} color={colors.primary} />
-            <Text style={styles.cardValue}>{card.value}</Text>
-            <Text style={styles.cardLabel}>{card.label}</Text>
+          <View key={card.label} style={[styles.card, { backgroundColor: c.card, borderColor: c.borderLight }]}>
+            <Ionicons name={card.icon as any} size={18} color={c.primary} />
+            <Text style={[styles.cardValue, { color: c.text }]}>{card.value}</Text>
+            <Text style={[styles.cardLabel, { color: c.textSecondary }]}>{card.label}</Text>
           </View>
         ))}
       </View>
@@ -91,18 +93,16 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.sm },
-  title: { ...typography.h2, color: colors.text, marginBottom: spacing.xs },
-  subtitle: { ...typography.bodySmall, color: colors.textSecondary, marginBottom: spacing.lg },
-  loading: { ...typography.body, color: colors.textSecondary },
+  title: { ...typography.h2, marginBottom: spacing.xs },
+  subtitle: { ...typography.bodySmall, marginBottom: spacing.lg },
+  loading: { ...typography.body },
   refreshBtn: {
     borderWidth: 1,
-    borderColor: colors.borderLight,
     borderRadius: radii.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    backgroundColor: colors.surface,
   },
-  refreshBtnText: { ...typography.caption, color: colors.primaryTextOnLight, fontWeight: '600' },
+  refreshBtnText: { ...typography.caption, fontWeight: '600' },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -111,13 +111,11 @@ const styles = StyleSheet.create({
   card: {
     width: '47%',
     minHeight: 120,
-    backgroundColor: colors.card,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.borderLight,
     padding: spacing.md,
     justifyContent: 'space-between',
   },
-  cardValue: { ...typography.h3, color: colors.text, marginTop: spacing.sm },
-  cardLabel: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
+  cardValue: { ...typography.h3, marginTop: spacing.sm },
+  cardLabel: { ...typography.caption, marginTop: spacing.xs },
 });

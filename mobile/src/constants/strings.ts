@@ -94,6 +94,13 @@ export const strings = {
     hotlineHours: 'Available daily: 06:00 - 22:00',
     hotlineCall: 'Call',
     hotlineOpening: 'Opening dialer...',
+    dispute: 'Dispute',
+    disputeViaWhatsApp: 'Dispute via WhatsApp',
+    reportDisputeViaWhatsApp: 'Report / Dispute via WhatsApp',
+    disputeWhatsAppUnavailable: (number: string) =>
+      `WhatsApp is not available. Please contact ${number} on WhatsApp manually.`,
+    disputeOpenFailed: (number: string) =>
+      `Could not open WhatsApp. Please contact ${number} on WhatsApp manually to report a dispute.`,
     linkedAccountsSubtitle: 'Manage how payments are handled in the app.',
     withdrawalSubtitle: 'Link your Mobile Money or bank account to receive payouts from your trips.',
     addPaymentMethod: 'Add payment method',

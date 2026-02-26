@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getDisputes as getDisputesLocal, getBookings, resolveDispute as resolveDisputeLocal, setDisputeStatus as setDisputeStatusLocal } from '../services/adminData';
 import { getDisputes as getDisputesApi, patchDispute as patchDisputeApi, isApiConfigured } from '../services/api';
+import { getBookingsAsync, getUsersAsync } from '../services/adminApiData';
 import { adminSnapshot } from '../data/snapshot';
 import { useAdminScope } from '../context/AdminScopeContext';
-import type { Dispute } from '../types';
+import type { Dispute, Booking, User } from '../types';
 
 export default function DisputesPage() {
   const scope = useAdminScope();
   const useApi = isApiConfigured();
   const [disputes, setDisputes] = useState<Dispute[]>(() => (useApi ? [] : getDisputesLocal(scope)));
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(useApi);
   const [filter, setFilter] = useState<Dispute['status'] | 'all'>('all');
   const [detail, setDetail] = useState<Dispute | null>(null);
@@ -19,8 +22,14 @@ export default function DisputesPage() {
     if (useApi) {
       setLoading(true);
       try {
-        const list = await getDisputesApi(scope);
+        const [list, b, u] = await Promise.all([
+          getDisputesApi(scope),
+          getBookingsAsync(scope),
+          getUsersAsync(scope),
+        ]);
         setDisputes(list);
+        setBookings(b);
+        setUsers(u);
       } finally {
         setLoading(false);
       }
@@ -35,15 +44,16 @@ export default function DisputesPage() {
 
   const filtered = filter === 'all' ? disputes : disputes.filter((d) => d.status === filter);
 
-  const bookings = getBookings(scope);
+  const bookingsForRoute = useApi ? bookings : getBookings(scope);
   const getReporterName = (id: string) =>
-    useApi ? id : (adminSnapshot.users.find((u) => u.id === id)?.name ?? id);
-  const getBooking = (bookingId: string) => bookings.find((b) => b.id === bookingId);
+    useApi
+      ? (users.find((u) => u.id === id)?.name ?? id)
+      : (adminSnapshot.users.find((u) => u.id === id)?.name ?? id);
+  const getBooking = (bookingId: string) => bookingsForRoute.find((b) => b.id === bookingId);
   const getRoute = (d: Dispute) => {
-    if (useApi) return d.bookingId;
     const b = getBooking(d.bookingId);
-    if (!b) return '—';
-    return `${b.trip.departureHotpoint.name} → ${b.trip.destinationHotpoint.name}`;
+    if (!b) return d.bookingId;
+    return `${b.trip?.departureHotpoint?.name ?? '—'} → ${b.trip?.destinationHotpoint?.name ?? '—'}`;
   };
 
   const handleResolve = async () => {

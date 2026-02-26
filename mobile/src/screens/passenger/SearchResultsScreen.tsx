@@ -15,6 +15,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
+  Card,
   RideCard,
   Screen,
   CarWheelLoader,
@@ -143,44 +144,46 @@ export default function SearchResultsScreen() {
 
   return (
     <Screen style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Sticky header: back + From? / To? + Sort results */}
-      <View style={[styles.stickyHeader, { backgroundColor: c.card, borderBottomColor: c.borderLight }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
-          <Ionicons name="chevron-back" size={24} color={c.text} />
-        </TouchableOpacity>
-        <View style={styles.inputRow}>
-          <TouchableOpacity
-            style={[styles.inputBox, { backgroundColor: c.background || c.ghostBg }]}
-            onPress={() => setPickerMode('from')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="location" size={16} color={c.primary} style={styles.inputIcon} />
-            <Text style={[styles.inputText, !fromName && styles.inputPlaceholder, { color: fromName ? c.text : c.textMuted }]} numberOfLines={1}>
-              {fromName || 'From?'}
-            </Text>
+      {/* Sticky header: search card with back + From? / To? + Sort results */}
+      <View style={styles.stickyHeaderWrap}>
+        <Card variant="elevated" padding="md" style={styles.searchCard}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
+            <Ionicons name="chevron-back" size={24} color={c.text} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.inputBox, { backgroundColor: c.background || c.ghostBg }]}
-            onPress={() => setPickerMode('to')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="location" size={16} color={c.primary} style={styles.inputIcon} />
-            <Text style={[styles.inputText, !toName && styles.inputPlaceholder, { color: toName ? c.text : c.textMuted }]} numberOfLines={1}>
-              {toName || 'To?'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.sortRow}>
-          <TouchableOpacity
-            onPress={() => setSortSheetVisible(true)}
-            style={styles.sortBtn}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="options-outline" size={14} color={c.primary} />
-            <Text style={[styles.sortBtnText, { color: c.primary }]}>Sort results</Text>
-          </TouchableOpacity>
-          <Text style={[styles.ridesCount, { color: c.textMuted }]}>{filteredAndSortedTrips.length} rides found</Text>
-        </View>
+          <View style={styles.inputRow}>
+            <TouchableOpacity
+              style={[styles.inputBox, { backgroundColor: c.background || c.ghostBg, borderColor: c.borderLight }]}
+              onPress={() => setPickerMode('from')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="location" size={16} color={c.primary} style={styles.inputIcon} />
+              <Text style={[styles.inputText, !fromName && styles.inputPlaceholder, { color: fromName ? c.text : c.textMuted }]} numberOfLines={1}>
+                {fromName || 'From?'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.inputBox, { backgroundColor: c.background || c.ghostBg, borderColor: c.borderLight }]}
+              onPress={() => setPickerMode('to')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="location" size={16} color={c.primary} style={styles.inputIcon} />
+              <Text style={[styles.inputText, !toName && styles.inputPlaceholder, { color: toName ? c.text : c.textMuted }]} numberOfLines={1}>
+                {toName || 'To?'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.sortRow}>
+            <TouchableOpacity
+              onPress={() => setSortSheetVisible(true)}
+              style={styles.sortBtn}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="options-outline" size={14} color={c.primary} />
+              <Text style={[styles.sortBtnText, { color: c.primary }]}>Sort results</Text>
+            </TouchableOpacity>
+            <Text style={[styles.ridesCount, { color: c.textMuted }]}>{filteredAndSortedTrips.length} rides found</Text>
+          </View>
+        </Card>
       </View>
 
       <CarWheelLoader visible={loading} />
@@ -299,12 +302,11 @@ export default function SearchResultsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.passengerBgLight },
-  stickyHeader: {
+  stickyHeaderWrap: {
     paddingHorizontal: screenContentPadding,
-    paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
   },
+  searchCard: { marginBottom: 0 },
   backBtn: { padding: spacing.xs, marginBottom: spacing.xs },
   inputRow: {
     flexDirection: 'column',
@@ -315,8 +317,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radii.md,
+    borderWidth: 1,
   },
   inputIcon: { marginRight: spacing.sm },
   inputText: { ...typography.bodySmall, fontWeight: '700', flex: 1 },
@@ -360,8 +363,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sortSheet: {
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: radii.xlMobile,
+    borderTopRightRadius: radii.xlMobile,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.xl + 24,
@@ -369,7 +372,7 @@ const styles = StyleSheet.create({
   sortSheetHandle: {
     width: 40,
     height: 4,
-    borderRadius: 2,
+    borderRadius: radii.sm / 2,
     alignSelf: 'center',
     marginBottom: spacing.lg,
   },
@@ -384,7 +387,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    borderRadius: 16,
+    borderRadius: radii.md,
     borderWidth: 2,
     marginBottom: spacing.sm,
   },

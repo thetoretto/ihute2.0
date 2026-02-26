@@ -118,6 +118,11 @@ export async function getDriverActivitySummary(userId: string) {
   return mockApi.getDriverActivitySummary(userId);
 }
 
+export async function getDriverActivityLog(userId: string) {
+  if (USE_REAL_API) return request<Awaited<ReturnType<typeof mockApi.getDriverActivityLog>>>('GET', `/api/driver/activity-log?userId=${encodeURIComponent(userId)}`);
+  return mockApi.getDriverActivityLog(userId);
+}
+
 export type DriverDriveModeStatus =
   | { inDriveMode: false }
   | ({ inDriveMode: true } & DriverInstantQueueEntry);

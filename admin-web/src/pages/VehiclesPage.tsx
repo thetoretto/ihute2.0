@@ -1,20 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getVehicles, setVehicleApproval } from '../services/adminData';
+import { getVehiclesAsync, getUsersAsync } from '../services/adminApiData';
 import { adminSnapshot } from '../data/snapshot';
 import { useAdminScope } from '../context/AdminScopeContext';
-import type { Vehicle } from '../types';
+import type { Vehicle, User } from '../types';
 
 export default function VehiclesPage() {
   const scope = useAdminScope();
-  const [vehicles, setVehicles] = useState<Vehicle[]>(() => getVehicles(scope));
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
-  useEffect(() => {
-    setVehicles([...getVehicles(scope)]);
+  const refresh = useCallback(async () => {
+    const [v, u] = await Promise.all([getVehiclesAsync(scope), getUsersAsync(scope)]);
+    setVehicles(v);
+    setUsers(u);
   }, [scope]);
 
-  const refresh = () => setVehicles([...getVehicles(scope)]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
-  const getDriverName = (driverId: string) => adminSnapshot.users.find((u) => u.id === driverId)?.name ?? driverId;
+  const userMap = new Map(users.map((u) => [u.id, u]));
+  const getDriverName = (driverId: string) => userMap.get(driverId)?.name ?? adminSnapshot.users.find((u) => u.id === driverId)?.name ?? driverId;
 
   const handleApproval = (vehicleId: string, approvalStatus: Vehicle['approvalStatus']) => {
     setVehicleApproval(vehicleId, approvalStatus);

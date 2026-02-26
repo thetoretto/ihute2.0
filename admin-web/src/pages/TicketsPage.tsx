@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
-import { getBookingsWithTickets } from '../services/adminData';
+import { getBookingsWithTicketsAsync } from '../services/adminApiData';
 import { useAdminScope } from '../context/AdminScopeContext';
 import type { BookingWithTicket } from '../services/adminData';
 
@@ -44,11 +44,16 @@ function downloadCsv(bookings: BookingWithTicket[]) {
 
 export default function TicketsPage() {
   const scope = useAdminScope();
-  const [bookings, setBookings] = useState<BookingWithTicket[]>(() => getBookingsWithTickets(scope));
+  const [bookings, setBookings] = useState<BookingWithTicket[]>([]);
+
+  const refresh = useCallback(async () => {
+    const list = await getBookingsWithTicketsAsync(scope);
+    setBookings(list);
+  }, [scope]);
 
   useEffect(() => {
-    setBookings([...getBookingsWithTickets(scope)]);
-  }, [scope]);
+    void refresh();
+  }, [refresh]);
 
   const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
   return (

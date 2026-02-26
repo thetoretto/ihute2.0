@@ -69,6 +69,15 @@ app.delete('/api/hotpoints/:id', (req, res) => {
 });
 
 // ---------- Users ----------
+// List all users (for admin); optional query: role, agencyId
+app.get('/api/users', (req, res) => {
+  const { role, agencyId } = req.query;
+  let list = [...store.usersStore];
+  if (role) list = list.filter((u) => (u.roles || []).includes(role));
+  if (agencyId) list = list.filter((u) => u.agencyId === agencyId || u.id === agencyId);
+  res.json(list);
+});
+
 app.get('/api/users/:id', (req, res) => {
   const user = store.findUser(req.params.id);
   if (!user) return res.status(404).json({ error: 'User not found' });

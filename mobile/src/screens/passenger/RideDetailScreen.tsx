@@ -10,6 +10,8 @@ import { useThemeColors } from '../../context/ThemeContext';
 import { colors, spacing, typography, radii, buttonHeights } from '../../utils/theme';
 import { screenContentPadding } from '../../utils/layout';
 import { formatRwf } from '../../../../shared/src';
+import { openWhatsAppDispute } from '../../utils/whatsapp';
+import { strings } from '../../constants/strings';
 import type { Trip } from '../../types';
 
 type Params = {
@@ -148,9 +150,25 @@ export default function RideDetailScreen() {
               )}
             </View>
           </View>
-          <TouchableOpacity style={[styles.messageBtn, { backgroundColor: c.primaryTint }]} activeOpacity={0.8}>
-            <Ionicons name="chatbubble-outline" size={20} color={c.primary} />
-          </TouchableOpacity>
+          <View style={styles.driverActions}>
+            <TouchableOpacity style={[styles.messageBtn, { backgroundColor: c.primaryTint }]} activeOpacity={0.8}>
+              <Ionicons name="chatbubble-outline" size={20} color={c.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.disputeBtn, { backgroundColor: c.primaryTint }]}
+              activeOpacity={0.8}
+              accessibilityLabel={strings.profile.disputeViaWhatsApp}
+              onPress={() =>
+                openWhatsAppDispute({
+                  otherUserId: trip.driver.id,
+                  otherUserName: trip.driver.name,
+                  tripId: trip.id,
+                })
+              }
+            >
+              <Ionicons name="logo-whatsapp" size={20} color={c.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Info block */}
@@ -271,7 +289,19 @@ const styles = StyleSheet.create({
   ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
   ratingText: { ...typography.caption, fontWeight: '700', fontSize: 12 },
   reviewsText: { ...typography.caption, fontSize: 12 },
+  driverActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   messageBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disputeBtn: {
     width: 48,
     height: 48,
     borderRadius: 16,

@@ -14,7 +14,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components';
 import { useAuth } from '../../context/AuthContext';
 import { getConversationMessages, sendConversationMessage } from '../../services/api';
+import { openWhatsAppDispute } from '../../utils/whatsapp';
 import { colors, spacing, typography } from '../../utils/theme';
+import { strings } from '../../constants/strings';
 
 const TAB_BAR_HEIGHT = 66;
 
@@ -90,6 +92,13 @@ export default function ChatScreen() {
       >
         <View style={styles.banner}>
           <Text style={styles.bannerText}>This chat is for ticket and claim questions only.</Text>
+          <TouchableOpacity
+            onPress={() => openWhatsAppDispute({ otherUserId: otherUser.id, otherUserName: otherUser.name })}
+            style={styles.disputeLink}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.disputeLinkText}>{strings.profile.reportDisputeViaWhatsApp}</Text>
+          </TouchableOpacity>
         </View>
         <FlatList
           ref={listRef}
@@ -145,6 +154,18 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  disputeLink: {
+    marginTop: spacing.xs,
+    alignSelf: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  disputeLinkText: {
+    ...typography.caption,
+    color: colors.primary,
+    textDecorationLine: 'underline',
+    fontWeight: '600',
   },
   list: { flex: 1 },
   messagesContent: { paddingBottom: spacing.md, paddingTop: spacing.sm },

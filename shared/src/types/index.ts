@@ -101,6 +101,30 @@ export interface DriverTripActivity {
   collectedAmount: number;
 }
 
+/** Kind of entry in the driver/agency activity log. */
+export type ActivityLogEntryKind =
+  | 'trip_created'
+  | 'booking_created'
+  | 'ticket_scanned'
+  | 'car_full'
+  | 'trip_cancelled'
+  | 'booking_cancelled'
+  | 'trip_completed';
+
+/** Single entry in the chronological activity log for driver/agency. */
+export interface ActivityLogEntry {
+  id: string;
+  kind: ActivityLogEntryKind;
+  timestamp: string;
+  tripId?: string;
+  bookingId?: string;
+  trip?: Trip;
+  title: string;
+  subtitle?: string;
+  /** e.g. passenger name, seat count, route snippet */
+  metadata?: { passengerName?: string; seats?: number; route?: string };
+}
+
 export interface BookingTicket {
   bookingId: string;
   ticketId: string;

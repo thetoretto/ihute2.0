@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useCallback, useLayoutEffect, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,16 @@ import {
   RefreshControl,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
 import { useRootNavigation } from '../../context/RootNavigationContext';
-import { getDriverTripActivities } from '../../services/api';
+import { getDriverTripActivities, getDriverActivityLog } from '../../services/api';
 import {
+  Card,
   EmptyState,
   Screen,
   Button,
@@ -26,16 +28,27 @@ import { useTabbedList } from '../../hooks/useTabbedList';
 import { colors, spacing, typography, radii } from '../../utils/theme';
 import { listBottomPaddingDefault } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
-import type { DriverTripActivity } from '../../types';
+import type { DriverTripActivity, ActivityLogEntry, ActivityLogEntryKind } from '../../types';
 
 const TABS = [
   { key: 'all' as const, label: 'All' },
   { key: 'upcoming' as const, label: 'Upcoming' },
   { key: 'completed' as const, label: 'Completed' },
+  { key: 'log' as const, label: 'Log' },
 ];
 
 function formatTimeAgo(departureTime: string): string {
   return departureTime || '—';
+}
+
+function formatLogTime(iso: string): string {
+  const d = new Date(iso);
+  const diff = Date.now() - d.getTime();
+  if (diff < 60000) return 'Just now';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+  if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
 }
 
 export default function DriverMyRidesScreen() {
@@ -57,12 +70,33 @@ export default function DriverMyRidesScreen() {
     tabs: TABS,
     initialTab: 'all',
     fetchData: fetchActivities,
-    filterByTab: (a, tab) =>
-      tab === 'all' || (tab === 'upcoming' && a.trip.status === 'active') || (tab === 'completed' && a.trip.status === 'completed'),
+    filterByTab: (a, t) =>
+      t === 'log' ? false : t === 'all' || (t === 'upcoming' && a.trip.status === 'active') || (t === 'completed' && a.trip.status === 'completed'),
     deps: [user?.id],
   });
 
   const { tab, setTab, list, error: loadError, refreshing, refresh } = tabbed;
+
+  const [logEntries, setLogEntries] = useState<ActivityLogEntry[]>([]);
+  const [logLoading, setLogLoading] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
+  const fetchLog = useCallback(async () => {
+    if (!user?.id) return;
+    setLogError(null);
+    setLogLoading(true);
+    try {
+      const data = await getDriverActivityLog(user.id);
+      setLogEntries(data);
+    } catch (e) {
+      setLogError(e instanceof Error ? e.message : 'Failed to load activity log');
+    } finally {
+      setLogLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (tab === 'log') void fetchLog();
+  }, [tab, fetchLog]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -134,6 +168,86 @@ export default function DriverMyRidesScreen() {
     navigation.navigate('DriverScanTicket');
   };
 
+  const getLogIcon = (kind: ActivityLogEntryKind) => {
+    const map: Record<ActivityLogEntryKind, { icon: keyof typeof Ionicons.glyphMap; bg: string; color: string }> = {
+      trip_created: { icon: 'car', bg: colors.primaryTint, color: colors.primary },
+      booking_created: { icon: 'person-add', bg: colors.primaryTint, color: colors.primary },
+      ticket_scanned: { icon: 'checkmark-circle', bg: colors.successTint, color: colors.success },
+      car_full: { icon: 'people', bg: colors.primaryTint, color: colors.primary },
+      trip_cancelled: { icon: 'close-circle', bg: colors.errorTint, color: colors.error },
+      booking_cancelled: { icon: 'close-circle', bg: colors.errorTint, color: colors.error },
+      trip_completed: { icon: 'checkmark-done', bg: colors.successTint, color: colors.success },
+    };
+    const { icon, bg, color } = map[kind];
+    return (
+      <View style={[styles.iconBox, { backgroundColor: bg }]}>
+        <Ionicons name={icon} size={20} color={color} />
+      </View>
+    );
+  };
+
+  const renderLogTab = () => {
+    if (logLoading && logEntries.length === 0) {
+      return (
+        <View style={styles.logLoadingWrap}>
+          <ActivityIndicator size="large" color={c.primary} />
+          <Text style={[styles.logLoadingText, { color: c.textSecondary }]}>Loading activity log…</Text>
+        </View>
+      );
+    }
+    if (logError && logEntries.length === 0) {
+      return (
+        <View style={[styles.errorBanner, { backgroundColor: c.surfaceElevated, borderColor: c.error }]}>
+          <Text style={[styles.errorText, { color: c.error }]}>{logError}</Text>
+          <Button title="Retry" onPress={() => void fetchLog()} />
+        </View>
+      );
+    }
+    if (logEntries.length === 0) {
+      return (
+        <EmptyState
+          title="No activity yet"
+          subtitle="Trip and booking events will appear here."
+        />
+      );
+    }
+    return (
+      <FlatList
+        data={logEntries}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={[styles.listContent, styles.logListContent, { paddingBottom: listBottomPaddingDefault + 72 }]}
+        refreshControl={
+          <RefreshControl
+            refreshing={logLoading}
+            onRefresh={() => void fetchLog()}
+            colors={[c.primary]}
+            tintColor={c.primary}
+            progressBackgroundColor={c.surface}
+          />
+        }
+        overScrollMode="always"
+        removeClippedSubviews={Platform.OS === 'android'}
+        ListHeaderComponent={
+          <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>Activity log</Text>
+        }
+        renderItem={({ item }) => (
+          <Card variant="outlined" padding="md" style={styles.logCard}>
+            <View style={styles.logRow}>
+              {getLogIcon(item.kind)}
+              <View style={styles.logBody}>
+                <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>{item.title}</Text>
+                {item.subtitle ? (
+                  <Text style={[styles.cardDesc, { color: c.textSecondary }]} numberOfLines={1}>{item.subtitle}</Text>
+                ) : null}
+                <Text style={[styles.cardTime, { color: c.textMuted }]}>{formatLogTime(item.timestamp)}</Text>
+              </View>
+            </View>
+          </Card>
+        )}
+      />
+    );
+  };
+
   return (
     <Screen style={[styles.container, { backgroundColor: c.background }]}>
       {loadError ? (
@@ -173,7 +287,9 @@ export default function DriverMyRidesScreen() {
         ))}
       </ScrollView>
 
-      {list.length === 0 ? (
+      {tab === 'log' ? (
+        renderLogTab()
+      ) : list.length === 0 ? (
         <EmptyState
           title={tab === 'upcoming' ? 'No upcoming rides' : tab === 'completed' ? 'No completed rides' : 'No activities yet'}
           subtitle="Publish a ride to get started."
@@ -285,7 +401,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: 24,
+    borderRadius: radii.lg,
     borderWidth: 1,
     marginBottom: spacing.md,
   },
@@ -319,7 +435,7 @@ const styles = StyleSheet.create({
     right: spacing.lg,
     width: 56,
     height: 56,
-    borderRadius: 16,
+    borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -328,4 +444,19 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
+  logLoadingWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+    gap: spacing.md,
+  },
+  logLoadingText: { ...typography.bodySmall },
+  logListContent: { paddingTop: spacing.sm },
+  logCard: { marginBottom: spacing.md },
+  logRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logBody: { flex: 1, minWidth: 0, marginLeft: spacing.md },
 });
