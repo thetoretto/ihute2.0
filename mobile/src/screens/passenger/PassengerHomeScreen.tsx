@@ -33,7 +33,7 @@ export default function PassengerHomeScreen() {
   const [refreshState, setRefreshState] = React.useState<'idle' | 'refreshing' | 'done'>('idle');
 
   const loadTrips = React.useCallback(async () => {
-    const items = await searchTrips({ type: 'scheduled' });
+    const items = await searchTrips({});
     setAvailableTrips(items.slice(0, 6));
   }, []);
 
@@ -116,7 +116,7 @@ export default function PassengerHomeScreen() {
         />
       ) : null}
 
-      {/* Find trips CTA */}
+      {/* Single CTA: Find trips (unified instant + scheduled) */}
       <TouchableOpacity
         style={styles.heroCard}
         onPress={() => navigation.navigate('SearchResults', {})}
@@ -124,29 +124,13 @@ export default function PassengerHomeScreen() {
       >
         <View style={styles.heroContent}>
           <Text style={styles.heroTitle}>Ready to travel?</Text>
-          <Text style={styles.heroSubtitle}>Find rides with verified drivers at the best prices.</Text>
+          <Text style={styles.heroSubtitle}>Find instant and scheduled rides with verified drivers.</Text>
           <View style={styles.heroBtn}>
             <Text style={styles.heroBtnText}>Find trips</Text>
             <Ionicons name="arrow-forward" size={16} color={c.onPrimary} />
           </View>
         </View>
         <View style={styles.heroBlob} />
-      </TouchableOpacity>
-
-      {/* Drivers available now (instant queue) */}
-      <TouchableOpacity
-        style={[styles.instantQueueCard, { backgroundColor: c.card, borderColor: c.borderLight }]}
-        onPress={() => navigation.navigate('InstantQueue')}
-        activeOpacity={0.9}
-      >
-        <View style={styles.instantQueueLeft}>
-          <Ionicons name="car-sport" size={24} color={c.primary} />
-          <View>
-            <Text style={[styles.instantQueueTitle, { color: c.text }]}>Drivers available now</Text>
-            <Text style={[styles.instantQueueSub, { color: c.textSecondary }]}>See who's in drive mode, filter by route</Text>
-          </View>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
       </TouchableOpacity>
 
       {/* Upcoming Trips */}
@@ -181,9 +165,9 @@ export default function PassengerHomeScreen() {
         </View>
       )}
 
-      {/* Scheduled trips */}
+      {/* Trips (instant + scheduled) */}
       <Text style={[styles.sectionTitle, styles.sectionTitleTop, { color: c.text }]}>
-        Scheduled trips
+        Trips
       </Text>
       {availableTrips.map((trip) => (
         <RideCard
@@ -283,18 +267,6 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     backgroundColor: colors.decorativeLight,
   },
-  instantQueueCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    borderRadius: radii.button,
-    borderWidth: 1,
-    marginBottom: spacing.lg,
-  },
-  instantQueueLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
-  instantQueueTitle: { ...typography.body, fontWeight: '600' },
-  instantQueueSub: { ...typography.caption, marginTop: 2 },
   sectionTitle: { ...sectionTitleStyle, fontSize: 18 },
   sectionTitleTop: { marginTop: spacing.md },
   modeRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },

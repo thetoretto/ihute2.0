@@ -1,9 +1,11 @@
+import logoSrc from '../assets/logo.svg';
+
 export default function Footer() {
   return (
     <footer className="rs-footer">
       <div className="rs-footer-inner">
         <a href="/" className="rs-footer-logo" aria-label="ihute home">
-          <img src="/B%26Y.svg" alt="" className="rs-logo-img" />
+          <img src={logoSrc} alt="ihute logo" className="rs-logo-img" width="32" height="32" />
           <span>ihute</span>
         </a>
         <p className="rs-footer-copy">

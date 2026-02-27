@@ -22,6 +22,8 @@ export interface TripSearchCriteria {
   toId: string;
   date: string;
   travelers: number;
+  type?: 'all' | 'insta' | 'scheduled';
+  sortBy?: 'earliest' | 'price' | 'rating';
 }
 
 interface AvailableTripsPageProps {
@@ -47,11 +49,8 @@ function normalizeTimeLabel(time?: string) {
   return time;
 }
 
-type TripCategory = 'all' | 'public' | 'private';
-
-function isPublicTrip(trip: { driver: { roles?: string[] } }) {
-  return trip.driver.roles?.includes('agency') ?? false;
-}
+type TripTypeFilter = 'all' | 'insta' | 'scheduled';
+type SortOption = 'earliest' | 'price' | 'rating';
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: 'Cash',
@@ -95,12 +94,13 @@ function TripCardV2({
           </div>
           <div className="trip-card-v2-to">
             <strong>{trip.destinationHotpoint.name}</strong>
-            {trip.type === 'insta' && (
-              <span className="trip-card-v2-insta">
-                <Zap size={12} />
-                <small>Insta</small>
-              </span>
-            )}
+            <span className={`trip-card-v2-type ${trip.type === 'insta' ? 'trip-card-v2-insta' : ''}`}>
+              {trip.type === 'insta' ? (
+                <><Zap size={12} /><small>Instant</small></>
+              ) : (
+                <small>{trip.departureDate ? new Date(trip.departureDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Scheduled'}</small>
+              )}
+            </span>
             {trip.destinationHotpoint.address && (
               <small>{trip.destinationHotpoint.address}</small>
             )}
@@ -184,7 +184,8 @@ export default function AvailableTripsPage({
     criteria.date ? new Date(criteria.date) : null
   );
   const [travelers, setTravelers] = useState(String(criteria.travelers));
-  const [tripCategory, setTripCategory] = useState<TripCategory>('all');
+  const [typeFilter, setTypeFilter] = useState<TripTypeFilter>(criteria.type ?? 'all');
+  const [sortBy, setSortBy] = useState<SortOption>(criteria.sortBy ?? 'earliest');
   const [apiTrips, setApiTrips] = useState<Trip[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
@@ -194,7 +195,9 @@ export default function AvailableTripsPage({
     setToId(criteria.toId);
     setDate(criteria.date ? new Date(criteria.date) : null);
     setTravelers(String(criteria.travelers));
-  }, [criteria.date, criteria.fromId, criteria.toId, criteria.travelers]);
+    if (criteria.type) setTypeFilter(criteria.type);
+    if (criteria.sortBy) setSortBy(criteria.sortBy);
+  }, [criteria.date, criteria.fromId, criteria.toId, criteria.travelers, criteria.type, criteria.sortBy]);
 
   const loadTrips = useCallback(async () => {
     setLoading(true);
@@ -203,7 +206,9 @@ export default function AvailableTripsPage({
         fromId: fromId || undefined,
         toId: toId || undefined,
         date: date ? date.toISOString().slice(0, 10) : undefined,
-        type: 'scheduled',
+        type: typeFilter === 'all' ? undefined : typeFilter,
+        passengerCount: Math.max(1, Number(travelers) || 1),
+        sortBy,
       });
       setApiTrips(data);
       setTripsStore(data);
@@ -212,7 +217,7 @@ export default function AvailableTripsPage({
     } finally {
       setLoading(false);
     }
-  }, [fromId, toId, date]);
+  }, [fromId, toId, date, typeFilter, travelers, sortBy]);
 
   useEffect(() => {
     void loadTrips();
@@ -221,20 +226,11 @@ export default function AvailableTripsPage({
   const trips = useMemo(() => {
     const requestedSeats = Number(travelers) || 1;
     const baseList = apiTrips !== null ? apiTrips : getTripsStore();
-
-    let list = baseList
+    return baseList
       .filter((trip) => (fromId ? trip.departureHotpoint.id === fromId : true))
       .filter((trip) => (toId ? trip.destinationHotpoint.id === toId : true))
       .filter((trip) => trip.seatsAvailable >= requestedSeats || trip.status === 'full');
-
-    if (tripCategory === 'public') {
-      list = list.filter(isPublicTrip);
-    } else if (tripCategory === 'private') {
-      list = list.filter((trip) => !isPublicTrip(trip));
-    }
-
-    return list.sort((a, b) => (a.departureTime ?? '').localeCompare(b.departureTime ?? ''));
-  }, [apiTrips, fromId, toId, travelers, tripCategory]);
+  }, [apiTrips, fromId, toId, travelers]);
 
   const availableCount = trips.filter((trip) => trip.status !== 'full').length;
 
@@ -245,6 +241,8 @@ export default function AvailableTripsPage({
       toId,
       date: date ? date.toISOString().slice(0, 10) : '',
       travelers: Math.max(1, Number(travelers) || 1),
+      type: typeFilter,
+      sortBy,
     });
   }
 
@@ -313,25 +311,39 @@ export default function AvailableTripsPage({
                   <div className="tf-chips">
                     <button
                       type="button"
-                      className={`tf-chip ${tripCategory === 'all' ? 'tf-chip-on' : ''}`}
-                      onClick={() => setTripCategory('all')}
+                      className={`tf-chip ${typeFilter === 'all' ? 'tf-chip-on' : ''}`}
+                      onClick={() => setTypeFilter('all')}
                     >
                       All
                     </button>
                     <button
                       type="button"
-                      className={`tf-chip ${tripCategory === 'public' ? 'tf-chip-on' : ''}`}
-                      onClick={() => setTripCategory('public')}
+                      className={`tf-chip ${typeFilter === 'insta' ? 'tf-chip-on' : ''}`}
+                      onClick={() => setTypeFilter('insta')}
                     >
-                      Public
+                      <Zap size={12} /> Instant
                     </button>
                     <button
                       type="button"
-                      className={`tf-chip ${tripCategory === 'private' ? 'tf-chip-on' : ''}`}
-                      onClick={() => setTripCategory('private')}
+                      className={`tf-chip ${typeFilter === 'scheduled' ? 'tf-chip-on' : ''}`}
+                      onClick={() => setTypeFilter('scheduled')}
                     >
-                      Private
+                      Scheduled
                     </button>
+                  </div>
+                </div>
+                <div className="tf-field">
+                  <label className="tf-label" htmlFor="tf-sort">Sort by</label>
+                  <div className="tf-input-wrap">
+                    <select
+                      id="tf-sort"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    >
+                      <option value="earliest">Earliest departure</option>
+                      <option value="price">Lowest price</option>
+                      <option value="rating">Highest rating</option>
+                    </select>
                   </div>
                 </div>
                 <button type="submit" className="tf-submit">

@@ -33,6 +33,7 @@ const DEFAULT_FILTERS = {
   minSeats: 1,
 };
 
+type TripTypeFilter = 'all' | 'insta' | 'scheduled';
 type SortOption = 'earliest' | 'price-low' | 'rating';
 
 function getHotpointLabel(h: Hotpoint) {
@@ -56,7 +57,10 @@ export default function SearchResultsScreen() {
   const [pickerMode, setPickerMode] = useState<'from' | 'to' | null>(null);
   const [pickerQuery, setPickerQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('earliest');
+  const [typeFilter, setTypeFilter] = useState<TripTypeFilter>('all');
+  const [dateFilter, setDateFilter] = useState<string | undefined>(route.params?.date);
   const [sortSheetVisible, setSortSheetVisible] = useState(false);
+  const [filtersSheetVisible, setFiltersSheetVisible] = useState(false);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
   useEffect(() => {
@@ -66,26 +70,31 @@ export default function SearchResultsScreen() {
   useEffect(() => {
     setFromId(route.params?.fromId);
     setToId(route.params?.toId);
-  }, [route.params?.fromId, route.params?.toId]);
+    if (route.params?.date) setDateFilter(route.params.date);
+  }, [route.params?.fromId, route.params?.toId, route.params?.date]);
 
   const fromH = fromHotpoint ?? (fromId ? hotpoints.find((h) => h.id === fromId) ?? null : null);
   const toH = toHotpoint ?? (toId ? hotpoints.find((h) => h.id === toId) ?? null : null);
   const fromName = fromH ? getHotpointLabel(fromH) : '';
   const toName = toH ? getHotpointLabel(toH) : '';
 
+  const apiSortBy = sortBy === 'price-low' ? 'price' : sortBy;
   const loadTrips = useCallback(
     async (showLoading = true) => {
       if (showLoading) setLoading(true);
-      const t = await searchTrips({ fromId, toId });
-      const filtered = t.filter(
-        (item) =>
-          item.pricePerSeat <= filters.maxPrice &&
-          item.seatsAvailable >= filters.minSeats
-      );
+      const t = await searchTrips({
+        fromId,
+        toId,
+        date: dateFilter,
+        type: typeFilter === 'all' ? undefined : typeFilter,
+        passengerCount: filters.minSeats,
+        sortBy: apiSortBy,
+      });
+      const filtered = t.filter((item) => item.pricePerSeat <= filters.maxPrice);
       setTrips(filtered);
       if (showLoading) setLoading(false);
     },
-    [filters.maxPrice, filters.minSeats, fromId, toId]
+    [dateFilter, filters.maxPrice, filters.minSeats, fromId, toId, typeFilter, apiSortBy]
   );
 
   useEffect(() => {
@@ -101,17 +110,7 @@ export default function SearchResultsScreen() {
     setTimeout(() => setRefreshState('idle'), 240);
   };
 
-  const filteredAndSortedTrips = useMemo(() => {
-    let result = [...trips];
-    if (sortBy === 'earliest') {
-      result.sort((a, b) => (a.departureTime || '').localeCompare(b.departureTime || ''));
-    } else if (sortBy === 'price-low') {
-      result.sort((a, b) => a.pricePerSeat - b.pricePerSeat);
-    } else if (sortBy === 'rating') {
-      result.sort((a, b) => (b.driver.rating ?? 0) - (a.driver.rating ?? 0));
-    }
-    return result;
-  }, [trips, sortBy]);
+  const filteredAndSortedTrips = useMemo(() => [...trips], [trips]);
 
   const filteredHotpoints =
     pickerQuery.trim().length > 0
@@ -172,16 +171,31 @@ export default function SearchResultsScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+          <View style={styles.typeRow}>
+            {(['all', 'insta', 'scheduled'] as const).map((type) => (
+              <TouchableOpacity
+                key={type}
+                onPress={() => setTypeFilter(type)}
+                style={[
+                  styles.typeChip,
+                  { borderColor: c.borderLight, backgroundColor: typeFilter === type ? c.primaryTint : (c.background || c.ghostBg) },
+                  typeFilter === type && { borderColor: c.primary },
+                ]}
+                activeOpacity={0.8}
+              >
+                {type === 'insta' && <Ionicons name="flash" size={12} color={typeFilter === type ? c.primary : c.textMuted} style={styles.typeChipIcon} />}
+                <Text style={[styles.typeChipText, { color: typeFilter === type ? c.primary : c.textMuted }]}>
+                  {type === 'all' ? 'All' : type === 'insta' ? 'Instant' : 'Scheduled'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <View style={styles.sortRow}>
-            <TouchableOpacity
-              onPress={() => setSortSheetVisible(true)}
-              style={styles.sortBtn}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity onPress={() => setFiltersSheetVisible(true)} style={styles.sortBtn} activeOpacity={0.8}>
               <Ionicons name="options-outline" size={14} color={c.primary} />
-              <Text style={[styles.sortBtnText, { color: c.primary }]}>Sort results</Text>
+              <Text style={[styles.sortBtnText, { color: c.primary }]}>Filters & sort</Text>
             </TouchableOpacity>
-            <Text style={[styles.ridesCount, { color: c.textMuted }]}>{filteredAndSortedTrips.length} rides found</Text>
+            <Text style={[styles.ridesCount, { color: c.textMuted }]}>{filteredAndSortedTrips.length} rides</Text>
           </View>
         </Card>
       </View>
@@ -268,14 +282,49 @@ export default function SearchResultsScreen() {
         </View>
       </Modal>
 
-      {/* Sort bottom sheet */}
-      <Modal visible={sortSheetVisible} animationType="slide" transparent>
-        <TouchableWithoutFeedback onPress={() => setSortSheetVisible(false)}>
+      {/* Filters & sort bottom sheet */}
+      <Modal visible={filtersSheetVisible} animationType="slide" transparent>
+        <TouchableWithoutFeedback onPress={() => setFiltersSheetVisible(false)}>
           <View style={[styles.sortOverlay, { backgroundColor: c.overlayModal }]} />
         </TouchableWithoutFeedback>
         <View style={[styles.sortSheet, { backgroundColor: c.card }]}>
           <View style={[styles.sortSheetHandle, { backgroundColor: c.border }]} />
-          <Text style={[styles.sortSheetTitle, { color: c.text }]}>Sort by</Text>
+          <Text style={[styles.sortSheetTitle, { color: c.text }]}>Filters & sort</Text>
+          <Text style={[styles.filterLabel, { color: c.textMuted }]}>Trip type</Text>
+          <View style={styles.filterTypeRow}>
+            {(['all', 'insta', 'scheduled'] as const).map((type) => (
+              <TouchableOpacity
+                key={type}
+                onPress={() => setTypeFilter(type)}
+                style={[
+                  styles.filterChip,
+                  { borderColor: typeFilter === type ? c.primary : c.borderLight, backgroundColor: typeFilter === type ? c.primaryTint : c.background },
+                ]}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.filterChipText, { color: typeFilter === type ? c.primary : c.textMuted }]}>
+                  {type === 'all' ? 'All' : type === 'insta' ? 'Instant' : 'Scheduled'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={[styles.filterLabel, { color: c.textMuted }]}>Max price (RWF)</Text>
+          <TextInput
+            style={[styles.filterInput, { backgroundColor: c.background, borderColor: c.borderLight, color: c.text }]}
+            value={String(filters.maxPrice)}
+            onChangeText={(v) => setFilters((f) => ({ ...f, maxPrice: Math.max(0, parseInt(v, 10) || 0) }))}
+            keyboardType="number-pad"
+            placeholder="e.g. 50000"
+          />
+          <Text style={[styles.filterLabel, { color: c.textMuted }]}>Min seats</Text>
+          <TextInput
+            style={[styles.filterInput, { backgroundColor: c.background, borderColor: c.borderLight, color: c.text }]}
+            value={String(filters.minSeats)}
+            onChangeText={(v) => setFilters((f) => ({ ...f, minSeats: Math.max(1, parseInt(v, 10) || 1) }))}
+            keyboardType="number-pad"
+            placeholder="1"
+          />
+          <Text style={[styles.filterLabel, { color: c.textMuted }]}>Sort by</Text>
           {sortOptions.map((opt) => (
             <TouchableOpacity
               key={opt.value}
@@ -284,16 +333,20 @@ export default function SearchResultsScreen() {
                 { borderColor: sortBy === opt.value ? c.primary : c.borderLight },
                 sortBy === opt.value && { backgroundColor: c.primaryTint },
               ]}
-              onPress={() => {
-                setSortBy(opt.value);
-                setSortSheetVisible(false);
-              }}
+              onPress={() => setSortBy(opt.value)}
               activeOpacity={0.8}
             >
               <Text style={[styles.sortOptionText, { color: sortBy === opt.value ? c.primary : c.textMuted }]}>{opt.label}</Text>
               {sortBy === opt.value && <Ionicons name="checkmark-circle" size={18} color={c.primary} />}
             </TouchableOpacity>
           ))}
+          <TouchableOpacity
+            style={[styles.applyFiltersBtn, { backgroundColor: c.primary }]}
+            onPress={() => { setFiltersSheetVisible(false); loadTrips(true); }}
+            activeOpacity={0.9}
+          >
+            <Text style={[styles.applyFiltersBtnText, { color: c.onPrimary ?? c.text }]}>Apply</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
     </Screen>
@@ -324,6 +377,22 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: spacing.sm },
   inputText: { ...typography.bodySmall, fontWeight: '700', flex: 1 },
   inputPlaceholder: { fontWeight: '500' },
+  typeRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  typeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+  },
+  typeChipIcon: { marginRight: 4 },
+  typeChipText: { ...typography.caption, fontWeight: '700' },
   sortRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -381,6 +450,35 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: spacing.lg,
   },
+  filterLabel: {
+    ...typography.caption,
+    fontWeight: '700',
+    marginBottom: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  filterTypeRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', marginBottom: spacing.xs },
+  filterChip: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+  },
+  filterChipText: { ...typography.bodySmall, fontWeight: '700' },
+  filterInput: {
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    ...typography.bodySmall,
+    marginBottom: spacing.xs,
+  },
+  applyFiltersBtn: {
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
+    alignItems: 'center',
+  },
+  applyFiltersBtnText: { ...typography.bodySmall, fontWeight: '800' },
   sortOptionBtn: {
     flexDirection: 'row',
     alignItems: 'center',

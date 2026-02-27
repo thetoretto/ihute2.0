@@ -97,6 +97,16 @@ export default function RideDetailScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Trip type label */}
+        <View style={[styles.typeBadgeWrap, { backgroundColor: trip.type === 'insta' ? c.primaryTint : c.surface }]}>
+          {trip.type === 'insta' ? (
+            <Ionicons name="flash" size={14} color={c.primary} style={styles.typeBadgeIcon} />
+          ) : null}
+          <Text style={[styles.typeBadgeText, { color: trip.type === 'insta' ? c.primary : c.textSecondary }]}>
+            {trip.type === 'insta' ? 'Instant ride' : 'Scheduled ride'}
+          </Text>
+        </View>
+
         {/* Route timeline */}
         <View style={styles.timelineSection}>
           <View style={styles.timelineLeft}>
@@ -224,6 +234,17 @@ const styles = StyleSheet.create({
   headerTitle: { ...typography.bodySmall, fontWeight: '800' },
   scroll: { flex: 1 },
   content: { padding: screenContentPadding },
+  typeBadgeWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.md,
+    marginBottom: spacing.md,
+  },
+  typeBadgeIcon: { marginRight: 6 },
+  typeBadgeText: { ...typography.caption, fontWeight: '800' },
   timelineSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',

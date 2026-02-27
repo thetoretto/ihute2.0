@@ -83,6 +83,16 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
             </View>
             <Text style={[styles.searchResultsPrice, { color: c.primary }]}>{formatRwf(trip.pricePerSeat)}</Text>
           </View>
+          <View style={styles.searchResultsChipRow}>
+            <View style={[styles.searchResultsTypeChip, { backgroundColor: trip.type === 'insta' ? c.primaryTint : c.surface }]}>
+              {trip.type === 'insta' ? (
+                <Ionicons name="flash" size={12} color={c.primary} style={styles.searchResultsTypeChipIcon} />
+              ) : null}
+              <Text style={[styles.searchResultsTypeChipText, { color: trip.type === 'insta' ? c.primary : c.textSecondary }]}>
+                {trip.type === 'insta' ? 'Instant' : trip.departureDate ? new Date(trip.departureDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Scheduled'}
+              </Text>
+            </View>
+          </View>
           <View style={[styles.searchResultsDriverRow, { borderTopColor: c.borderLight }]}>
             <View style={styles.searchResultsDriverLeft}>
               {trip.driver.avatarUri ? (
@@ -347,6 +357,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 18,
   },
+  searchResultsChipRow: { flexDirection: 'row', marginBottom: spacing.xs },
+  searchResultsTypeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 2,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    alignSelf: 'flex-start',
+  },
+  searchResultsTypeChipIcon: { marginRight: 4 },
+  searchResultsTypeChipText: { ...typography.caption, fontWeight: '700', fontSize: 10 },
   searchResultsDriverRow: {
     flexDirection: 'row',
     alignItems: 'center',

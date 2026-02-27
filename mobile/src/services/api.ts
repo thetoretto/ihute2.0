@@ -62,14 +62,27 @@ export async function getHotpoints() {
   return mockApi.getHotpoints();
 }
 
-export async function searchTrips(params: { fromId?: string; toId?: string; date?: string; type?: 'insta' | 'scheduled' }) {
+export type SearchTripsSortBy = 'earliest' | 'price' | 'rating';
+
+export interface SearchTripsParams {
+  fromId?: string;
+  toId?: string;
+  date?: string;
+  type?: 'insta' | 'scheduled';
+  passengerCount?: number;
+  sortBy?: SearchTripsSortBy;
+}
+
+export async function searchTrips(params: SearchTripsParams = {}): Promise<Trip[]> {
   if (USE_REAL_API) {
     const q = new URLSearchParams();
     if (params.fromId) q.set('fromId', params.fromId);
     if (params.toId) q.set('toId', params.toId);
     if (params.date) q.set('date', params.date);
     if (params.type) q.set('type', params.type);
-    return request<Awaited<ReturnType<typeof mockApi.searchTrips>>>('GET', `/api/trips?${q.toString()}`);
+    if (params.passengerCount != null) q.set('passengerCount', String(params.passengerCount));
+    if (params.sortBy) q.set('sortBy', params.sortBy);
+    return request<Trip[]>('GET', `/api/trips?${q.toString()}`);
   }
   return mockApi.searchTrips(params);
 }

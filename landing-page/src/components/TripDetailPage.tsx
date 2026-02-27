@@ -28,7 +28,7 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked }: 
 
   if (!trip) {
     return (
-      <section className="trips-page">
+      <section className="trips-page trips-page-v2">
         <div className="lp-container">
           <button className="trips-back-btn" type="button" onClick={onBack}>← Back to results</button>
           <p className="lp-mt-24">Trip not found.</p>
@@ -74,7 +74,7 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked }: 
   }
 
   return (
-    <section className="trips-page">
+    <section className="trips-page trips-page-v2">
       <div className="lp-container">
         <button className="trips-back-btn" type="button" onClick={onBack}>
           ← Back to results

@@ -8,11 +8,15 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000').
 
 const BOOKING_PASSENGER_ID = import.meta.env.VITE_BOOKING_PASSENGER_ID ?? 'u_passenger_1';
 
+export type SearchTripsSortBy = 'earliest' | 'price' | 'rating';
+
 export interface SearchTripsParams {
   fromId?: string;
   toId?: string;
   date?: string;
   type?: 'insta' | 'scheduled';
+  passengerCount?: number;
+  sortBy?: SearchTripsSortBy;
 }
 
 export async function fetchTripsFromApi(params: SearchTripsParams = {}): Promise<Trip[]> {
@@ -21,6 +25,8 @@ export async function fetchTripsFromApi(params: SearchTripsParams = {}): Promise
   if (params.toId) q.set('toId', params.toId);
   if (params.date) q.set('date', params.date);
   if (params.type) q.set('type', params.type);
+  if (params.passengerCount != null) q.set('passengerCount', String(params.passengerCount));
+  if (params.sortBy) q.set('sortBy', params.sortBy);
   const url = `${API_BASE}/api/trips?${q.toString()}`;
   const res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
   if (!res.ok) throw new Error(res.statusText || 'Failed to fetch trips');

@@ -60,6 +60,7 @@ export default function PassengerBookingScreen() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [step, setStep] = useState(1);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  const [fullCarToggle, setFullCarToggle] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | undefined>(undefined);
   const [isBooking, setIsBooking] = useState(false);
 
@@ -79,6 +80,7 @@ export default function PassengerBookingScreen() {
   const bookableSeatIds = useMemo(() => getBookableSeatIds(layout), [layout]);
 
   const toggleSeat = (seatId: string) => {
+    if (fullCarToggle) return;
     if (selectedSeats.includes(seatId)) {
       setSelectedSeats(selectedSeats.filter((id) => id !== seatId));
     } else {
@@ -86,10 +88,12 @@ export default function PassengerBookingScreen() {
     }
   };
 
+  const effectiveSeatCount = fullCarToggle && trip ? trip.seatsAvailable : selectedSeats.length;
   const totalPrice = useMemo(() => {
     if (!trip) return 0;
-    return selectedSeats.length * trip.pricePerSeat;
-  }, [trip, selectedSeats]);
+    return effectiveSeatCount * trip.pricePerSeat;
+  }, [trip, effectiveSeatCount]);
+  const isFullCarBooking = fullCarToggle || (trip != null && selectedSeats.length >= trip.seatsAvailable);
 
   const requireProfile = (): boolean => {
     if (!user) return false;
@@ -108,16 +112,18 @@ export default function PassengerBookingScreen() {
   };
 
   const handleCompletePayment = async () => {
-    if (!trip || !user || paymentMethod == null || selectedSeats.length === 0 || isBooking) return;
+    if (!trip || !user || paymentMethod == null || (fullCarToggle ? false : selectedSeats.length === 0) || isBooking) return;
     if (!requireProfile()) return;
+    const seats = fullCarToggle ? trip.seatsAvailable : selectedSeats.length;
+    if (seats <= 0) return;
     try {
       setIsBooking(true);
       const booking = await bookTrip({
         tripId: trip.id,
         passenger: user,
-        seats: selectedSeats.length,
+        seats,
         paymentMethod,
-        isFullCar: selectedSeats.length >= trip.seatsAvailable,
+        isFullCar: fullCarToggle || seats >= trip.seatsAvailable,
       });
       Alert.alert(
         'Booking confirmed',
@@ -314,6 +320,23 @@ export default function PassengerBookingScreen() {
         {/* Step 2: Seat map */}
         {step === 2 && (
           <View style={styles.stepContent}>
+            {trip.allowFullCar && (
+              <TouchableOpacity
+                style={[
+                  styles.fullCarRow,
+                  { backgroundColor: fullCarToggle ? c.primaryTint : c.surface, borderColor: fullCarToggle ? c.primary : c.border },
+                ]}
+                onPress={() => setFullCarToggle((v) => !v)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="car-sport" size={20} color={fullCarToggle ? c.primary : c.textMuted} />
+                <Text style={[styles.fullCarLabel, { color: fullCarToggle ? c.primary : c.text }]}>Book full car</Text>
+                <Text style={[styles.fullCarSub, { color: c.textMuted }]}>{trip.seatsAvailable} seats • {formatRwf(trip.seatsAvailable * trip.pricePerSeat)}</Text>
+                <View style={[styles.fullCarToggle, { backgroundColor: fullCarToggle ? c.primary : c.border }]}>
+                  {fullCarToggle && <Ionicons name="checkmark" size={14} color={c.onPrimary ?? '#fff'} />}
+                </View>
+              </TouchableOpacity>
+            )}
             <View style={styles.seatHeader}>
               <Text style={[styles.seatHeaderTitle, { color: c.text }]}>
                 {trip.vehicle.make} {trip.vehicle.model}
@@ -361,13 +384,15 @@ export default function PassengerBookingScreen() {
               <View style={[styles.summaryRow, { borderBottomColor: c.border }]}>
                 <Text style={[styles.summaryLabel, { color: c.textMuted }]}>Seats</Text>
                 <Text style={[styles.summaryValue, { color: c.primary }]}>
-                  {selectedSeats.map((s) => s.replace('s-', '#')).join(', ')}
+                  {isFullCarBooking && trip.seatsAvailable === effectiveSeatCount
+                    ? `Full car (${trip.seatsAvailable} seats)`
+                    : selectedSeats.map((s) => s.replace('s-', '#')).join(', ')}
                 </Text>
               </View>
               <View style={[styles.summaryRow, { borderBottomColor: c.border }]}>
                 <Text style={[styles.summaryLabel, { color: c.textMuted }]}>Price</Text>
                 <Text style={[styles.summaryValue, { color: c.text }]}>
-                  {formatRwf(trip.pricePerSeat)} × {selectedSeats.length}
+                  {formatRwf(trip.pricePerSeat)} × {effectiveSeatCount}
                 </Text>
               </View>
               <View style={[styles.summaryRow, styles.summaryRowTotal]}>
@@ -409,10 +434,10 @@ export default function PassengerBookingScreen() {
               style={[
                 styles.ctaContinue,
                 { backgroundColor: c.primary },
-                selectedSeats.length === 0 && { backgroundColor: c.border, opacity: 0.5 },
+                effectiveSeatCount === 0 && { backgroundColor: c.border, opacity: 0.5 },
               ]}
               onPress={() => setStep(3)}
-              disabled={selectedSeats.length === 0}
+              disabled={effectiveSeatCount === 0}
               activeOpacity={0.9}
             >
               <Text style={[styles.ctaContinueText, { color: c.text }]}>Continue</Text>
@@ -492,6 +517,25 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: screenContentPadding, paddingTop: spacing.md, paddingBottom: 220 },
   stepContent: { paddingBottom: spacing.xl },
+
+  fullCarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  fullCarLabel: { ...typography.bodySmall, fontWeight: '800', flex: 1 },
+  fullCarSub: { ...typography.caption },
+  fullCarToggle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   // Step 1 timeline (match RideDetail)
   timelineSection: {

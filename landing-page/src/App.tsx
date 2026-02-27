@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
-import Navbar                from './components/Navbar';
-import Hero                  from './components/Hero';
-import HowItWorks            from './components/HowItWorks';
-import HotDestinations       from './components/HotDestinations';
-import AppDownload           from './components/AppDownload';
-import Footer                from './components/Footer';
+import Navbar                   from './components/Navbar';
+import Hero                     from './components/Hero';
+import HowItWorks               from './components/HowItWorks';
+import HotDestinations          from './components/HotDestinations';
+import AppDownload              from './components/AppDownload';
+import Footer                   from './components/Footer';
 import AvailableTripsPage, { type TripSearchCriteria } from './components/AvailableTripsPage';
-import TripDetailPage        from './components/TripDetailPage';
-import BookingConfirmPage    from './components/BookingConfirmPage';
-import InstantQueuePage      from './components/InstantQueuePage';
+import TripDetailPage           from './components/TripDetailPage';
+import BookingConfirmPage       from './components/BookingConfirmPage';
+import InstantQueuePage         from './components/InstantQueuePage';
+import WhatsAppSupport          from './components/WhatsAppSupport';
 
 type Page = 'landing' | 'trips' | 'trip-detail' | 'booking-confirm' | 'instant-queue';
 
-const DEFAULT_CRITERIA: TripSearchCriteria = { fromId: '', toId: '', date: '', travelers: 1 };
+const DEFAULT_CRITERIA: TripSearchCriteria = { fromId: '', toId: '', date: '', travelers: 1, type: 'all', sortBy: 'earliest' };
 
 export default function App() {
   const [page, setPage]               = useState<Page>('landing');
@@ -26,11 +27,15 @@ export default function App() {
     const toId   = params.get('to')   ?? '';
     if (fromId && toId) {
       setPage('trips');
+      const type = params.get('type');
+      const sortBy = params.get('sortBy');
       setCriteria({
         fromId,
         toId,
         date:      params.get('date')      ?? '',
         travelers: Number(params.get('travelers') ?? '1') || 1,
+        type:      (type === 'insta' || type === 'scheduled' ? type : 'all') as 'all' | 'insta' | 'scheduled',
+        sortBy:    (sortBy === 'price' || sortBy === 'rating' ? sortBy : 'earliest') as 'earliest' | 'price' | 'rating',
       });
     }
   }, []);
@@ -42,7 +47,10 @@ export default function App() {
   function handleSearch(next: TripSearchCriteria) {
     setCriteria(next);
     setPage('trips');
-    pushUrl(new URLSearchParams({ from: next.fromId, to: next.toId, date: next.date, travelers: String(next.travelers) }).toString());
+    const q = new URLSearchParams({ from: next.fromId, to: next.toId, date: next.date || '', travelers: String(next.travelers) });
+    if (next.type && next.type !== 'all') q.set('type', next.type);
+    if (next.sortBy && next.sortBy !== 'earliest') q.set('sortBy', next.sortBy);
+    pushUrl(q.toString());
     window.scrollTo(0, 0);
   }
 
@@ -130,6 +138,7 @@ export default function App() {
           <InstantQueuePage onBackHome={handleBackHome} />
         )}
       </main>
+      <WhatsAppSupport />
       <Footer />
     </>
   );

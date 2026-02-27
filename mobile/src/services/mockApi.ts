@@ -148,11 +148,15 @@ export async function getHotpoints(): Promise<Hotpoint[]> {
   return delay([...mockHotpoints]);
 }
 
+export type SearchTripsSortBy = 'earliest' | 'price' | 'rating';
+
 export async function searchTrips(params: {
   fromId?: string;
   toId?: string;
   date?: string;
   type?: TripType;
+  passengerCount?: number;
+  sortBy?: SearchTripsSortBy;
 }): Promise<Trip[]> {
   consumeMockFailure('search');
   const trips = getTripsStore();
@@ -165,6 +169,24 @@ export async function searchTrips(params: {
   }
   if (params.type) {
     filtered = filtered.filter((t) => t.type === params.type);
+  }
+  if (params.date) {
+    const dateStr = params.date.slice(0, 10);
+    filtered = filtered.filter((t) => {
+      const depDate = t.departureDate ?? new Date().toISOString().slice(0, 10);
+      return depDate === dateStr;
+    });
+  }
+  if (params.passengerCount != null && params.passengerCount > 0) {
+    filtered = filtered.filter((t) => t.seatsAvailable >= params.passengerCount!);
+  }
+  const sortBy = params.sortBy ?? 'earliest';
+  if (sortBy === 'earliest') {
+    filtered = [...filtered].sort((a, b) => (a.departureTime || '').localeCompare(b.departureTime || ''));
+  } else if (sortBy === 'price') {
+    filtered = [...filtered].sort((a, b) => a.pricePerSeat - b.pricePerSeat);
+  } else if (sortBy === 'rating') {
+    filtered = [...filtered].sort((a, b) => (b.driver.rating ?? 0) - (a.driver.rating ?? 0));
   }
   trackMockEvent('trip_search', {
     fromId: params.fromId ?? null,

@@ -1,3 +1,5 @@
+import logoSrc from '../assets/logo.svg';
+
 interface NavbarProps {
   onViewAllTrips?: () => void;
   onViewInstantQueue?: () => void;
@@ -23,7 +25,7 @@ export default function Navbar({ onViewAllTrips, onViewInstantQueue, onBackHome,
           onClick={goHome}
           aria-label="ihute home"
         >
-          <img src="/B%26Y.svg" alt="" className="rs-logo-img" />
+          <img src={logoSrc} alt="ihute logo" className="rs-logo-img" width="32" height="32" />
           <span>ihute</span>
         </a>
 

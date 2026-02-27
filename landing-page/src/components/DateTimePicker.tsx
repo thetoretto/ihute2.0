@@ -193,10 +193,10 @@ export default function DateTimePicker({
 
       <div
         className={`fixed inset-x-0 bottom-0 z-50 transform transition-transform duration-300 ease-out safe-area-bottom ${
-          isSearchVariant ? 'rs-search-date-dropdown rounded-t-2xl max-w-md mx-auto mb-4 left-4 right-4' : 'bg-white rounded-t-[32px] shadow-2xl'
+          isSearchVariant ? 'rs-search-date-dropdown rs-date-sheet-search rounded-t-2xl' : 'rs-date-sheet'
         } ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
       >
-        <div className="p-6 max-w-md mx-auto">
+        <div className="rs-date-sheet-inner">
           <div className="flex items-center justify-between mb-6">
             <button
               type="button"
@@ -324,7 +324,7 @@ export default function DateTimePicker({
             <div className="py-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="flex items-center justify-center gap-4">
                 <div className="flex flex-col items-center">
-                  <span className="text-[56px] font-light leading-none mb-2 text-dark">
+                  <span className="rs-date-time-value mb-2">
                     {tempDate.getHours() === 0
                       ? '12'
                       : tempDate.getHours() > 12
@@ -362,7 +362,7 @@ export default function DateTimePicker({
                 </span>
 
                 <div className="flex flex-col items-center">
-                  <span className="text-[56px] font-light leading-none mb-2 text-dark">
+                  <span className="rs-date-time-value mb-2">
                     {tempDate.getMinutes().toString().padStart(2, '0')}
                   </span>
                   <input

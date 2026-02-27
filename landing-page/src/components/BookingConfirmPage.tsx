@@ -18,7 +18,7 @@ export default function BookingConfirmPage({ bookingId, onGoHome, onSearchAgain 
 
   if (!booking) {
     return (
-      <section className="trips-page">
+      <section className="trips-page trips-page-v2">
         <div className="lp-container">
           <div className="bc-card bc-card-standalone">
             <p>Booking not found.</p>

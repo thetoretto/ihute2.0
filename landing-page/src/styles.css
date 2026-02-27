@@ -52,6 +52,18 @@
   --lp-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05);
   --lp-border-12: rgba(23, 28, 34, 0.12);
   --lp-border-20: rgba(23, 28, 34, 0.2);
+  /* Layout (single source – same on all screens) */
+  --lp-header-offset: 64px;
+  --lp-container-width: 1280px;
+  --lp-gutter: 24px;
+  --lp-gutter-narrow: 20px;
+  --lp-section-padding: 96px;
+  --lp-section-padding-sm: 72px;
+  --lp-radius-sm: 8px;
+  --lp-radius-md: 12px;
+  --lp-radius-lg: 16px;
+  --lp-radius-xl: 24px;
+  --lp-radius-2xl: 32px;
   /* RideShare-style landing (migrated to lp-* in rs-* sections) */
   --rs-brand:        #FEE46B;
   --rs-brand-hover:  #FDD835;
@@ -109,9 +121,9 @@ button {
 }
 
 .lp-container {
-  max-width: 1280px;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--lp-gutter);
   box-sizing: border-box;
 }
 
@@ -119,7 +131,7 @@ button {
 .lp-mb-24 { margin-bottom: 24px; }
 
 .lp-section {
-  padding: 96px 0;
+  padding: var(--lp-section-padding) 0;
 }
 
 .lp-heading-block {
@@ -174,6 +186,7 @@ button {
   display: block;
   width: 100%;
   min-height: 50vh;
+  padding-top: var(--lp-header-offset);
   background: var(--lp-bg-main);
 }
 
@@ -321,14 +334,14 @@ button {
 }
 
 .hero-bbc-main {
-  padding: 72px 0 48px;
+  padding: var(--lp-section-padding-sm) 0 48px;
 }
 
 .hero-bbc-inner {
   width: 100%;
-  max-width: 1123px;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--lp-gutter);
   box-sizing: border-box;
 }
 
@@ -426,6 +439,59 @@ button {
   cursor: pointer;
 }
 
+/* Floating WhatsApp support button */
+.wa-support-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  background: var(--lp-primary);
+  color: var(--lp-on-primary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--lp-shadow-soft);
+}
+
+.wa-support-btn:hover {
+  background: var(--lp-primary-dark);
+  color: var(--lp-on-primary);
+}
+
+.wa-support-btn:focus-visible {
+  outline: 2px solid var(--lp-on-primary);
+  outline-offset: 2px;
+}
+
+.wa-support-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wa-support-label {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .wa-support-btn {
+    right: 16px;
+    bottom: 16px;
+    padding-inline: 12px;
+  }
+
+  .wa-support-label {
+    display: none;
+  }
+}
+
 .hero-search-date-hidden {
   position: absolute;
   width: 0;
@@ -488,9 +554,11 @@ button {
 }
 
 .best-price-inner {
-  max-width: 1123px;
+  max-width: var(--lp-container-width);
   margin-left: auto;
   margin-right: auto;
+  padding: 0 var(--lp-gutter);
+  box-sizing: border-box;
 }
 
 .best-price-heading {
@@ -1313,8 +1381,8 @@ button {
 }
 
 .footer-inner {
-  padding: 56px 24px 0;
-  max-width: 1200px;
+  padding: 56px var(--lp-gutter) 0;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
 }
 
@@ -1502,12 +1570,12 @@ button {
 }
 
 .rs-nav-inner {
-  max-width: 1280px;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 16px var(--lp-gutter);
 }
 
 .rs-logo {
@@ -1540,8 +1608,12 @@ button {
 
 .rs-logo-img {
   height: 32px;
+  min-height: 32px;
   width: auto;
+  max-width: 120px;
   display: block;
+  flex-shrink: 0;
+  object-fit: contain;
   border-radius: 8px;
 }
 
@@ -1620,15 +1692,15 @@ button {
   color: var(--lp-primary);
 }
 
-/* Hero */
+/* Hero (top padding = section spacing only; header clearance via .lp-main) */
 .rs-hero {
-  padding: 120px 24px 96px;
+  padding: 56px var(--lp-gutter) 96px;
   background: var(--rs-slate-50) url('/balcandyellow.png') no-repeat bottom center;
   background-size: 100% auto;
 }
 
 .rs-hero-inner {
-  max-width: 1280px;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
   text-align: center;
   margin-bottom: 48px;
@@ -1656,11 +1728,11 @@ button {
 }
 
 .rs-search-widget {
-  max-width: 1280px;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
   background: var(--rs-surface);
   border: 1px solid var(--rs-border);
-  border-radius: 1.5rem;
+  border-radius: var(--lp-radius-lg);
   padding: 16px;
   box-sizing: content-box;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
@@ -1730,6 +1802,40 @@ button {
   letter-spacing: 0.05em;
   color: var(--rs-slate-400);
   margin-bottom: 4px;
+}
+
+.rs-search-type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.rs-type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 0.75rem;
+  border: 1px solid var(--rs-border);
+  background: var(--rs-slate-50);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rs-slate-500);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.rs-type-chip:hover {
+  background: var(--rs-slate-100);
+  color: var(--rs-slate-700);
+}
+.rs-type-chip-on {
+  border-color: var(--rs-brand);
+  background: var(--lp-primary-alpha-12);
+  color: var(--rs-brand);
+}
+.rs-type-chip-on:hover {
+  background: var(--lp-primary-alpha-18);
+  color: var(--rs-brand);
 }
 
 .rs-search-select-wrap {
@@ -1868,6 +1974,38 @@ button {
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 4px 12px -4px rgba(0, 0, 0, 0.04) !important;
 }
 
+/* Date/time picker sheet – layout from design system (no hardcoded px) */
+.rs-date-sheet {
+  background: var(--lp-white);
+  box-shadow: var(--lp-shadow-soft), 0 -4px 24px rgba(0, 0, 0, 0.08);
+  border-top-left-radius: var(--lp-radius-2xl);
+  border-top-right-radius: var(--lp-radius-2xl);
+}
+
+.rs-date-sheet-inner {
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: var(--lp-gutter);
+  box-sizing: border-box;
+}
+
+.rs-date-time-value {
+  font-size: clamp(2.5rem, 8vw, 3.5rem);
+  font-weight: 300;
+  line-height: 1;
+  color: var(--lp-text);
+}
+
+.rs-date-sheet-search {
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 16px;
+  left: var(--lp-gutter);
+  right: var(--lp-gutter);
+}
+
 .rs-search-input,
 .rs-search-input select {
   width: 100%;
@@ -1943,12 +2081,12 @@ button {
 
 /* How it works */
 .rs-how {
-  padding: 96px 24px;
+  padding: var(--lp-section-padding) var(--lp-gutter);
   background: var(--rs-surface);
 }
 
 .rs-how-inner {
-  max-width: 1280px;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
 }
 
@@ -2016,12 +2154,12 @@ button {
 
 /* Hot Destinations */
 .rs-dest {
-  padding: 96px 24px;
+  padding: var(--lp-section-padding) var(--lp-gutter);
   background: var(--rs-slate-50);
 }
 
 .rs-dest-inner {
-  max-width: 1280px;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
 }
 
@@ -2118,12 +2256,12 @@ button {
 
 /* App section */
 .rs-app {
-  padding: 96px 24px;
+  padding: var(--lp-section-padding) var(--lp-gutter);
   background: var(--rs-surface);
 }
 
 .rs-app-inner {
-  max-width: 1280px;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -2262,16 +2400,17 @@ button {
 .rs-footer {
   background: var(--rs-surface);
   border-top: 1px solid var(--rs-slate-100);
-  padding: 64px 24px;
+  padding: 64px var(--lp-gutter);
 }
 
 .rs-footer-inner {
-  max-width: 1280px;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 32px;
+  padding: 0 var(--lp-gutter);
 }
 
 @media (min-width: 768px) {
@@ -2563,16 +2702,10 @@ button {
 }
 
 .trips-v2-wrap {
-  max-width: 1280px;
+  max-width: var(--lp-container-width);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--lp-gutter);
   box-sizing: border-box;
-}
-
-@media (min-width: 1024px) {
-  .trips-v2-wrap {
-    padding: 0 24px;
-  }
 }
 
 .trips-v2-layout {
@@ -3931,7 +4064,29 @@ button {
 
 @media (max-width: 1024px) {
   .lp-container {
-    padding: 0 20px;
+    padding: 0 var(--lp-gutter-narrow);
+  }
+
+  .rs-nav-inner,
+  .rs-footer,
+  .rs-hero,
+  .rs-how,
+  .rs-dest,
+  .rs-app,
+  .trips-v2-wrap,
+  .footer-inner {
+    padding-left: var(--lp-gutter-narrow);
+    padding-right: var(--lp-gutter-narrow);
+  }
+
+  .rs-footer-inner {
+    padding-left: var(--lp-gutter-narrow);
+    padding-right: var(--lp-gutter-narrow);
+  }
+
+  .rs-date-sheet-search {
+    left: var(--lp-gutter-narrow);
+    right: var(--lp-gutter-narrow);
   }
 
   .lp-header-row {
@@ -4113,7 +4268,7 @@ button {
 
 @media (max-width: 680px) {
   .lp-section {
-    padding: 72px 0;
+    padding: var(--lp-section-padding-sm) 0;
   }
 
   .hero-search,
