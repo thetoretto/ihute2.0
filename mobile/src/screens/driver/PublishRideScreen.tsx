@@ -13,9 +13,10 @@ import { HotpointPicker, PaymentMethodIcons, Screen, DateTimePicker } from '../.
 import { getHotpoints, getUserVehicles, publishTrip, publishTrips } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
-import { buttonHeights, colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
+import { buttonHeights, colors, spacing, typography, radii, cardShadow, sizes, borderWidths } from '../../utils/theme';
 import { useThemeColors } from '../../context/ThemeContext';
 import { selectorStyles } from '../../utils/selectorStyles';
+import { tightGap } from '../../utils/layout';
 import { formatRwf } from '../../../../shared/src';
 import type { Hotpoint, Vehicle, PaymentMethod } from '../../types';
 
@@ -700,12 +701,12 @@ const styles = StyleSheet.create({
   introSub: { ...typography.bodySmall, marginBottom: spacing.lg },
   introSteps: { marginBottom: spacing.xl },
   introStepRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
-  introStepIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  introStepIcon: { width: sizes.avatar.lg, height: sizes.avatar.lg, borderRadius: sizes.avatar.lg / 2, alignItems: 'center', justifyContent: 'center' },
   introStepBody: { flex: 1 },
-  introStepLabel: { ...typography.caption, fontWeight: '700', letterSpacing: 0.5, marginBottom: 2 },
+  introStepLabel: { ...typography.caption, fontWeight: '700', letterSpacing: 0.5, marginBottom: tightGap },
   introStepValue: { ...typography.bodySmall, fontWeight: '600' },
-  introStepDivider: { borderBottomWidth: 1, marginLeft: 48 + spacing.md },
-  introContinueBtn: { paddingVertical: 16, borderRadius: 20, alignItems: 'center' },
+  introStepDivider: { borderBottomWidth: 1, marginLeft: spacing.xxl + spacing.md },
+  introContinueBtn: { paddingVertical: spacing.md, borderRadius: radii.button, alignItems: 'center' },
   introContinueText: { ...typography.body, fontWeight: '700', color: colors.onAccent },
   stepMetaRow: {
     flexDirection: 'row',
@@ -812,31 +813,31 @@ const styles = StyleSheet.create({
   routeCard: {
     flexDirection: 'row',
     padding: spacing.lg,
-    borderRadius: 24,
+    borderRadius: radii.panel,
     borderWidth: 1,
     overflow: 'hidden',
   },
   routeLineWrap: {
-    width: 32,
+    width: spacing.xl,
     alignItems: 'center',
     marginRight: spacing.sm,
   },
   routeDotStart: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: sizes.routeDot,
+    height: sizes.routeDot,
+    borderRadius: sizes.routeDot / 2,
     backgroundColor: colors.background,
     borderWidth: 2,
   },
-  routeLine: { width: 2, flex: 1, minHeight: 24, marginVertical: 4 },
-  routeDotEnd: { width: 10, height: 10, borderRadius: 5 },
+  routeLine: { width: borderWidths.medium, flex: 1, minHeight: spacing.lg, marginVertical: spacing.xs },
+  routeDotEnd: { width: sizes.routeDot, height: sizes.routeDot, borderRadius: sizes.routeDot / 2 },
   routePickers: { flex: 1 },
   routePickerRow: { marginBottom: spacing.sm },
-  routeLabel: { ...typography.caption, marginBottom: 2 },
+  routeLabel: { ...typography.caption, marginBottom: tightGap },
   routeTrigger: {
     backgroundColor: 'transparent',
     borderBottomWidth: 1,
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     borderRadius: 0,
     marginBottom: 0,
   },
@@ -844,7 +845,7 @@ const styles = StyleSheet.create({
   detailsCard: {
     flex: 1,
     padding: spacing.lg,
-    borderRadius: 24,
+    borderRadius: radii.panel,
     borderWidth: 1,
   },
   detailsCardLabel: {
@@ -855,9 +856,9 @@ const styles = StyleSheet.create({
   },
   detailsStepperRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   detailsStepperBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: sizes.avatar.md,
+    height: sizes.avatar.md,
+    borderRadius: sizes.avatar.md / 2,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -870,14 +871,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: 20,
+    borderRadius: radii.button,
     borderWidth: 1,
     marginBottom: spacing.lg,
   },
-  durationIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
+  durationIconWrap: { width: sizes.touchTarget.iconButton, height: sizes.touchTarget.iconButton, borderRadius: radii.smMedium, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
   durationBody: { flex: 1 },
-  durationInput: { ...typography.body, fontWeight: '600', paddingVertical: 4 },
-  autoCalcBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  durationInput: { ...typography.body, fontWeight: '600', paddingVertical: spacing.xs },
+  autoCalcBadge: { paddingHorizontal: spacing.sm + spacing.xs, paddingVertical: spacing.smDense, borderRadius: radii.sm },
   autoCalcText: { ...typography.caption, fontWeight: '700' },
   amenitiesSection: { marginBottom: spacing.lg },
   amenitiesHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
@@ -888,9 +889,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingVertical: 14,
+    paddingVertical: spacing.sm + spacing.smDense,
     paddingHorizontal: spacing.md,
-    borderRadius: 20,
+    borderRadius: radii.button,
     borderWidth: 1,
     minWidth: '47%',
   },
@@ -900,7 +901,7 @@ const styles = StyleSheet.create({
   noteTitle: { ...typography.bodySmall, fontWeight: '700' },
   noteInput: {
     borderWidth: 1,
-    borderRadius: 24,
+    borderRadius: radii.panel,
     padding: spacing.lg,
     ...typography.bodySmall,
     minHeight: 100,
@@ -931,8 +932,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    paddingVertical: 18,
-    borderRadius: 20,
+    paddingVertical: spacing.md + spacing.xs,
+    borderRadius: radii.button,
   },
   publishBtnText: { ...typography.body, fontWeight: '700', color: colors.onAccent },
   nextBtn: {

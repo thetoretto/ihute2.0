@@ -37,11 +37,11 @@ export default function BarChartTrend({ data, height = 280 }: BarChartTrendProps
           <CartesianGrid strokeDasharray="3 3" stroke="var(--lp-line-soft)" />
           <XAxis
             dataKey="name"
-            tick={{ fontSize: 12, fill: 'var(--lp-muted)' }}
+            tick={{ fontSize: 'var(--chart-tick-font-size)', fill: 'var(--lp-muted)' }}
             stroke="var(--lp-line)"
           />
           <YAxis
-            tick={{ fontSize: 11, fill: 'var(--lp-muted)' }}
+            tick={{ fontSize: 'var(--chart-tick-font-size-y)', fill: 'var(--lp-muted)' }}
             stroke="var(--lp-line)"
             tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
           />
@@ -49,13 +49,13 @@ export default function BarChartTrend({ data, height = 280 }: BarChartTrendProps
             contentStyle={{
               background: 'var(--lp-white)',
               border: '1px solid var(--lp-line)',
-              borderRadius: 8,
+              borderRadius: 'var(--chart-tooltip-radius)',
             }}
             formatter={(value: number) => [formatRwf(value), '']}
             labelFormatter={(label) => label}
           />
           <Legend
-            wrapperStyle={{ fontSize: 12 }}
+            wrapperStyle={{ fontSize: 'var(--chart-legend-font-size)' }}
             formatter={() => 'Earnings'}
             iconType="square"
             iconSize={10}
@@ -63,7 +63,7 @@ export default function BarChartTrend({ data, height = 280 }: BarChartTrendProps
           <Bar
             dataKey="gross"
             name="Earnings"
-            fill="rgba(100, 149, 237, 0.7)"
+            fill="var(--chart-bar-fill)"
             radius={[4, 4, 0, 0]}
           />
         </BarChart>

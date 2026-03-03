@@ -138,7 +138,7 @@ export default function DisputesPage() {
                   <td className="py-5 text-sm">{d.type}</td>
                   <td className="py-5">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                      d.status === 'resolved' ? 'bg-gray-100 text-gray-700' : d.status === 'in_review' ? 'bg-blue-100 text-blue-700' : 'bg-primary text-dark'
+                      d.status === 'resolved' ? 'bg-neutral-100 text-neutral-700' : d.status === 'in_review' ? 'bg-info-100 text-info-700' : 'bg-primary text-dark'
                     }`}>
                       {d.status.toUpperCase()}
                     </span>
@@ -161,38 +161,40 @@ export default function DisputesPage() {
       </div>
 
       {detail && (
-        <div className="modal-overlay" role="dialog" aria-modal="true">
-          <div className="modal-card modal-wide">
-            <h3>Dispute {detail.id}</h3>
+        <div className="fixed inset-0 bg-dark/40 flex items-center justify-center z-[1000]" role="dialog" aria-modal="true">
+          <div className="bg-white border border-soft rounded-xl p-5 max-w-[560px] w-[90%] shadow-soft">
+            <h3 className="text-lg font-black text-dark m-0 mb-3">Dispute {detail.id}</h3>
             <p><strong>Booking:</strong> {detail.bookingId} · <strong>Route:</strong> {getRoute(detail)}</p>
             <p><strong>Reporter:</strong> {getReporterName(detail.reporterId)} · <strong>Type:</strong> {detail.type} · <strong>Status:</strong>{' '}
-            <span className={`status-chip status-${detail.status === 'in_review' ? 'in_review' : detail.status}`}>
+            <span className={`inline-block px-2.5 py-1 rounded-xl text-[10px] font-black uppercase ${
+              detail.status === 'resolved' ? 'bg-neutral-100 text-neutral-700' : detail.status === 'in_review' ? 'bg-info-100 text-info-700' : 'bg-primary text-dark'
+            }`}>
               {detail.status.toUpperCase()}
             </span>
             </p>
             <p><strong>Description:</strong></p>
-            <p className="subtle">{detail.description}</p>
+            <p className="text-muted mb-4">{detail.description}</p>
             {detail.status !== 'resolved' && (
               <>
-                <div className="form-group">
-                  <label>Resolution</label>
-                  <textarea value={resolution} onChange={(e) => setResolution(e.target.value)} rows={3} />
+                <div className="mb-3">
+                  <label className="block mb-1 text-sm text-muted">Resolution</label>
+                  <textarea value={resolution} onChange={(e) => setResolution(e.target.value)} rows={3} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" />
                 </div>
-                <div className="form-group">
-                  <label>Resolved by</label>
-                  <input value={resolvedBy} onChange={(e) => setResolvedBy(e.target.value)} />
+                <div className="mb-4">
+                  <label className="block mb-1 text-sm text-muted">Resolved by</label>
+                  <input value={resolvedBy} onChange={(e) => setResolvedBy(e.target.value)} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" />
                 </div>
-                <div className="modal-actions">
-                  <button type="button" className="btn-primary" onClick={handleResolve}>Mark resolved</button>
-                  <button type="button" className="btn-sm" onClick={() => setDetail(null)}>Close</button>
+                <div className="flex gap-2 flex-wrap mt-4">
+                  <button type="button" className="min-h-[38px] px-4 py-0 bg-primary text-dark border border-primary/50 rounded-xl font-semibold cursor-pointer" onClick={handleResolve}>Mark resolved</button>
+                  <button type="button" className="min-h-[38px] px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setDetail(null)}>Close</button>
                 </div>
               </>
             )}
             {detail.status === 'resolved' && detail.resolution && (
               <>
                 <p><strong>Resolution:</strong> {detail.resolution}</p>
-                <p className="subtle">Resolved by {detail.resolvedBy} at {detail.resolvedAt ? new Date(detail.resolvedAt).toLocaleString() : ''}</p>
-                <button type="button" className="btn-sm" onClick={() => setDetail(null)}>Close</button>
+                <p className="text-muted mb-4">Resolved by {detail.resolvedBy} at {detail.resolvedAt ? new Date(detail.resolvedAt).toLocaleString() : ''}</p>
+                <button type="button" className="min-h-[38px] px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setDetail(null)}>Close</button>
               </>
             )}
           </div>

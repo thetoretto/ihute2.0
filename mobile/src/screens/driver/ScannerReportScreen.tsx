@@ -6,6 +6,7 @@ import { Screen } from '../../components';
 import { getScannerTicketReport } from '../../services/api';
 import type { ScannerTicketReportItem } from '../../services/api';
 import { colors, spacing, typography, radii } from '../../utils/theme';
+import { tightGap } from '../../utils/layout';
 
 type Period = 'past' | 'today' | 'upcoming';
 
@@ -146,7 +147,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: spacing.sm,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: tightGap,
     borderRadius: radii.sm,
     backgroundColor: colors.primaryTint,
   },

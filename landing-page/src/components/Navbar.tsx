@@ -43,8 +43,8 @@ export default function Navbar({ onViewAllTrips, onViewInstantQueue, onBackHome,
         ) : (
           <>
             <div className="rs-nav-links">
-              <a href="#how-it-works">How it works</a>
-              <a href="#hot-destinations">Destinations</a>
+              <a href="#how-it-works" className="rs-nav-quick-link">How it works</a>
+              <a href="#hot-destinations" className="rs-nav-quick-link">Destinations</a>
               <button
                 type="button"
                 className="rs-nav-cta"
@@ -52,15 +52,6 @@ export default function Navbar({ onViewAllTrips, onViewInstantQueue, onBackHome,
               >
                 Search trips
               </button>
-              {onViewInstantQueue && (
-                <button
-                  type="button"
-                  className="rs-nav-link-cta"
-                  onClick={onViewInstantQueue}
-                >
-                  Drivers available now
-                </button>
-              )}
             </div>
             <button
               type="button"

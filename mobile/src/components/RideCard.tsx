@@ -2,7 +2,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../context/ThemeContext';
-import { colors, spacing, radii, typography } from '../utils/theme';
+import { spacing, radii, typography, sizes, borderWidths } from '../utils/theme';
+import { panelRadius } from '../utils/layout';
+import { sharedStyles } from '../utils/sharedStyles';
 import { formatRwf } from '../../../shared/src';
 import RatingDisplay from './RatingDisplay';
 import type { Trip } from '../types';
@@ -45,7 +47,7 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
 
   if (searchResults) {
     return (
-      <Animated.View style={{ transform: [{ scale }] }}>
+      <Animated.View style={[styles.searchResultsWrapper, { transform: [{ scale }] }]}>
         <TouchableOpacity
           style={[
             styles.card,
@@ -86,7 +88,7 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
           <View style={styles.searchResultsChipRow}>
             <View style={[styles.searchResultsTypeChip, { backgroundColor: trip.type === 'insta' ? c.primaryTint : c.surface }]}>
               {trip.type === 'insta' ? (
-                <Ionicons name="flash" size={12} color={c.primary} style={styles.searchResultsTypeChipIcon} />
+                <Ionicons name="flash" size={sizes.icon.small} color={c.primary} style={styles.searchResultsTypeChipIcon} />
               ) : null}
               <Text style={[styles.searchResultsTypeChipText, { color: trip.type === 'insta' ? c.primary : c.textSecondary }]}>
                 {trip.type === 'insta' ? 'Instant' : trip.departureDate ? new Date(trip.departureDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Scheduled'}
@@ -99,7 +101,7 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
                 <Image source={{ uri: trip.driver.avatarUri }} style={styles.searchResultsAvatar} />
               ) : (
                 <View style={[styles.searchResultsAvatar, styles.searchResultsAvatarPlc, { backgroundColor: c.surface }]}>
-                  <Ionicons name="person" size={20} color={c.textMuted} />
+                  <Ionicons name="person" size={sizes.icon.medium} color={c.textMuted} />
                 </View>
               )}
               <Text style={[styles.searchResultsDriverName, { color: c.text }]} numberOfLines={1}>
@@ -107,7 +109,7 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
               </Text>
               {trip.driver.rating != null && (
                 <View style={[styles.searchResultsRatingWrap, { backgroundColor: c.primaryTint }]}>
-                  <Ionicons name="star" size={10} color={c.primary} />
+                  <Ionicons name="star" size={sizes.icon.small} color={c.primary} />
                   <Text style={[styles.searchResultsRating, { color: c.text }]}>{trip.driver.rating}</Text>
                 </View>
               )}
@@ -141,7 +143,7 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
               <Image source={{ uri: trip.driver.avatarUri }} style={styles.blablacarAvatar} />
             ) : (
               <View style={[styles.blablacarAvatar, styles.blablacarAvatarPlc]}>
-                <Ionicons name="person" size={20} color={c.textMuted} />
+                <Ionicons name="person" size={sizes.icon.medium} color={c.textMuted} />
               </View>
             )}
             <View style={styles.blablacarInfo}>
@@ -207,7 +209,7 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
             {isFull ? (
               <Text style={[styles.fullBadge, compact && styles.fullBadgeCompact, { color: c.error }]}>Full</Text>
             ) : (
-              <Text style={[styles.price, compact && styles.priceCompact]}>
+              <Text style={[styles.price, compact && styles.priceCompact, { color: c.success }]}>
                 {formatRwf(trip.pricePerSeat)}
               </Text>
             )}
@@ -216,18 +218,18 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
 
         {/* Row 2: car icon, avatar (always), driver name, rating, badge */}
         <View style={[styles.driverRow, compact && styles.driverRowCompact]}>
-          <Ionicons name="car-outline" size={compact ? 14 : 16} color={c.textSecondary} />
+          <Ionicons name="car-outline" size={compact ? sizes.icon.mid : sizes.icon.mid} color={c.textSecondary} />
           <View style={styles.avatarWrap}>
             {trip.driver.avatarUri ? (
               <Image source={{ uri: trip.driver.avatarUri }} style={[styles.avatar, compact && styles.avatarCompact]} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder, compact && styles.avatarCompact, { backgroundColor: c.surface }]}>
-                <Ionicons name="person" size={compact ? 12 : 18} color={c.textMuted} />
+                <Ionicons name="person" size={compact ? sizes.icon.small : sizes.icon.medium} color={c.textMuted} />
               </View>
             )}
             {trip.driver.statusBadge && (
               <View style={[styles.verifiedBadge, compact && styles.verifiedBadgeCompact, { backgroundColor: c.card }]}>
-                <Ionicons name="checkmark-circle" size={compact ? 12 : 14} color={c.primary} />
+                <Ionicons name="checkmark-circle" size={compact ? sizes.icon.small : sizes.icon.mid} color={c.primary} />
               </View>
             )}
           </View>
@@ -247,26 +249,22 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
     borderRadius: radii.md,
     padding: spacing.sm,
     marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: borderWidths.thin,
   },
   cardCompact: {
     padding: spacing.xs,
     marginBottom: spacing.xs,
   },
-  cardEmphasis: {
-    borderColor: colors.borderLight,
-  },
+  cardEmphasis: {},
   cardBlablacar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: spacing.md,
-    borderRadius: 24,
+    borderRadius: panelRadius,
     marginBottom: spacing.sm,
   },
   blablacarLeft: {
@@ -277,27 +275,26 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   blablacarAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    ...sharedStyles.avatarLg,
+    borderRadius: radii.md,
   },
-  blablacarAvatarPlc: {
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  blablacarAvatarPlc: sharedStyles.avatarPlaceholder,
   blablacarInfo: { flex: 1, minWidth: 0 },
-  blablacarTime: { ...typography.body, fontWeight: '700', fontSize: 16 },
-  blablacarMeta: { ...typography.caption, fontSize: 12, marginTop: 2 },
+  blablacarTime: typography.bodyBold,
+  blablacarMeta: { ...typography.caption, marginTop: spacing.xs },
   blablacarRight: { alignItems: 'flex-end' },
-  blablacarPrice: { ...typography.body, fontWeight: '800', fontSize: 18 },
-  blablacarPerSeat: { ...typography.caption, fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 0 },
+  blablacarPrice: typography.priceLg,
+  blablacarPerSeat: { ...typography.overline, marginTop: 0 },
   blablacarFull: { ...typography.caption, fontWeight: '600' },
+  searchResultsWrapper: {
+    alignSelf: 'stretch',
+  },
   cardSearchResults: {
     padding: spacing.md,
     borderRadius: radii.lg,
     marginBottom: spacing.md,
-    borderWidth: 1,
+    borderWidth: borderWidths.thin,
+    alignSelf: 'stretch',
   },
   searchResultsTop: {
     flexDirection: 'row',
@@ -317,63 +314,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.xs,
   },
-  searchResultsTime: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    fontSize: 14,
-  },
+  searchResultsTime: { ...typography.bodySmall, fontWeight: '700' },
   searchResultsLineWrap: {
-    width: 2,
-    marginVertical: spacing.xs,
-    borderLeftWidth: 2,
-    borderStyle: 'dashed',
-    flex: 1,
-    minHeight: 16,
-    position: 'relative',
+    ...sharedStyles.timelineLine,
+    minHeight: spacing.md,
   },
   searchResultsDot: {
-    position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderWidth: 2,
+    ...sharedStyles.timelineDot,
     left: -5,
   },
-  searchResultsDotTop: { top: -4 },
-  searchResultsDotBottom: { bottom: -4 },
+  searchResultsDotTop: { top: -spacing.xs },
+  searchResultsDotBottom: { bottom: -spacing.xs },
   searchResultsPlaces: {
     flex: 1,
     justifyContent: 'space-between',
     paddingVertical: spacing.xs,
     minWidth: 0,
   },
-  searchResultsPlace: {
-    ...typography.bodySmall,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  searchResultsPrice: {
-    ...typography.h3,
-    fontWeight: '800',
-    fontSize: 18,
-  },
+  searchResultsPlace: { ...typography.bodySmall, fontWeight: '600' },
+  searchResultsPrice: typography.priceLg,
   searchResultsChipRow: { flexDirection: 'row', marginBottom: spacing.xs },
   searchResultsTypeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 2,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radii.sm,
+    ...sharedStyles.chip,
     alignSelf: 'flex-start',
   },
-  searchResultsTypeChipIcon: { marginRight: 4 },
-  searchResultsTypeChipText: { ...typography.caption, fontWeight: '700', fontSize: 10 },
+  searchResultsTypeChipIcon: sharedStyles.chipIconMargin,
+  searchResultsTypeChipText: typography.overline,
   searchResultsDriverRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...sharedStyles.listRowBetween,
     paddingTop: spacing.md,
-    borderTopWidth: 1,
+    borderTopWidth: borderWidths.thin,
   },
   searchResultsDriverLeft: {
     flexDirection: 'row',
@@ -382,113 +352,67 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  searchResultsAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  searchResultsAvatarPlc: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchResultsDriverName: {
-    ...typography.caption,
-    fontWeight: '700',
-    fontSize: 12,
-  },
+  searchResultsAvatar: sharedStyles.avatarSm,
+  searchResultsAvatarPlc: sharedStyles.avatarPlaceholder,
+  searchResultsDriverName: typography.captionBold,
   searchResultsRatingWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: radii.sm,
-    gap: 2,
+    gap: spacing.xs,
   },
-  searchResultsRating: {
-    ...typography.caption,
-    fontWeight: '700',
-    fontSize: 10,
-  },
-  searchResultsSeatsLeft: {
-    ...typography.caption,
-    fontWeight: '700',
-    fontSize: 10,
-  },
+  searchResultsRating: typography.caption10,
+  searchResultsSeatsLeft: typography.overline,
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
-  topRowCompact: {
-    marginBottom: spacing.xs,
-  },
-  routeBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
-  depTime: { ...typography.body, color: colors.text, fontWeight: '700', fontSize: 15 },
-  depTimeCompact: { fontSize: 13 },
-  arrTime: { ...typography.body, color: colors.text, fontWeight: '600', fontSize: 14 },
-  arrTimeCompact: { fontSize: 12 },
-  location: { ...typography.caption, color: colors.textSecondary, fontSize: 11 },
-  locationCompact: { fontSize: 10 },
+  topRowCompact: { marginBottom: spacing.xs },
+  routeBlock: { flex: 1, minWidth: 0 },
+  depTime: typography.price,
+  depTimeCompact: typography.driverName,
+  arrTime: { ...typography.bodySmall, fontWeight: '600' },
+  arrTimeCompact: typography.caption,
+  location: typography.caption11,
+  locationCompact: typography.caption10,
   durationBlock: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: spacing.xs,
   },
   durationLine: {
-    width: 2,
-    height: 10,
-    backgroundColor: colors.border,
+    width: borderWidths.medium,
+    height: spacing.sm + 2,
     marginRight: spacing.xs,
   },
-  duration: { ...typography.caption, color: colors.textSecondary, fontSize: 11 },
-  durationCompact: { fontSize: 10 },
+  duration: typography.caption11,
+  durationCompact: typography.caption10,
   priceBadge: { alignSelf: 'flex-start' },
-  price: { ...typography.body, color: colors.success, fontWeight: '700', fontSize: 15 },
-  priceCompact: { fontSize: 12, fontWeight: '600' },
-  fullBadge: { ...typography.caption, color: colors.error, fontWeight: '600', fontSize: 12 },
-  fullBadgeCompact: { fontSize: 10 },
-  driverRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  driverRowCompact: {
-    gap: spacing.xs,
-  },
-  avatarWrap: {
-    position: 'relative',
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  avatarCompact: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
-  avatarPlaceholder: {
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  price: typography.price,
+  priceCompact: { ...typography.caption, fontWeight: '600' },
+  fullBadge: { ...typography.caption, fontWeight: '600' },
+  fullBadgeCompact: typography.caption10,
+  driverRow: { ...sharedStyles.listRow },
+  driverRowCompact: { ...sharedStyles.listRow, gap: spacing.xs },
+  avatarWrap: { position: 'relative' },
+  avatar: sharedStyles.avatarMd,
+  avatarCompact: sharedStyles.avatarXs,
+  avatarPlaceholder: sharedStyles.avatarPlaceholder,
   verifiedBadge: {
     position: 'absolute',
-    right: -2,
-    bottom: -2,
-    backgroundColor: colors.card,
-    borderRadius: 10,
+    right: -borderWidths.medium,
+    bottom: -borderWidths.medium,
+    borderRadius: radii.sm,
   },
   verifiedBadgeCompact: {
-    right: -1,
-    bottom: -1,
+    right: -borderWidths.thin,
+    bottom: -borderWidths.thin,
   },
   driverInfo: { flex: 1, minWidth: 0 },
-  driverName: { ...typography.bodySmall, color: colors.text, fontWeight: '600', fontSize: 13 },
-  driverNameCompact: { ...typography.caption, color: colors.text, fontSize: 11 },
-  rating: { ...typography.caption, color: colors.textSecondary, fontSize: 11 },
+  driverName: typography.driverName,
+  driverNameCompact: typography.caption11,
+  rating: typography.caption11,
 });

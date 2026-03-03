@@ -8,7 +8,9 @@
   --lp-primary-active: #FDD835;
   --lp-on-primary:   #171C22;
   --lp-text:         #171C22;
-  --lp-muted:        #94A9BC;
+  /* Muted tuned for contrast on light bg (--lp-bg-main / --lp-white); use --lp-muted-strong for labels where needed */
+  --lp-muted:        #64748B;
+  --lp-muted-strong: #475569;
   --lp-bg-main:      #F8F3EF;
   --lp-bg-soft:      #F8F3EF;
   --lp-surface:      #F8F3EF;
@@ -72,8 +74,8 @@
   --rs-border:       #E6DBEB;
   --rs-slate-50:     #f8fafc;
   --rs-slate-100:    #E6DBEB;
-  --rs-slate-400:    #94A9BC;
-  --rs-slate-500:    #94A9BC;
+  --rs-slate-400:    #64748B;
+  --rs-slate-500:    #64748B;
   --rs-slate-800:    #171C22;
   --rs-slate-900:    #171C22;
 }
@@ -1377,7 +1379,7 @@ button {
   margin-top: 64px;
   padding: 0;
   background: var(--lp-surface);
-  color: var(--lp-white);
+  color: var(--lp-text);
 }
 
 .footer-inner {
@@ -1602,7 +1604,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--lp-white);
+  color: var(--lp-on-primary);
   font-size: 12px;
 }
 

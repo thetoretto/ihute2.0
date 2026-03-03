@@ -14,8 +14,8 @@ import { useRole } from '../../context/RoleContext';
 import { RoleToggle, RideCard, Screen, CarRefreshIndicator } from '../../components';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeColors } from '../../context/ThemeContext';
-import { buttonHeights, colors, spacing, typography, radii } from '../../utils/theme';
-import { listBottomPaddingTab, sectionTitleStyle } from '../../utils/layout';
+import { buttonHeights, spacing, typography, radii, sizes } from '../../utils/theme';
+import { listBottomPaddingTab, sectionTitleStyle, tightGap } from '../../utils/layout';
 import { strings } from '../../constants/strings';
 import { searchTrips, getUserBookings } from '../../services/api';
 import type { Trip, Booking } from '../../types';
@@ -66,7 +66,7 @@ export default function PassengerHomeScreen() {
   return (
     <Screen
       scroll
-      style={styles.container}
+      style={[styles.container, { backgroundColor: c.background }]}
       contentContainerStyle={[styles.content, { paddingTop: effectiveSpacing.lg, paddingBottom: listBottomPaddingTab }]}
       scrollProps={{
         refreshControl: (
@@ -85,19 +85,19 @@ export default function PassengerHomeScreen() {
       }}
     >
       {/* Decorative blobs */}
-      <View style={styles.blob1} />
-      <View style={styles.blob2} />
+      <View style={[styles.blob1, { backgroundColor: c.primary }]} />
+      <View style={[styles.blob2, { backgroundColor: c.successLight }]} />
 
       <View style={[styles.header, { marginBottom: effectiveSpacing.lg }]}>
         <View style={styles.headerLeft}>
-          <Text style={styles.welcomeLabel}>Welcome back</Text>
+          <Text style={[styles.welcomeLabel, { color: c.primary }]}>Welcome back</Text>
           <Text style={[styles.userName, { color: c.text }]}>{displayName}</Text>
         </View>
         <View style={styles.avatarWrap}>
           {user?.avatarUri ? (
             <Image source={{ uri: user.avatarUri }} style={styles.avatar} />
           ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: c.background, borderColor: c.cardBorder }]}>
               <Ionicons name="person" size={28} color={c.textMuted} />
             </View>
           )}
@@ -118,19 +118,19 @@ export default function PassengerHomeScreen() {
 
       {/* Single CTA: Find trips (unified instant + scheduled) */}
       <TouchableOpacity
-        style={styles.heroCard}
+        style={[styles.heroCard, { backgroundColor: c.passengerDark }]}
         onPress={() => navigation.navigate('SearchResults', {})}
         activeOpacity={0.9}
       >
         <View style={styles.heroContent}>
-          <Text style={styles.heroTitle}>Ready to travel?</Text>
-          <Text style={styles.heroSubtitle}>Find instant and scheduled rides with verified drivers.</Text>
-          <View style={styles.heroBtn}>
-            <Text style={styles.heroBtnText}>Find trips</Text>
+          <Text style={[styles.heroTitle, { color: c.onDarkText }]}>Ready to travel?</Text>
+          <Text style={[styles.heroSubtitle, { color: c.onDarkTextMuted }]}>Find instant and scheduled rides with verified drivers.</Text>
+          <View style={[styles.heroBtn, { backgroundColor: c.primary }]}>
+            <Text style={[styles.heroBtnText, { color: c.onPrimary }]}>Find trips</Text>
             <Ionicons name="arrow-forward" size={16} color={c.onPrimary} />
           </View>
         </View>
-        <View style={styles.heroBlob} />
+        <View style={[styles.heroBlob, { backgroundColor: c.decorativeLight }]} />
       </TouchableOpacity>
 
       {/* Upcoming Trips */}
@@ -145,7 +145,7 @@ export default function PassengerHomeScreen() {
               activeOpacity={0.9}
             >
               <View style={styles.upcomingLeft}>
-                <Text style={styles.upcomingBadge}>Confirmed</Text>
+                <Text style={[styles.upcomingBadge, { color: c.success }]}>Confirmed</Text>
                 <Text style={[styles.upcomingRoute, { color: c.text }]}>
                   {b.trip.departureHotpoint.name} → {b.trip.destinationHotpoint.name}
                 </Text>
@@ -153,7 +153,7 @@ export default function PassengerHomeScreen() {
                   {b.trip.departureTime} • with {b.trip.driver.name}
                 </Text>
               </View>
-              <View style={styles.upcomingChevron}>
+              <View style={[styles.upcomingChevron, { backgroundColor: c.background }]}>
                 <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
               </View>
             </TouchableOpacity>
@@ -184,7 +184,7 @@ export default function PassengerHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surface },
+  container: { flex: 1 },
   content: {},
   blob1: {
     position: 'absolute',
@@ -193,7 +193,6 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: colors.primary,
     opacity: 0.08,
   },
   blob2: {
@@ -203,7 +202,6 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: colors.successLight,
     opacity: 0.08,
   },
   header: {
@@ -216,26 +214,22 @@ const styles = StyleSheet.create({
     ...typography.caption,
     fontWeight: '700',
     letterSpacing: 1.2,
-    color: colors.primary,
-    marginBottom: 2,
+    marginBottom: tightGap,
     textTransform: 'uppercase',
   },
   userName: {
     ...typography.h2,
-    fontSize: 26,
+    fontSize: typography.h2.fontSize + 4,
     fontWeight: '800',
   },
   avatarWrap: {},
-  avatar: { width: 56, height: 56, borderRadius: radii.md },
+  avatar: { width: sizes.avatar.xl, height: sizes.avatar.xl, borderRadius: radii.md },
   avatarPlaceholder: {
-    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.cardBorder,
   },
   heroCard: {
-    backgroundColor: colors.dark,
     borderRadius: radii.lg,
     padding: spacing.lg,
     marginBottom: spacing.lg,
@@ -245,19 +239,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   heroContent: { position: 'relative', zIndex: 1 },
-  heroTitle: { ...typography.h2, color: colors.onDarkText, marginBottom: 4 },
-  heroSubtitle: { ...typography.bodySmall, color: colors.onDarkTextMuted, marginBottom: spacing.md },
+  heroTitle: { ...typography.h2, marginBottom: spacing.xs },
+  heroSubtitle: { ...typography.bodySmall, marginBottom: spacing.md },
   heroBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: colors.primary,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radii.md,
     gap: spacing.sm,
   },
-  heroBtnText: { ...typography.bodySmall, fontWeight: '700', color: colors.onPrimary },
+  heroBtnText: { ...typography.bodySmall, fontWeight: '700' },
   heroBlob: {
     position: 'absolute',
     right: -24,
@@ -265,28 +258,23 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.decorativeLight,
   },
-  sectionTitle: { ...sectionTitleStyle, fontSize: 18 },
+  sectionTitle: { ...sectionTitleStyle, fontSize: typography.h3.fontSize },
   sectionTitleTop: { marginTop: spacing.md },
   modeRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   modeBtn: {
     flex: 1,
-    backgroundColor: colors.surface,
     borderRadius: radii.button,
     minHeight: buttonHeights.medium,
     borderWidth: 1,
-    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modeBtnActive: {
-    backgroundColor: colors.primary,
     borderWidth: 1,
-    borderColor: colors.primary,
   },
-  modeText: { ...typography.bodySmall, color: colors.textSecondary },
-  modeTextActive: { ...typography.bodySmall, color: colors.dark, fontWeight: '600' },
+  modeText: { ...typography.bodySmall },
+  modeTextActive: { ...typography.bodySmall, fontWeight: '600' },
   upcomingList: { gap: spacing.sm, marginBottom: spacing.md },
   upcomingCard: {
     flexDirection: 'row',
@@ -301,17 +289,15 @@ const styles = StyleSheet.create({
     ...typography.caption,
     fontWeight: '700',
     letterSpacing: 1,
-    color: colors.success,
-    marginBottom: 2,
+    marginBottom: tightGap,
     textTransform: 'uppercase',
   },
   upcomingRoute: { ...typography.body, fontWeight: '700' },
-  upcomingMeta: { ...typography.caption, marginTop: 2 },
+  upcomingMeta: { ...typography.caption, marginTop: tightGap },
   upcomingChevron: {
-    width: 40,
-    height: 40,
+    width: sizes.touchTarget.iconButton,
+    height: sizes.touchTarget.iconButton,
     borderRadius: radii.button,
-    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },

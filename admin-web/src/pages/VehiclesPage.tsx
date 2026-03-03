@@ -56,7 +56,7 @@ export default function VehiclesPage() {
                 <td className="py-5 text-sm">{v.seats}</td>
                 <td className="py-5">
                   <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                    v.approvalStatus === 'pending' ? 'bg-primary text-dark' : v.approvalStatus === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    v.approvalStatus === 'pending' ? 'bg-primary text-dark' : v.approvalStatus === 'approved' ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'
                   }`}>
                     {v.approvalStatus.toUpperCase()}
                   </span>
@@ -66,7 +66,7 @@ export default function VehiclesPage() {
                     <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-primary text-dark mr-2" onClick={() => handleApproval(v.id, 'approved')}>Approve</button>
                   )}
                   {v.approvalStatus !== 'rejected' && (
-                    <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-red-100 text-red-700 mr-2" onClick={() => handleApproval(v.id, 'rejected')}>Reject</button>
+                    <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-danger-100 text-danger-700 mr-2" onClick={() => handleApproval(v.id, 'rejected')}>Reject</button>
                   )}
                   {v.approvalStatus === 'approved' && (
                     <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-surface hover:bg-soft" onClick={() => handleApproval(v.id, 'pending')}>Set pending</button>

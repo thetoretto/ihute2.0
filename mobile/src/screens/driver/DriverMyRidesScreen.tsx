@@ -25,9 +25,14 @@ import {
   CarRefreshIndicator,
 } from '../../components';
 import { useTabbedList } from '../../hooks/useTabbedList';
-import { colors, spacing, typography, radii } from '../../utils/theme';
-import { listBottomPaddingDefault } from '../../utils/layout';
+import { spacing, typography, radii, sizes, borderWidths, cardShadowStrong } from '../../utils/theme';
+import {
+  listBottomPaddingDefault,
+  listBottomPaddingWithFab,
+  fabBottomOffset,
+} from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
+import { strings } from '../../constants/strings';
 import type { DriverTripActivity, ActivityLogEntry, ActivityLogEntryKind } from '../../types';
 
 const TABS = [
@@ -100,7 +105,7 @@ export default function DriverMyRidesScreen() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: 'All Activities',
+      title: strings.nav.allActivities,
       headerRight: () => (
         <TouchableOpacity
           onPress={() => {
@@ -125,7 +130,7 @@ export default function DriverMyRidesScreen() {
               ].filter(Boolean) as { text: string; style?: 'cancel'; onPress?: () => void }[]
             );
           }}
-          style={headerBtnStyle}
+          style={styles.headerRightBtn}
           hitSlop={12}
         >
           <Ionicons name="filter-outline" size={20} color={c.dark} />
@@ -154,11 +159,11 @@ export default function DriverMyRidesScreen() {
   const getActivityIcon = (item: DriverTripActivity) => {
     const isComplete = item.trip.status === 'completed';
     return (
-      <View style={[styles.iconBox, { backgroundColor: isComplete ? colors.successTint : c.primaryTint }]}>
+      <View style={[styles.iconBox, { backgroundColor: isComplete ? c.successTint : c.primaryTint }]}>
         <Ionicons
           name={isComplete ? 'checkmark-circle' : 'car'}
           size={20}
-          color={isComplete ? colors.success : c.primary}
+          color={isComplete ? c.success : c.primary}
         />
       </View>
     );
@@ -170,13 +175,13 @@ export default function DriverMyRidesScreen() {
 
   const getLogIcon = (kind: ActivityLogEntryKind) => {
     const map: Record<ActivityLogEntryKind, { icon: keyof typeof Ionicons.glyphMap; bg: string; color: string }> = {
-      trip_created: { icon: 'car', bg: colors.primaryTint, color: colors.primary },
-      booking_created: { icon: 'person-add', bg: colors.primaryTint, color: colors.primary },
-      ticket_scanned: { icon: 'checkmark-circle', bg: colors.successTint, color: colors.success },
-      car_full: { icon: 'people', bg: colors.primaryTint, color: colors.primary },
-      trip_cancelled: { icon: 'close-circle', bg: colors.errorTint, color: colors.error },
-      booking_cancelled: { icon: 'close-circle', bg: colors.errorTint, color: colors.error },
-      trip_completed: { icon: 'checkmark-done', bg: colors.successTint, color: colors.success },
+      trip_created: { icon: 'car', bg: c.primaryTint, color: c.primary },
+      booking_created: { icon: 'person-add', bg: c.primaryTint, color: c.primary },
+      ticket_scanned: { icon: 'checkmark-circle', bg: c.successTint, color: c.success },
+      car_full: { icon: 'people', bg: c.primaryTint, color: c.primary },
+      trip_cancelled: { icon: 'close-circle', bg: c.errorTint, color: c.error },
+      booking_cancelled: { icon: 'close-circle', bg: c.errorTint, color: c.error },
+      trip_completed: { icon: 'checkmark-done', bg: c.successTint, color: c.success },
     };
     const { icon, bg, color } = map[kind];
     return (
@@ -215,7 +220,7 @@ export default function DriverMyRidesScreen() {
       <FlatList
         data={logEntries}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, styles.logListContent, { paddingBottom: listBottomPaddingDefault + 72 }]}
+        contentContainerStyle={[styles.listContent, styles.logListContent, styles.listContentWithFab]}
         refreshControl={
           <RefreshControl
             refreshing={logLoading}
@@ -299,7 +304,7 @@ export default function DriverMyRidesScreen() {
           key={tab}
           data={list}
           keyExtractor={(item) => item.trip.id}
-          contentContainerStyle={[styles.listContent, { paddingBottom: listBottomPaddingDefault + 72 }]}
+          contentContainerStyle={[styles.listContent, styles.listContentWithFab]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -329,7 +334,7 @@ export default function DriverMyRidesScreen() {
                   <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>
                     {item.trip.departureHotpoint?.name ?? '—'} → {item.trip.destinationHotpoint?.name ?? '—'}
                   </Text>
-                  <Text style={[styles.cardAmount, { color: colors.success }]}>
+                  <Text style={[styles.cardAmount, { color: c.success }]}>
                     {maskAmount(item.collectedAmount)}
                   </Text>
                 </View>
@@ -352,7 +357,7 @@ export default function DriverMyRidesScreen() {
       {/* FAB - reference style */}
       {!isScanner && (
         <TouchableOpacity
-          style={[styles.fab, { backgroundColor: c.primary, bottom: listBottomPaddingDefault + 8 }]}
+          style={[styles.fab, { backgroundColor: c.primary, bottom: listBottomPaddingDefault + fabBottomOffset }]}
           onPress={() => {
             navigation.goBack();
             setTimeout(() => {
@@ -370,10 +375,12 @@ export default function DriverMyRidesScreen() {
   );
 }
 
-const headerBtnStyle = { padding: spacing.sm, marginRight: spacing.xs };
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerRightBtn: {
+    padding: spacing.sm,
+    marginRight: spacing.xs,
+  },
   tabsWrapper: { marginBottom: spacing.sm },
   tabsScroll: {
     flexDirection: 'row',
@@ -384,15 +391,14 @@ const styles = StyleSheet.create({
   },
   tabPill: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.sm,
     borderRadius: radii.full,
-    borderWidth: 1,
+    borderWidth: borderWidths.thin,
   },
   tabPillText: { ...typography.bodySmall, fontWeight: '700' },
   tabPillTextActive: { fontWeight: '800' },
   sectionLabel: {
-    fontSize: 10,
-    fontWeight: '700',
+    ...typography.overline,
     letterSpacing: 1.2,
     marginBottom: spacing.sm,
     marginHorizontal: spacing.xs,
@@ -402,12 +408,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.md,
     borderRadius: radii.lg,
-    borderWidth: 1,
+    borderWidth: borderWidths.thin,
     marginBottom: spacing.md,
   },
   iconBox: {
-    width: 40,
-    height: 40,
+    width: sizes.touchTarget.iconButton,
+    height: sizes.touchTarget.iconButton,
     borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
@@ -417,32 +423,29 @@ const styles = StyleSheet.create({
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.sm },
   cardTitle: { ...typography.body, fontWeight: '700', flex: 1 },
   cardAmount: { ...typography.bodySmall, fontWeight: '800' },
-  cardDesc: { ...typography.bodySmall, marginTop: 2 },
-  cardTimeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.sm },
-  cardTime: { ...typography.caption, fontSize: 10, fontWeight: '600' },
+  cardDesc: { ...typography.bodySmall, marginTop: spacing.xs },
+  cardTimeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
+  cardTime: { ...typography.caption10, fontWeight: '600' },
   chevron: { marginLeft: spacing.xs },
   listContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+  listContentWithFab: { paddingBottom: listBottomPaddingWithFab },
   errorBanner: {
     marginBottom: spacing.md,
     padding: spacing.md,
     borderRadius: radii.md,
-    borderWidth: 1,
+    borderWidth: borderWidths.thin,
     gap: spacing.sm,
   },
   errorText: { ...typography.body },
   fab: {
     position: 'absolute',
     right: spacing.lg,
-    width: 56,
-    height: 56,
+    width: sizes.avatar.xl,
+    height: sizes.avatar.xl,
     borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    ...cardShadowStrong,
   },
   logLoadingWrap: {
     flex: 1,

@@ -132,7 +132,7 @@ export default function ActivitiesPage() {
                 <td className="py-5 font-bold text-sm">{trip.departureHotpoint.name} → {trip.destinationHotpoint.name}</td>
                 <td className="py-5 text-sm">{trip.type}</td>
                 <td className="py-5">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${trip.status === 'active' ? 'bg-primary text-dark' : trip.status === 'completed' ? 'bg-green-100 text-green-700' : trip.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${trip.status === 'active' ? 'bg-primary text-dark' : trip.status === 'completed' ? 'bg-success-100 text-success-700' : trip.status === 'cancelled' ? 'bg-danger-100 text-danger-700' : 'bg-neutral-100 text-neutral-700'}`}>
                     {trip.status.toUpperCase()}
                   </span>
                 </td>
@@ -167,13 +167,13 @@ export default function ActivitiesPage() {
                 <td className="py-5 font-bold text-sm">{booking.passenger.name}</td>
                 <td className="py-5 text-sm">{booking.trip.departureHotpoint.name} → {booking.trip.destinationHotpoint.name}</td>
                 <td className="py-5">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${booking.status === 'upcoming' ? 'bg-primary text-dark' : booking.status === 'ongoing' ? 'bg-blue-100 text-blue-700' : booking.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${booking.status === 'upcoming' ? 'bg-primary text-dark' : booking.status === 'ongoing' ? 'bg-info-100 text-info-700' : booking.status === 'completed' ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'}`}>
                     {booking.status.toUpperCase()}
                   </span>
                 </td>
                 <td className="py-5 text-sm">{booking.seats}</td>
                 <td className="py-5">
-                  <span className={`inline-block px-2 py-0.5 rounded-lg text-[11px] font-bold ${booking.paymentMethod === 'cash' ? 'bg-green-100 text-green-700' : booking.paymentMethod === 'mobile_money' ? 'bg-blue-100 text-blue-700' : 'bg-soft text-dark'}`}>
+                  <span className={`inline-block px-2 py-0.5 rounded-lg text-[11px] font-bold ${booking.paymentMethod === 'cash' ? 'bg-success-100 text-success-700' : booking.paymentMethod === 'mobile_money' ? 'bg-info-100 text-info-700' : 'bg-soft text-dark'}`}>
                     {booking.paymentMethod.replace('_', ' ')}
                   </span>
                 </td>

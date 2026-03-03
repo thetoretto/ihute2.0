@@ -15,8 +15,8 @@ import { PaymentMethodIcons, Screen } from '../../components';
 import { getTrip, getTripsStore, bookTrip } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
-import { colors, spacing, typography, radii, buttonHeights } from '../../utils/theme';
-import { screenContentPadding } from '../../utils/layout';
+import { spacing, typography, radii, buttonHeights, cardShadowStrong, sizes, borderWidths } from '../../utils/theme';
+import { screenContentPadding, tightGap, scrollStepBottomPadding } from '../../utils/layout';
 import { formatRwf } from '../../../../shared/src';
 import type { Trip, PaymentMethod } from '../../types';
 
@@ -191,7 +191,7 @@ export default function PassengerBookingScreen() {
                   onPress={() => toggleSeat(seatId)}
                   style={[
                     styles.seatBtn,
-                    { borderColor: c.border },
+                    { borderColor: c.border, backgroundColor: c.surface },
                     isSelected && { backgroundColor: c.primary, borderColor: c.primary },
                   ]}
                   activeOpacity={0.8}
@@ -269,8 +269,8 @@ export default function PassengerBookingScreen() {
               <View style={styles.timelineLeft}>
                 <View style={styles.timelineDotsWrap}>
                   <View style={[styles.timelineDashed, { borderColor: c.border }]} />
-                  <View style={[styles.timelineDot, styles.timelineDotTop, { backgroundColor: c.primary }]} />
-                  <View style={[styles.timelineDot, styles.timelineDotBottom, { backgroundColor: c.primary }]} />
+                  <View style={[styles.timelineDot, styles.timelineDotTop, { backgroundColor: c.primary, borderColor: c.card }]} />
+                  <View style={[styles.timelineDot, styles.timelineDotBottom, { backgroundColor: c.primary, borderColor: c.card }]} />
                 </View>
                 <View style={styles.timelineLabels}>
                   <View style={styles.timelineItem}>
@@ -333,7 +333,7 @@ export default function PassengerBookingScreen() {
                 <Text style={[styles.fullCarLabel, { color: fullCarToggle ? c.primary : c.text }]}>Book full car</Text>
                 <Text style={[styles.fullCarSub, { color: c.textMuted }]}>{trip.seatsAvailable} seats • {formatRwf(trip.seatsAvailable * trip.pricePerSeat)}</Text>
                 <View style={[styles.fullCarToggle, { backgroundColor: fullCarToggle ? c.primary : c.border }]}>
-                  {fullCarToggle && <Ionicons name="checkmark" size={14} color={c.onPrimary ?? '#fff'} />}
+                  {fullCarToggle && <Ionicons name="checkmark" size={14} color={c.onPrimary ?? c.onAccent} />}
                 </View>
               </TouchableOpacity>
             )}
@@ -349,7 +349,7 @@ export default function PassengerBookingScreen() {
             {renderSeatMap()}
             <View style={styles.legendRow}>
               <View style={styles.legendItem}>
-                <View style={[styles.legendBox, styles.legendFree, { borderColor: c.border }]} />
+                <View style={[styles.legendBox, styles.legendFree, { borderColor: c.border, backgroundColor: c.surface }]} />
                 <Text style={[styles.legendText, { color: c.textMuted }]}>Free</Text>
               </View>
               <View style={styles.legendItem}>
@@ -474,9 +474,9 @@ export default function PassengerBookingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { ...typography.body, color: colors.textSecondary, marginTop: spacing.md },
+  loadingText: { ...typography.body, marginTop: spacing.md },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -486,17 +486,22 @@ const styles = StyleSheet.create({
     minHeight: 56,
     borderBottomWidth: 1,
   },
-  headerBtn: { padding: spacing.xs, minWidth: 44, minHeight: 44, justifyContent: 'center' },
+  headerBtn: {
+    padding: spacing.xs,
+    minWidth: sizes.touchTarget.min,
+    minHeight: sizes.touchTarget.min,
+    justifyContent: 'center',
+  },
   headerBtnInner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: sizes.touchTarget.iconButton,
+    height: sizes.touchTarget.iconButton,
+    borderRadius: sizes.touchTarget.iconButton / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerBtnInvisible: { opacity: 0 },
   headerTitle: { ...typography.bodySmall, fontWeight: '800', flex: 1, textAlign: 'center' },
-  headerSpacer: { width: 40 },
+  headerSpacer: { width: sizes.touchTarget.iconButton },
   stepperWrap: {
     paddingVertical: spacing.md,
     paddingHorizontal: screenContentPadding,
@@ -504,18 +509,30 @@ const styles = StyleSheet.create({
   },
   stepperRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   stepperItem: { flexDirection: 'row', alignItems: 'center' },
-  stepperDot: { width: 10, height: 10, borderRadius: 5 },
-  stepperDotActive: { width: 12, height: 12, borderRadius: 6 },
-  stepperLine: { width: 24, height: 2, marginHorizontal: 4 },
+  stepperDot: {
+    width: sizes.timelineDot + 2,
+    height: sizes.timelineDot + 2,
+    borderRadius: (sizes.timelineDot + 2) / 2,
+  },
+  stepperDotActive: {
+    width: sizes.timelineDotLg,
+    height: sizes.timelineDotLg,
+    borderRadius: sizes.timelineDotLg / 2,
+  },
+  stepperLine: {
+    width: spacing.lg,
+    height: borderWidths.medium,
+    marginHorizontal: spacing.xs,
+  },
   stepperLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: spacing.xs,
     paddingHorizontal: 0,
   },
-  stepperLabel: { ...typography.caption, fontSize: 10, flex: 1, textAlign: 'center' },
+  stepperLabel: { ...typography.caption10, flex: 1, textAlign: 'center' },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: screenContentPadding, paddingTop: spacing.md, paddingBottom: 220 },
+  scrollContent: { paddingHorizontal: screenContentPadding, paddingTop: spacing.md, paddingBottom: scrollStepBottomPadding },
   stepContent: { paddingBottom: spacing.xl },
 
   fullCarRow: {
@@ -530,9 +547,9 @@ const styles = StyleSheet.create({
   fullCarLabel: { ...typography.bodySmall, fontWeight: '800', flex: 1 },
   fullCarSub: { ...typography.caption },
   fullCarToggle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: sizes.icon.large,
+    height: sizes.icon.large,
+    borderRadius: radii.smMedium,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -546,7 +563,7 @@ const styles = StyleSheet.create({
   },
   timelineLeft: { flexDirection: 'row', flex: 1, minWidth: 0 },
   timelineDotsWrap: {
-    width: 24,
+    width: sizes.icon.large,
     marginRight: spacing.sm,
     position: 'relative',
     alignItems: 'center',
@@ -561,11 +578,10 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: sizes.timelineDotLg,
+    height: sizes.timelineDotLg,
+    borderRadius: radii.xs,
     borderWidth: 2,
-    borderColor: colors.card,
     position: 'absolute',
     left: 6,
   },
@@ -573,11 +589,11 @@ const styles = StyleSheet.create({
   timelineDotBottom: { bottom: 0 },
   timelineLabels: { flex: 1, minWidth: 0 },
   timelineItem: { marginBottom: spacing.lg },
-  timelineTime: { ...typography.h3, fontSize: 20, fontWeight: '800' },
-  timelinePlace: { ...typography.bodySmall, fontWeight: '600', marginTop: 2 },
+  timelineTime: typography.time,
+  timelinePlace: { ...typography.bodySmall, fontWeight: '600', marginTop: tightGap },
   timelinePriceWrap: { alignItems: 'flex-end' },
-  timelinePrice: { ...typography.h2, fontSize: 24, fontWeight: '800' },
-  perSeatLabel: { ...typography.caption, fontWeight: '800', textTransform: 'uppercase', fontSize: 10, marginTop: 2 },
+  timelinePrice: typography.timeLg,
+  perSeatLabel: { ...typography.overline, fontWeight: '800', marginTop: tightGap },
   timelineMeta: { borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.lg },
   timelineMetaText: { ...typography.bodySmall, fontWeight: '600' },
   vehicleSection: { marginTop: spacing.sm },
@@ -588,11 +604,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.md,
     borderRadius: radii.md,
-    borderWidth: 2,
+    borderWidth: borderWidths.medium,
   },
   vehicleIconWrap: {
-    width: 56,
-    height: 56,
+    width: sizes.avatar.xl,
+    height: sizes.avatar.xl,
     borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
@@ -600,27 +616,27 @@ const styles = StyleSheet.create({
   },
   vehicleTextWrap: { flex: 1 },
   vehicleName: { ...typography.body, fontWeight: '700' },
-  vehicleDesc: { fontSize: 11, marginTop: 2 },
+  vehicleDesc: { ...typography.caption11, marginTop: tightGap },
   vehiclePriceWrap: { alignItems: 'flex-end' },
   vehiclePrice: { ...typography.body, fontWeight: '800' },
-  vehiclePriceUnit: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
+  vehiclePriceUnit: typography.caption9,
 
   // Step 2
   seatHeader: { alignItems: 'center', marginBottom: spacing.md },
-  seatHeaderTitle: { ...typography.body, fontWeight: '700', fontSize: 18 },
+  seatHeaderTitle: typography.driverNameLg,
   seatHeaderBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: spacing.smDense,
+    paddingHorizontal: spacing.sm + spacing.xs,
+    paddingVertical: spacing.smDense,
     borderRadius: radii.button,
-    marginTop: 6,
+    marginTop: spacing.smDense,
   },
-  seatHeaderBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+  seatHeaderBadgeText: { ...typography.overline, fontWeight: '700' },
   seatMapContainer: {
     borderRadius: radii.lg,
-    borderWidth: 2,
+    borderWidth: borderWidths.medium,
     borderStyle: 'dashed',
     padding: spacing.lg,
     alignItems: 'center',
@@ -629,8 +645,8 @@ const styles = StyleSheet.create({
   },
   windshield: {
     width: 80,
-    height: 6,
-    borderRadius: 3,
+    height: spacing.smDense,
+    borderRadius: radii.xxs,
     marginBottom: spacing.lg,
     opacity: 0.4,
   },
@@ -641,27 +657,26 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   driverCell: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: sizes.avatar.lg,
+    height: sizes.avatar.lg,
+    borderRadius: radii.smMedium,
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.5,
   },
   seatBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 2,
+    width: sizes.avatar.lg,
+    height: sizes.avatar.lg,
+    borderRadius: radii.smMedium,
+    borderWidth: borderWidths.medium,
     alignItems: 'center',
     justifyContent: 'center',
   },
   seatBtnSelected: {},
   rearMarker: {
-    width: 64,
-    height: 4,
-    borderRadius: 2,
+    width: spacing.xl * 2,
+    height: borderWidths.medium,
+    borderRadius: borderWidths.medium,
     marginTop: spacing.md,
     opacity: 0.5,
   },
@@ -671,24 +686,24 @@ const styles = StyleSheet.create({
     gap: spacing.xl * 2,
     paddingVertical: spacing.sm,
   },
-  legendItem: { alignItems: 'center', gap: 6 },
-  legendBox: { width: 12, height: 12, borderRadius: 3 },
-  legendFree: { backgroundColor: colors.surface, borderWidth: 2 },
+  legendItem: { alignItems: 'center', gap: spacing.smDense },
+  legendBox: { width: sizes.timelineDotLg, height: sizes.timelineDotLg, borderRadius: radii.xxs },
+  legendFree: { borderWidth: borderWidths.medium },
   legendPicked: {},
   legendStaff: {},
-  legendText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
+  legendText: typography.caption9,
 
   // Step 3
   summaryHeader: { alignItems: 'center', marginBottom: spacing.lg },
   summaryIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: sizes.avatar.xl + spacing.lg,
+    height: sizes.avatar.xl + spacing.lg,
+    borderRadius: (sizes.avatar.xl + spacing.lg) / 2,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  summaryTitle: { ...typography.h2, fontWeight: '700', marginBottom: 4 },
+  summaryTitle: { ...typography.h2, fontWeight: '700', marginBottom: spacing.xs },
   summarySub: { ...typography.bodySmall },
   summaryBox: {
     borderRadius: radii.lg,
@@ -712,7 +727,7 @@ const styles = StyleSheet.create({
   summaryValue: { ...typography.body, fontWeight: '700' },
   summaryValueBrand: {},
   summaryTotalLabel: { ...typography.body, fontWeight: '800' },
-  summaryTotalPrice: { fontSize: 22, fontWeight: '800' },
+  summaryTotalPrice: typography.totalPrice,
   paymentSection: { marginTop: spacing.sm },
   paymentLabel: { ...typography.body, fontWeight: '600', marginBottom: spacing.sm },
 
@@ -729,50 +744,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    minHeight: buttonHeights.large + 4,
+    gap: spacing.md,
+    minHeight: buttonHeights.large + spacing.xs,
     borderRadius: radii.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    ...cardShadowStrong,
   },
-  ctaPrimaryText: { fontSize: 16, fontWeight: '700' },
+  ctaPrimaryText: typography.bodyBold,
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
   },
-  subtotalLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
-  subtotalValue: { fontSize: 20, fontWeight: '800' },
+  subtotalLabel: typography.overline,
+  subtotalValue: typography.time,
   ctaContinue: {
     flex: 1,
-    minHeight: buttonHeights.large + 4,
+    minHeight: buttonHeights.large + spacing.xs,
     borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    ...cardShadowStrong,
   },
   ctaContinueDisabled: {},
-  ctaContinueText: { fontSize: 16, fontWeight: '700' },
+  ctaContinueText: typography.bodyBold,
   ctaPayment: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    minHeight: buttonHeights.large + 4,
+    gap: spacing.md,
+    minHeight: buttonHeights.large + spacing.xs,
     borderRadius: radii.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    ...cardShadowStrong,
   },
   ctaPaymentDisabled: { opacity: 0.8 },
-  ctaPaymentText: { ...typography.body, fontWeight: '700', color: colors.onAccent },
+  ctaPaymentText: { ...typography.body, fontWeight: '700' },
 });

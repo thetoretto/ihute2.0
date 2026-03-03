@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../context/ThemeContext';
 import { spacing, typography } from '../utils/theme';
+import { headerIconSize } from '../utils/layout';
+import { sharedStyles } from '../utils/sharedStyles';
 
 interface ScreenHeaderProps {
   title: string;
@@ -18,7 +20,7 @@ export default function ScreenHeader({ title, onBack, rightAction, style }: Scre
   return (
     <View
       style={[
-        styles.header,
+        sharedStyles.header,
         {
           backgroundColor: c.card,
           borderBottomColor: c.borderLight,
@@ -28,44 +30,29 @@ export default function ScreenHeader({ title, onBack, rightAction, style }: Scre
         style,
       ]}
     >
-      <View style={styles.side}>
+      <View style={sharedStyles.headerSide}>
         {onBack ? (
-          <TouchableOpacity onPress={onBack} style={[styles.iconBtn, { backgroundColor: c.background || c.ghostBg }]} hitSlop={12}>
-            <Ionicons name="chevron-back" size={22} color={c.text} />
+          <TouchableOpacity
+            onPress={onBack}
+            style={[sharedStyles.headerIconBtn, { backgroundColor: c.background || c.ghostBg }]}
+            hitSlop={spacing.sm}
+          >
+            <Ionicons name="chevron-back" size={headerIconSize} color={c.text} />
           </TouchableOpacity>
         ) : (
-          <View style={styles.sideSpacer} />
+          <View style={sharedStyles.headerSideSpacer} />
         )}
       </View>
-      <Text style={[styles.title, { color: c.text }]} numberOfLines={1}>
+      <Text style={[styles.headerTitle, { color: c.text }]} numberOfLines={1}>
         {title}
       </Text>
-      <View style={styles.side}>{rightAction ?? <View style={styles.sideSpacer} />}</View>
+      <View style={sharedStyles.headerSide}>{rightAction ?? <View style={sharedStyles.headerSideSpacer} />}</View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-  },
-  side: {
-    minWidth: 44,
-    alignItems: 'flex-start',
-  },
-  sideSpacer: { width: 44, height: 44 },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
+  headerTitle: {
     ...typography.bodySmall,
     fontWeight: '800',
     flex: 1,

@@ -143,7 +143,7 @@ export default function DashboardPage() {
               <h2 className="text-4xl font-black text-primary mb-2">
                 {formatRwf(metrics.grossEarnings)}
               </h2>
-              <div className="flex items-center gap-2 text-green-400 text-sm font-bold">
+              <div className="flex items-center gap-2 text-success-400 text-sm font-bold">
                 <TrendingUp size={16} /> Total revenue (RWF)
               </div>
             </div>
@@ -216,8 +216,8 @@ export default function DashboardPage() {
               View activities <ChevronRight size={18} />
             </Link>
           </div>
-          <div className="absolute -bottom-6 -right-6 opacity-10">
-            <Zap size={140} fill="#171C22" />
+          <div className="absolute -bottom-6 -right-6 opacity-10 text-dark">
+            <Zap size={140} fill="currentColor" />
           </div>
         </div>
       </div>
@@ -298,7 +298,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-4">
                           <div
                             className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                              positive ? 'bg-green-50 text-green-600' : 'bg-soft text-dark'
+                              positive ? 'bg-success-50 text-success-600' : 'bg-soft text-dark'
                             }`}
                           >
                             <ArrowDownLeft size={20} />
@@ -321,14 +321,14 @@ export default function DashboardPage() {
                         <span
                           className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
                             b.status === 'completed'
-                              ? 'bg-green-100 text-green-700'
+                              ? 'bg-success-100 text-success-700'
                               : 'bg-primary text-dark'
                           }`}
                         >
                           {b.status}
                         </span>
                       </td>
-                      <td className="py-5 text-right font-black text-sm text-green-600">
+                      <td className="py-5 text-right font-black text-sm text-success-600">
                         +{formatRwf(amount)}
                       </td>
                     </tr>
@@ -382,9 +382,9 @@ export default function DashboardPage() {
                     <span
                       className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
                         d.status === 'resolved'
-                          ? 'bg-gray-100 text-gray-700'
+                          ? 'bg-neutral-100 text-neutral-700'
                           : d.status === 'in_review'
-                            ? 'bg-blue-100 text-blue-700'
+                            ? 'bg-info-100 text-info-700'
                             : 'bg-primary text-dark'
                       }`}
                     >

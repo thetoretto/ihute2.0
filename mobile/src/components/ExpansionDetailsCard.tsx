@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { colors, spacing, radii, typography } from '../utils/theme';
+import { colors, spacing, radii, typography, sizes } from '../utils/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 type ExpansionTone = 'passenger' | 'driver';
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radii.full,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: radii.xxs,
   },
   headerTitle: {
     ...typography.caption,
@@ -81,8 +81,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   iconWrap: {
-    width: 20,
-    height: 20,
+    width: sizes.icon.medium,
+    height: sizes.icon.medium,
     borderRadius: radii.full,
     alignItems: 'center',
     justifyContent: 'center',

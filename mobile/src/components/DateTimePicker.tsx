@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../context/ThemeContext';
-import { spacing, typography, radii } from '../utils/theme';
+import { spacing, typography, radii, sizes } from '../utils/theme';
 
 export type DateTimePickerMode = 'date' | 'time' | 'datetime';
 
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerBtn: { padding: spacing.sm },
-  headerSpacer: { width: 40 },
+  headerSpacer: { width: sizes.touchTarget.iconButton },
   tabs: {
     flexDirection: 'row',
     padding: spacing.xs,
@@ -406,9 +406,9 @@ const styles = StyleSheet.create({
   tabActive: {},
   tabText: { ...typography.bodySmall, fontWeight: '600' },
   confirmBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: sizes.touchTarget.iconButton,
+    height: sizes.touchTarget.iconButton,
+    borderRadius: radii.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -456,21 +456,20 @@ const styles = StyleSheet.create({
   },
   timeBlock: { alignItems: 'center' },
   timeDisplay: {
-    fontSize: 48,
-    fontWeight: '300',
+    ...typography.timeDisplayLg,
     marginBottom: spacing.sm,
   },
   stepperRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xs },
   stepperBtn: {
-    width: 36,
-    height: 36,
+    width: sizes.avatar.md,
+    height: sizes.avatar.md,
     borderRadius: radii.sm,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   timeLabel: { ...typography.caption, fontWeight: '700', textTransform: 'uppercase' },
-  timeColon: { fontSize: 32, fontWeight: '300', marginBottom: 32 },
+  timeColon: { ...typography.timeColon, marginBottom: spacing.xl },
   ampmBlock: { flexDirection: 'column', gap: spacing.sm, marginLeft: spacing.md },
   ampmBtn: {
     paddingHorizontal: spacing.md,

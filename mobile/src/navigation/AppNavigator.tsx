@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useThemeColors } from '../context/ThemeContext';
-import { spacing, typography, radii } from '../utils/theme';
+import { spacing, typography, radii, sizes, buttonHeights } from '../utils/theme';
 import { useResponsiveTheme } from '../utils/responsiveTheme';
 import { strings } from '../constants/strings';
 
@@ -74,7 +74,7 @@ function useTabNavigatorScreenOptions(opts?: { tintColor?: string; headerTintCol
       paddingTop: responsiveTheme.spacing.sm,
     },
     tabBarLabelStyle: { ...responsiveTheme.typography.caption, fontWeight: '600' as const },
-    tabBarItemStyle: { borderRadius: responsiveTheme.radii.md, marginHorizontal: 2, minHeight: 48 },
+    tabBarItemStyle: { borderRadius: responsiveTheme.radii.md, marginHorizontal: spacing.xs, minHeight: responsiveTheme.buttonHeights.medium },
   };
 }
 
@@ -82,7 +82,7 @@ const LogoHeader = () => (
   <Image
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     source={require('../../assets/logo.png')}
-    style={{ height: 32, width: 56, resizeMode: 'contain', borderRadius: radii.sm }}
+    style={{ height: sizes.logo.height, width: sizes.logo.width, resizeMode: 'contain', borderRadius: radii.sm }}
   />
 );
 
@@ -113,8 +113,6 @@ import DriverNotificationsScreen from '../screens/driver/DriverNotificationsScre
 import ScannerReportScreen from '../screens/driver/ScannerReportScreen';
 
 // Shared
-import MessagesScreen from '../screens/shared/MessagesScreen';
-import ChatScreen from '../screens/shared/ChatScreen';
 import ProfileScreen from '../screens/shared/ProfileScreen';
 import HotlineScreen from '../screens/shared/HotlineScreen';
 import PaymentMethodsScreen from '../screens/shared/PaymentMethodsScreen';
@@ -310,14 +308,6 @@ function PassengerTabsNavigator() {
         }}
       />
       <Tabs.Screen
-        name="PassengerMessages"
-        component={MessagesScreen}
-        options={{
-          tabBarLabel: strings.tabs.messages,
-          tabBarIcon: ({ color }) => <Ionicons name="chatbubbles" size={tabBarIconSize} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="PassengerProfile"
         component={ProfileScreen}
         options={{
@@ -356,16 +346,6 @@ function DriverTabsNavigator() {
           headerShown: false,
           tabBarIcon: ({ focused }) => (
             <Ionicons name="add-circle" size={28} color={c.primary} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="DriverMessages"
-        component={MessagesScreen}
-        options={{
-          tabBarLabel: strings.tabs.messages,
-          tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={tabBarIconSize} color={focused ? c.primary : color} />
           ),
         }}
       />
@@ -609,11 +589,6 @@ export default function AppNavigator() {
               name="VehicleGarage"
               component={VehicleGarageScreen}
               options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.profile.myVehicles }}
-            />
-            <RootStack.Screen
-              name="Chat"
-              component={ChatScreen}
-              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: 'Chat' }}
             />
             <RootStack.Screen
               name="Hotline"

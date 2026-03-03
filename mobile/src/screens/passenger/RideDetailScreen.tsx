@@ -7,8 +7,9 @@ import { Screen } from '../../components';
 import { getTripsStore, getTrip } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
-import { colors, spacing, typography, radii, buttonHeights } from '../../utils/theme';
-import { screenContentPadding } from '../../utils/layout';
+import { spacing, typography, radii, buttonHeights, sizes, borderWidths } from '../../utils/theme';
+import { screenContentPadding, timelineDotSizeLg, contentBottomPaddingWithFooter } from '../../utils/layout';
+import { sharedStyles } from '../../utils/sharedStyles';
 import { formatRwf } from '../../../../shared/src';
 import { openWhatsAppDispute } from '../../utils/whatsapp';
 import { strings } from '../../constants/strings';
@@ -81,26 +82,26 @@ export default function RideDetailScreen() {
     <View style={[styles.container, { backgroundColor: c.card }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.borderLight, paddingTop: insets.top }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn} hitSlop={12} accessibilityLabel="Go back">
-          <View style={[styles.headerBtnInner, { backgroundColor: c.background || c.ghostBg }]}>
-            <Ionicons name="chevron-back" size={20} color={c.text} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn} hitSlop={spacing.sm} accessibilityLabel="Go back">
+          <View style={[sharedStyles.headerIconBtn, { backgroundColor: c.background || c.ghostBg }]}>
+            <Ionicons name="chevron-back" size={sizes.icon.medium} color={c.text} />
           </View>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: c.text }]}>Trip Details</Text>
-        <TouchableOpacity style={styles.headerBtn} hitSlop={12}>
-          <Ionicons name="information-circle-outline" size={20} color={c.textMuted} />
+        <TouchableOpacity style={styles.headerBtn} hitSlop={spacing.sm}>
+          <Ionicons name="information-circle-outline" size={sizes.icon.medium} color={c.textMuted} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingBottom: 120 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: contentBottomPaddingWithFooter }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Trip type label */}
         <View style={[styles.typeBadgeWrap, { backgroundColor: trip.type === 'insta' ? c.primaryTint : c.surface }]}>
           {trip.type === 'insta' ? (
-            <Ionicons name="flash" size={14} color={c.primary} style={styles.typeBadgeIcon} />
+            <Ionicons name="flash" size={sizes.icon.mid} color={c.primary} style={styles.typeBadgeIcon} />
           ) : null}
           <Text style={[styles.typeBadgeText, { color: trip.type === 'insta' ? c.primary : c.textSecondary }]}>
             {trip.type === 'insta' ? 'Instant ride' : 'Scheduled ride'}
@@ -141,19 +142,19 @@ export default function RideDetailScreen() {
               {trip.driver.avatarUri ? (
                 <Image source={{ uri: trip.driver.avatarUri }} style={styles.driverAvatar} />
               ) : (
-                <View style={[styles.driverAvatar, styles.avatarPlaceholder, { backgroundColor: c.background || c.ghostBg }]}>
-                  <Ionicons name="person" size={28} color={c.textMuted} />
+                <View style={[styles.driverAvatar, sharedStyles.avatarPlaceholder, { backgroundColor: c.background || c.ghostBg }]}>
+                  <Ionicons name="person" size={sizes.icon.large} color={c.textMuted} />
                 </View>
               )}
-              <View style={[styles.verifiedBadge, { backgroundColor: colors.success }]}>
-                <Ionicons name="shield-checkmark" size={12} color="#fff" />
+              <View style={[styles.verifiedBadge, { backgroundColor: c.success, borderColor: c.card }]}>
+                <Ionicons name="shield-checkmark" size={sizes.icon.small} color={c.onAccent} />
               </View>
             </View>
             <View style={styles.driverInfo}>
               <Text style={[styles.driverName, { color: c.text }]}>{trip.driver.name}</Text>
               {trip.driver.rating != null && (
                 <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={12} color={c.primary} />
+                  <Ionicons name="star" size={sizes.icon.small} color={c.primary} />
                   <Text style={[styles.ratingText, { color: c.text }]}> {trip.driver.rating} </Text>
                   <Text style={[styles.reviewsText, { color: c.textMuted }]}>(reviews)</Text>
                 </View>
@@ -161,9 +162,6 @@ export default function RideDetailScreen() {
             </View>
           </View>
           <View style={styles.driverActions}>
-            <TouchableOpacity style={[styles.messageBtn, { backgroundColor: c.primaryTint }]} activeOpacity={0.8}>
-              <Ionicons name="chatbubble-outline" size={20} color={c.primary} />
-            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.disputeBtn, { backgroundColor: c.primaryTint }]}
               activeOpacity={0.8}
@@ -176,7 +174,7 @@ export default function RideDetailScreen() {
                 })
               }
             >
-              <Ionicons name="logo-whatsapp" size={20} color={c.primary} />
+              <Ionicons name="logo-whatsapp" size={sizes.icon.medium} color={c.primary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -184,11 +182,11 @@ export default function RideDetailScreen() {
         {/* Info block */}
         <View style={[styles.infoBlock, { backgroundColor: c.background || c.ghostBg }]}>
           <View style={[styles.infoRow, { marginBottom: spacing.sm }]}>
-            <Ionicons name="time-outline" size={18} color={c.textMuted} />
+            <Ionicons name="time-outline" size={sizes.icon.medium} color={c.textMuted} />
             <Text style={[styles.infoText, { color: c.text }]}>Departure: {departureDateLabel}, {trip.departureTime.slice(0, 5)}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Ionicons name="people-outline" size={18} color={c.textMuted} />
+            <Ionicons name="people-outline" size={sizes.icon.medium} color={c.textMuted} />
             <Text style={[styles.infoText, { color: c.text }]}>{trip.seatsAvailable} seats available</Text>
           </View>
         </View>
@@ -220,30 +218,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: screenContentPadding,
     paddingVertical: spacing.md,
-    minHeight: 56,
-    borderBottomWidth: 1,
+    minHeight: sizes.avatar.xl,
+    borderBottomWidth: borderWidths.thin,
   },
-  headerBtn: { padding: spacing.xs, minWidth: 44, minHeight: 44, justifyContent: 'center' },
-  headerBtnInner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
+  headerBtn: {
+    padding: spacing.xs,
+    minWidth: sizes.touchTarget.min,
+    minHeight: sizes.touchTarget.min,
     justifyContent: 'center',
   },
   headerTitle: { ...typography.bodySmall, fontWeight: '800' },
   scroll: { flex: 1 },
   content: { padding: screenContentPadding },
   typeBadgeWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...sharedStyles.chip,
     alignSelf: 'flex-start',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
     borderRadius: radii.md,
     marginBottom: spacing.md,
   },
-  typeBadgeIcon: { marginRight: 6 },
+  typeBadgeIcon: { marginRight: spacing.xs + 2 },
   typeBadgeText: { ...typography.caption, fontWeight: '800' },
   timelineSection: {
     flexDirection: 'row',
@@ -253,103 +246,72 @@ const styles = StyleSheet.create({
   },
   timelineLeft: { flexDirection: 'row', flex: 1, minWidth: 0 },
   timelineDotsWrap: {
-    width: 24,
+    width: timelineDotSizeLg + spacing.md,
     marginRight: spacing.sm,
     position: 'relative',
     alignItems: 'center',
   },
   timelineDashed: {
     position: 'absolute',
-    left: 11,
-    top: 4,
-    bottom: 4,
+    left: timelineDotSizeLg / 2 + borderWidths.thin,
+    top: spacing.xs,
+    bottom: spacing.xs,
     width: 0,
-    borderLeftWidth: 2,
+    borderLeftWidth: borderWidths.medium,
     borderStyle: 'dashed',
   },
   timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.card,
+    width: timelineDotSizeLg,
+    height: timelineDotSizeLg,
+    borderRadius: timelineDotSizeLg / 2,
+    borderWidth: borderWidths.medium,
     position: 'absolute',
-    left: 6,
+    left: spacing.xs + 2,
   },
   timelineDotTop: { top: 0 },
   timelineDotBottom: { bottom: 0 },
   timelineLabels: { flex: 1, minWidth: 0 },
   timelineItem: { marginBottom: spacing.lg },
-  timelineTime: { ...typography.h3, fontSize: 20, fontWeight: '800' },
-  timelinePlace: { ...typography.bodySmall, fontWeight: '600', marginTop: 2 },
+  timelineTime: typography.time,
+  timelinePlace: { ...typography.bodySmall, fontWeight: '600', marginTop: spacing.xs },
   timelinePriceWrap: { alignItems: 'flex-end' },
-  timelinePrice: { ...typography.h2, fontSize: 24, fontWeight: '800' },
-  perSeatLabel: { ...typography.caption, fontWeight: '800', textTransform: 'uppercase', fontSize: 10, marginTop: 2 },
-  divider: { height: 1, marginBottom: spacing.lg },
+  timelinePrice: typography.timeLg,
+  perSeatLabel: { ...typography.overline, marginTop: spacing.xs },
+  divider: { ...sharedStyles.divider, marginBottom: spacing.lg },
   driverSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...sharedStyles.listRowBetween,
     marginBottom: spacing.lg,
   },
   driverLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 },
   avatarWrap: { position: 'relative', marginRight: spacing.md },
-  driverAvatar: { width: 56, height: 56, borderRadius: 16 },
-  avatarPlaceholder: { justifyContent: 'center', alignItems: 'center' },
+  driverAvatar: { ...sharedStyles.avatarXl, borderRadius: radii.md },
   verifiedBadge: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
-    padding: 2,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: colors.card,
+    bottom: -spacing.xs,
+    right: -spacing.xs,
+    padding: borderWidths.medium,
+    borderRadius: radii.sm,
+    borderWidth: borderWidths.medium,
   },
   driverInfo: { flex: 1, minWidth: 0 },
-  driverName: { ...typography.h3, fontWeight: '800', fontSize: 18 },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  ratingText: { ...typography.caption, fontWeight: '700', fontSize: 12 },
-  reviewsText: { ...typography.caption, fontSize: 12 },
-  driverActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  messageBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disputeBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  infoBlock: {
-    borderRadius: 24,
-    padding: spacing.md,
-  },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  driverName: typography.driverNameLg,
+  ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
+  ratingText: typography.captionBold,
+  reviewsText: typography.caption,
+  driverActions: { ...sharedStyles.listRow },
+  disputeBtn: sharedStyles.actionButton,
+  infoBlock: { ...sharedStyles.panel },
+  infoRow: { ...sharedStyles.listRow },
   infoText: { ...typography.bodySmall, fontWeight: '600', flex: 1 },
   footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: screenContentPadding,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
+    ...sharedStyles.footerBar,
   },
   bookBtn: {
-    minHeight: buttonHeights.large + 4,
+    minHeight: buttonHeights.large + spacing.xs,
     paddingVertical: spacing.md,
     borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bookBtnText: { ...typography.body, fontWeight: '800', fontSize: 16 },
+  bookBtnText: typography.bodyBold,
 });

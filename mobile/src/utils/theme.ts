@@ -1,138 +1,183 @@
+/**
+ * Design system – mobile theme
+ *
+ * Core palette (6 colors): All token values are derived from these or from
+ * documented extended palette (success, warning, agency).
+ *
+ * Light: Surfaces = cream (#F8F3EF) + white; text = dark (#171C22) + muted (#94A9BC);
+ * primary/CTA = yellow (#FEE46B); critical = red (#DF0827).
+ *
+ * Dark: Elevation = #171C22 → #1E252D → #252D38; body text = cream (#F8F3EF);
+ * links = muted (#94A9BC); captions/tertiary = lavender (#E6DBEB).
+ *
+ * Extended: success (green), warning (amber), agency (indigo) for semantic/role use.
+ */
+
+// --- Core palette (single source of truth) ---
+const CORE_DARK = '#171C22';
+const CORE_CREAM = '#F8F3EF';
+const CORE_RED = '#DF0827';
+const CORE_MUTED = '#94A9BC';
+const CORE_LAVENDER = '#E6DBEB';
+const CORE_YELLOW = '#FEE46B';
+
+/** Primary pressed state (derived from CORE_YELLOW). */
+const PRIMARY_PRESSED = '#FDD835';
+
+/** Dark mode elevation: base, elevation 1, elevation 2 (derived from CORE_DARK). */
+const ELEVATION_1 = '#1E252D';
+const ELEVATION_2 = '#252D38';
+
+/** Text on red/agency buttons (not in core 6). */
+const ON_ACCENT = '#FFFFFF';
+
+export const corePalette = {
+  dark: CORE_DARK,
+  cream: CORE_CREAM,
+  red: CORE_RED,
+  muted: CORE_MUTED,
+  lavender: CORE_LAVENDER,
+  yellow: CORE_YELLOW,
+} as const;
+
 export const colors = {
-  background: '#F8F3EF',
+  // --- Surfaces ---
+  background: CORE_CREAM,
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
   card: '#FFFFFF',
+  popupSurface: '#FFFFFF',
+  ghostBg: CORE_CREAM,
 
-  text: '#171C22',
-  textSecondary: '#94A9BC',
-  textMuted: '#94A9BC',
-  onPrimary: '#171C22',
+  // --- Text hierarchy ---
+  text: CORE_DARK,
+  textSecondary: CORE_MUTED,
+  textMuted: CORE_MUTED,
+  onPrimary: CORE_DARK,
+  buttonPrimaryText: CORE_DARK,
+  buttonSecondaryText: CORE_MUTED,
+  primaryTextOnLight: CORE_DARK,
+  ghostText: CORE_MUTED,
+  neutral: CORE_MUTED,
 
-  primary: '#FEE46B',
-  primaryDark: '#FDD835',
-  accent: '#DF0827',
-
-  buttonPrimaryBg: '#FEE46B',
-  buttonPrimaryText: '#171C22',
+  // --- Primary & CTA ---
+  primary: CORE_YELLOW,
+  primaryDark: PRIMARY_PRESSED,
+  primaryActive: PRIMARY_PRESSED,
+  buttonPrimaryBg: CORE_YELLOW,
   primaryButtonBorder: 'rgba(254,228,107,0.5)',
   buttonSecondaryBg: 'transparent',
-  buttonSecondaryText: '#94A9BC',
-  primaryTextOnLight: '#171C22',
-
-  popupSurface: '#FFFFFF',
-
-  /** Semantic: deep neutral (tab bar, premium card). */
-  dark: '#171C22',
-  /** Semantic: highlight/tertiary, empty states. */
-  soft: '#E6DBEB',
-  /** Primary pressed state. */
-  primaryActive: '#FDD835',
-
-  success: '#00D382',
-  successLight: '#5EEAD4',
-  successTint: 'rgba(0,211,130,0.12)',
-  info: '#1E88E5',
-  neutral: '#94A9BC',
-
-  error: '#DF0827',
-  warning: '#B7791F',
-
-  border: '#E6DBEB',
-  borderLight: '#E6DBEB',
-  overlay: 'rgba(23,28,34,0.35)',
   primaryTint: 'rgba(254,228,107,0.1)',
-  ghostBg: '#F8F3EF',
-  ghostBorder: '#E6DBEB',
-  ghostText: '#94A9BC',
 
-  /** Tab bar background (dark). */
-  tabBarBackground: '#171C22',
+  // --- Critical action ---
+  accent: CORE_RED,
+  error: CORE_RED,
+  errorTint: 'rgba(223,8,39,0.12)',
 
-  /** Passenger / brand = primary. */
-  passengerBrand: '#FEE46B',
-  passengerDark: '#171C22',
-  passengerBgLight: '#F8F3EF',
-  passengerOnBrand: '#171C22',
+  // --- Borders ---
+  border: CORE_LAVENDER,
+  borderLight: CORE_LAVENDER,
+  ghostBorder: CORE_LAVENDER,
+  soft: CORE_LAVENDER,
+  cardBorder: CORE_LAVENDER,
 
-  /** Driver context (dark). */
-  driverDark: '#171C22',
+  // --- Dark surfaces & on-dark ---
+  dark: CORE_DARK,
+  tabBarBackground: CORE_DARK,
+  onDarkText: CORE_CREAM,
+  onDarkTextMuted: 'rgba(248,243,239,0.7)',
+  tabBarBorder: 'rgba(254,228,107,0.15)',
+  decorativeLight: 'rgba(255,255,255,0.06)',
+  surfaceOnDark: 'rgba(255,255,255,0.15)',
+  surfaceOnDarkSubtle: 'rgba(255,255,255,0.1)',
+  surfaceOnDarkOrb: 'rgba(255,255,255,0.05)',
 
-  /** Agency role (indigo). */
+  // --- Overlays ---
+  overlay: 'rgba(23,28,34,0.35)',
+  overlayModal: 'rgba(0,0,0,0.4)',
+
+  // --- Role (passenger, driver, agency) ---
+  passengerBrand: CORE_YELLOW,
+  passengerDark: CORE_DARK,
+  passengerBgLight: CORE_CREAM,
+  passengerOnBrand: CORE_DARK,
+  driverDark: CORE_DARK,
   agency: '#6366f1',
   agencyDark: '#4f46e5',
   agencyTint: 'rgba(99,102,241,0.14)',
   agencyBorder: 'rgba(99,102,241,0.5)',
 
-  /** Modal/sheet overlay (backdrop). */
-  overlayModal: 'rgba(0,0,0,0.4)',
-  /** Subtle card border. */
-  cardBorder: 'rgba(0,0,0,0.06)',
-  /** Text on dark backgrounds (hero, tab bar). */
-  onDarkText: '#FFFFFF',
-  onDarkTextMuted: 'rgba(255,255,255,0.7)',
-  /** Star rating icon color. */
-  starRating: '#FBBF24',
-  /** Tab bar top border. */
-  tabBarBorder: 'rgba(254,228,107,0.15)',
-  /** Error background tint (chips, status). */
-  errorTint: 'rgba(223,8,39,0.12)',
-  /** Warning background tint. */
+  // --- Semantic (extended palette) ---
+  success: '#00D382',
+  successLight: '#5EEAD4',
+  successTint: 'rgba(0,211,130,0.12)',
+  warning: '#B7791F',
   warningTint: 'rgba(183,121,31,0.12)',
-  /** On accent/agency/danger button text. */
-  onAccent: '#FFFFFF',
-  /** Decorative blob on dark backgrounds (e.g. hero). */
-  decorativeLight: 'rgba(255,255,255,0.06)',
-  /** Button/surface on dark (hero). */
-  surfaceOnDark: 'rgba(255,255,255,0.15)',
-  /** Pill/surface on dark (subtle). */
-  surfaceOnDarkSubtle: 'rgba(255,255,255,0.1)',
-  /** Orb on dark (very subtle). */
-  surfaceOnDarkOrb: 'rgba(255,255,255,0.05)',
+  info: '#1E88E5',
+  starRating: '#FBBF24',
+
+  // --- Other ---
+  onAccent: ON_ACCENT,
 } as const;
 
 /** Dark theme colors. Use with ThemeContext for light/dark switching. */
 export const colorsDark = {
   ...colors,
-  background: '#171C22',
-  surface: '#1E252D',
-  surfaceElevated: '#252D38',
-  card: '#1E252D',
-  text: '#F1F5F9',
-  textSecondary: '#94A9BC',
-  textMuted: '#94A9BC',
-  onPrimary: '#171C22',
-  popupSurface: '#252D38',
-  ghostBg: '#1E252D',
-  ghostText: '#94A9BC',
-  border: 'rgba(241,245,249,0.18)',
-  borderLight: 'rgba(241,245,249,0.10)',
-  overlay: 'rgba(0,0,0,0.5)',
-  primaryTint: 'rgba(254,228,107,0.18)',
-  tabBarBackground: '#171C22',
-  passengerBrand: '#FEE46B',
-  passengerDark: '#171C22',
-  passengerBgLight: '#1E252D',
-  passengerOnBrand: '#171C22',
-  overlayModal: 'rgba(0,0,0,0.5)',
-  cardBorder: 'rgba(241,245,249,0.12)',
-  onDarkText: '#FFFFFF',
-  onDarkTextMuted: 'rgba(255,255,255,0.7)',
-  starRating: '#FBBF24',
+
+  // --- Surfaces (elevation) ---
+  background: CORE_DARK,
+  surface: ELEVATION_1,
+  surfaceElevated: ELEVATION_2,
+  card: ELEVATION_1,
+  popupSurface: ELEVATION_2,
+  ghostBg: ELEVATION_1,
+
+  // --- Text hierarchy ---
+  text: CORE_CREAM,
+  textSecondary: CORE_MUTED,
+  textMuted: CORE_LAVENDER,
+  onPrimary: CORE_DARK,
+  ghostText: CORE_MUTED,
+
+  // --- Borders ---
+  border: 'rgba(248,243,239,0.18)',
+  borderLight: 'rgba(248,243,239,0.1)',
+  cardBorder: 'rgba(248,243,239,0.12)',
+
+  // --- Dark surfaces & on-dark ---
+  tabBarBackground: CORE_DARK,
+  onDarkText: CORE_CREAM,
+  onDarkTextMuted: 'rgba(248,243,239,0.7)',
   tabBarBorder: 'rgba(254,228,107,0.2)',
-  errorTint: 'rgba(223,8,39,0.18)',
-  warningTint: 'rgba(183,121,31,0.18)',
-  onAccent: '#FFFFFF',
   decorativeLight: 'rgba(255,255,255,0.08)',
   surfaceOnDark: 'rgba(255,255,255,0.18)',
   surfaceOnDarkSubtle: 'rgba(255,255,255,0.12)',
   surfaceOnDarkOrb: 'rgba(255,255,255,0.06)',
+
+  // --- Overlays ---
+  overlay: 'rgba(0,0,0,0.5)',
+  overlayModal: 'rgba(0,0,0,0.5)',
+
+  // --- Role ---
+  passengerBrand: CORE_YELLOW,
+  passengerDark: CORE_DARK,
+  passengerBgLight: ELEVATION_1,
+  passengerOnBrand: CORE_DARK,
+
+  // --- Tints ---
+  primaryTint: 'rgba(254,228,107,0.18)',
+  errorTint: 'rgba(223,8,39,0.18)',
+  warningTint: 'rgba(183,121,31,0.18)',
+
+  onAccent: ON_ACCENT,
 } as const;
 
 export type ColorScheme = 'light' | 'dark';
 
 export const spacing = {
+  xxs: 2,
   xs: 4,
+  smDense: 6,
   sm: 8,
   md: 16,
   lg: 24,
@@ -141,23 +186,54 @@ export const spacing = {
 } as const;
 
 export const radii = {
+  xxs: 3,
+  xs: 6,
   sm: 8,
+  smMedium: 12,
   button: 20,
   md: 16,
   lg: 28,
   xl: 40,
   xxl: 28,
   xlMobile: 32,
+  panel: 24,
   full: 9999,
 } as const;
 
-/** Card shadow (template-style). */
+/** Layout / box sizes – icons, avatars, touch targets. */
+export const sizes = {
+  icon: { small: 12, mid: 16, medium: 20, large: 24 },
+  avatar: { xs: 24, sm: 32, md: 36, lg: 48, xl: 56 },
+  touchTarget: { min: 44, iconButton: 40 },
+  timelineDot: 8,
+  timelineDotLg: 12,
+  routeDot: 10,
+  sheetHandle: { width: 40, height: 4 },
+  logo: { width: 56, height: 32 },
+} as const;
+
+/** Border widths for timeline dots, badges, buttons. */
+export const borderWidths = {
+  thin: 1,
+  medium: 2,
+} as const;
+
+/** Card shadow (template-style). Shadow color aligned with core palette. */
 export const cardShadow = {
-  shadowColor: '#000',
+  shadowColor: CORE_DARK,
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.08,
   shadowRadius: 20,
   elevation: 4,
+};
+
+/** Stronger card shadow for elevated panels (e.g. booking summary). */
+export const cardShadowStrong = {
+  shadowColor: CORE_DARK,
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.12,
+  shadowRadius: 12,
+  elevation: 6,
 };
 
 export const buttonHeights = {
@@ -173,4 +249,21 @@ export const typography = {
   body:      { fontSize: 16, fontWeight: '400' as const, fontFamily: 'Poppins_400Regular' },
   bodySmall: { fontSize: 14, fontWeight: '400' as const, fontFamily: 'Poppins_400Regular' },
   caption:   { fontSize: 12, fontWeight: '400' as const, fontFamily: 'Poppins_400Regular' },
+  /** Semantic variants – use instead of ad‑hoc fontSize overrides. */
+  overline:  { fontSize: 10, fontWeight: '700' as const, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  bodyBold:  { fontSize: 16, fontWeight: '700' as const, fontFamily: 'Poppins_700Bold' },
+  bodyBold18: { fontSize: 18, fontWeight: '800' as const, fontFamily: 'Poppins_700Bold' },
+  price:     { fontSize: 15, fontWeight: '700' as const, fontFamily: 'Poppins_700Bold' },
+  priceLg:   { fontSize: 18, fontWeight: '800' as const, fontFamily: 'Poppins_700Bold' },
+  time:      { fontSize: 20, fontWeight: '800' as const, fontFamily: 'Poppins_700Bold' },
+  timeLg:    { fontSize: 24, fontWeight: '800' as const, fontFamily: 'Poppins_700Bold' },
+  driverName: { fontSize: 13, fontWeight: '600' as const, fontFamily: 'Poppins_600SemiBold' },
+  driverNameLg: { fontSize: 18, fontWeight: '800' as const, fontFamily: 'Poppins_700Bold' },
+  captionBold: { fontSize: 12, fontWeight: '700' as const, fontFamily: 'Poppins_700Bold' },
+  caption10: { fontSize: 10, fontWeight: '400' as const, fontFamily: 'Poppins_400Regular' },
+  caption11: { fontSize: 11, fontWeight: '400' as const, fontFamily: 'Poppins_400Regular' },
+  caption9: { fontSize: 9, fontWeight: '700' as const, fontFamily: 'Poppins_700Bold', letterSpacing: 0.5 },
+  totalPrice: { fontSize: 22, fontWeight: '800' as const, fontFamily: 'Poppins_700Bold' },
+  timeDisplayLg: { fontSize: 48, fontWeight: '300' as const, fontFamily: 'Poppins_400Regular' },
+  timeColon: { fontSize: 32, fontWeight: '300' as const, fontFamily: 'Poppins_400Regular' },
 } as const;

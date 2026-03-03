@@ -138,7 +138,7 @@ export default function HotpointsPage() {
         <p className="text-muted text-xs mb-4">Connected to server: changes here apply to the whole app (mobile, web).</p>
       )}
       {error && (
-        <div className="mb-4 px-4 py-2 rounded-xl bg-red-100 text-red-700 text-sm font-bold">{error}</div>
+        <div className="mb-4 px-4 py-2 rounded-xl bg-danger-100 text-danger-700 text-sm font-bold">{error}</div>
       )}
       <div className="w-full overflow-x-auto">
         <table className="w-full text-left">
@@ -165,7 +165,7 @@ export default function HotpointsPage() {
                 <td className="py-5 text-sm">{h.latitude.toFixed(4)}, {h.longitude.toFixed(4)}</td>
                 <td className="py-5">
                   <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-surface hover:bg-soft mr-2" onClick={() => { setEditing(h); setForm({ name: h.name, address: h.address, latitude: h.latitude, longitude: h.longitude, country: h.country }); }}>Edit</button>
-                  <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-red-100 text-red-700 mr-2" onClick={() => setDeleteConfirm(h.id)}>Delete</button>
+                  <button type="button" className="px-3 py-1.5 rounded-lg text-sm font-bold bg-danger-100 text-danger-700 mr-2" onClick={() => setDeleteConfirm(h.id)}>Delete</button>
                   {deleteConfirm === h.id && (
                     <span className="inline-block ml-2">
                       Confirm? <button type="button" className="px-2 py-1 rounded text-sm font-bold bg-primary text-dark mr-1" onClick={() => handleDelete(h.id)}>Yes</button>
@@ -180,37 +180,37 @@ export default function HotpointsPage() {
         </table>
       </div>
       {adding && (
-        <div className="modal-overlay" role="dialog" aria-modal="true">
-          <div className="modal-card">
-            <h3>Add hot point</h3>
-            <div className="form-group"><label>Name</label><input value={form.name ?? ''} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} /></div>
-            <div className="form-group"><label>Address</label><input value={form.address ?? ''} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} /></div>
-            <div className="form-group"><label>Country</label><input value={form.country ?? ''} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} /></div>
-            <div className="form-row">
-              <div className="form-group"><label>Latitude</label><input type="number" step="any" value={form.latitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, latitude: Number(e.target.value) }))} /></div>
-              <div className="form-group"><label>Longitude</label><input type="number" step="any" value={form.longitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, longitude: Number(e.target.value) }))} /></div>
+        <div className="fixed inset-0 bg-dark/40 flex items-center justify-center z-[1000]" role="dialog" aria-modal="true">
+          <div className="bg-white border border-soft rounded-xl p-5 max-w-[420px] w-[90%] shadow-soft">
+            <h3 className="text-lg font-black text-dark m-0 mb-3">Add hot point</h3>
+            <div className="mb-3"><label className="block mb-1 text-sm text-muted">Name</label><input value={form.name ?? ''} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
+            <div className="mb-3"><label className="block mb-1 text-sm text-muted">Address</label><input value={form.address ?? ''} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
+            <div className="mb-3"><label className="block mb-1 text-sm text-muted">Country</label><input value={form.country ?? ''} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
+            <div className="flex gap-3 mb-4">
+              <div className="flex-1"><label className="block mb-1 text-sm text-muted">Latitude</label><input type="number" step="any" value={form.latitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, latitude: Number(e.target.value) }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
+              <div className="flex-1"><label className="block mb-1 text-sm text-muted">Longitude</label><input type="number" step="any" value={form.longitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, longitude: Number(e.target.value) }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
             </div>
-            <div className="modal-actions">
-              <button type="button" className="btn-primary" onClick={handleSaveNew}>Save</button>
-              <button type="button" className="btn-sm" onClick={() => setAdding(false)}>Cancel</button>
+            <div className="flex gap-2 flex-wrap mt-4">
+              <button type="button" className="min-h-[38px] px-4 py-0 bg-primary text-dark border border-primary/50 rounded-xl font-semibold cursor-pointer" onClick={handleSaveNew}>Save</button>
+              <button type="button" className="min-h-[38px] px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setAdding(false)}>Cancel</button>
             </div>
           </div>
         </div>
       )}
       {editing && (
-        <div className="modal-overlay" role="dialog" aria-modal="true">
-          <div className="modal-card">
-            <h3>Edit hot point</h3>
-            <div className="form-group"><label>Name</label><input value={form.name ?? ''} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} /></div>
-            <div className="form-group"><label>Address</label><input value={form.address ?? ''} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} /></div>
-            <div className="form-group"><label>Country</label><input value={form.country ?? ''} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} /></div>
-            <div className="form-row">
-              <div className="form-group"><label>Latitude</label><input type="number" step="any" value={form.latitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, latitude: Number(e.target.value) }))} /></div>
-              <div className="form-group"><label>Longitude</label><input type="number" step="any" value={form.longitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, longitude: Number(e.target.value) }))} /></div>
+        <div className="fixed inset-0 bg-dark/40 flex items-center justify-center z-[1000]" role="dialog" aria-modal="true">
+          <div className="bg-white border border-soft rounded-xl p-5 max-w-[420px] w-[90%] shadow-soft">
+            <h3 className="text-lg font-black text-dark m-0 mb-3">Edit hot point</h3>
+            <div className="mb-3"><label className="block mb-1 text-sm text-muted">Name</label><input value={form.name ?? ''} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
+            <div className="mb-3"><label className="block mb-1 text-sm text-muted">Address</label><input value={form.address ?? ''} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
+            <div className="mb-3"><label className="block mb-1 text-sm text-muted">Country</label><input value={form.country ?? ''} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
+            <div className="flex gap-3 mb-4">
+              <div className="flex-1"><label className="block mb-1 text-sm text-muted">Latitude</label><input type="number" step="any" value={form.latitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, latitude: Number(e.target.value) }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
+              <div className="flex-1"><label className="block mb-1 text-sm text-muted">Longitude</label><input type="number" step="any" value={form.longitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, longitude: Number(e.target.value) }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
             </div>
-            <div className="modal-actions">
-              <button type="button" className="btn-primary" onClick={handleSaveEdit}>Save</button>
-              <button type="button" className="btn-sm" onClick={() => setEditing(null)}>Cancel</button>
+            <div className="flex gap-2 flex-wrap mt-4">
+              <button type="button" className="min-h-[38px] px-4 py-0 bg-primary text-dark border border-primary/50 rounded-xl font-semibold cursor-pointer" onClick={handleSaveEdit}>Save</button>
+              <button type="button" className="min-h-[38px] px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setEditing(null)}>Cancel</button>
             </div>
           </div>
         </div>

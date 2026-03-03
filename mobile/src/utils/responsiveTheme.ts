@@ -29,43 +29,50 @@ export interface ResponsiveTheme {
 
 function scaleSpacing(base: ResponsiveSpacing, scale: number): ResponsiveSpacing {
   return {
-    xs: Math.round(base.xs * scale),
-    sm: Math.round(base.sm * scale),
-    md: Math.round(base.md * scale),
-    lg: Math.round(base.lg * scale),
-    xl: Math.round(base.xl * scale),
-    xxl: Math.round(base.xxl * scale),
+    xxs: Math.round(base.xxs * scale) as ResponsiveSpacing['xxs'],
+    xs: Math.round(base.xs * scale) as ResponsiveSpacing['xs'],
+    smDense: Math.round(base.smDense * scale) as ResponsiveSpacing['smDense'],
+    sm: Math.round(base.sm * scale) as ResponsiveSpacing['sm'],
+    md: Math.round(base.md * scale) as ResponsiveSpacing['md'],
+    lg: Math.round(base.lg * scale) as ResponsiveSpacing['lg'],
+    xl: Math.round(base.xl * scale) as ResponsiveSpacing['xl'],
+    xxl: Math.round(base.xxl * scale) as ResponsiveSpacing['xxl'],
   };
 }
 
 function scaleTypography(base: ResponsiveTypography, scale: number): ResponsiveTypography {
   const scaleFont = (n: number) => Math.round(n * scale);
   return {
-    h1:        { ...base.h1, fontSize: scaleFont(base.h1.fontSize) },
-    h2:        { ...base.h2, fontSize: scaleFont(base.h2.fontSize) },
-    h3:        { ...base.h3, fontSize: scaleFont(base.h3.fontSize) },
-    body:      { ...base.body, fontSize: scaleFont(base.body.fontSize) },
-    bodySmall: { ...base.bodySmall, fontSize: scaleFont(base.bodySmall.fontSize) },
-    caption:   { ...base.caption, fontSize: scaleFont(base.caption.fontSize) },
+    ...base,
+    h1:        { ...base.h1, fontSize: scaleFont(base.h1.fontSize) as ResponsiveTypography['h1']['fontSize'] },
+    h2:        { ...base.h2, fontSize: scaleFont(base.h2.fontSize) as ResponsiveTypography['h2']['fontSize'] },
+    h3:        { ...base.h3, fontSize: scaleFont(base.h3.fontSize) as ResponsiveTypography['h3']['fontSize'] },
+    body:      { ...base.body, fontSize: scaleFont(base.body.fontSize) as ResponsiveTypography['body']['fontSize'] },
+    bodySmall: { ...base.bodySmall, fontSize: scaleFont(base.bodySmall.fontSize) as ResponsiveTypography['bodySmall']['fontSize'] },
+    caption:   { ...base.caption, fontSize: scaleFont(base.caption.fontSize) as ResponsiveTypography['caption']['fontSize'] },
   };
 }
 
 function scaleButtonHeights(base: ResponsiveButtonHeights, scale: number): ResponsiveButtonHeights {
-  const small = Math.max(MIN_TOUCH_TARGET, Math.round(base.small * scale));
-  const medium = Math.max(MIN_TOUCH_TARGET, Math.round(base.medium * scale));
-  const large = Math.max(MIN_TOUCH_TARGET, Math.round(base.large * scale));
+  const small = Math.max(MIN_TOUCH_TARGET, Math.round(base.small * scale)) as ResponsiveButtonHeights['small'];
+  const medium = Math.max(MIN_TOUCH_TARGET, Math.round(base.medium * scale)) as ResponsiveButtonHeights['medium'];
+  const large = Math.max(MIN_TOUCH_TARGET, Math.round(base.large * scale)) as ResponsiveButtonHeights['large'];
   return { small, medium, large };
 }
 
 function scaleRadii(base: ResponsiveRadii, scale: number): ResponsiveRadii {
   return {
-    sm: Math.round(base.sm * scale),
-    button: Math.round(base.button * scale),
-    md: Math.round(base.md * scale),
-    lg: Math.round(base.lg * scale),
-    xl: Math.round(base.xl * scale),
-    xxl: Math.round(base.xxl * scale),
-    xlMobile: Math.round(base.xlMobile * scale),
+    xxs: Math.round(base.xxs * scale) as ResponsiveRadii['xxs'],
+    xs: Math.round(base.xs * scale) as ResponsiveRadii['xs'],
+    sm: Math.round(base.sm * scale) as ResponsiveRadii['sm'],
+    smMedium: Math.round(base.smMedium * scale) as ResponsiveRadii['smMedium'],
+    button: Math.round(base.button * scale) as ResponsiveRadii['button'],
+    md: Math.round(base.md * scale) as ResponsiveRadii['md'],
+    lg: Math.round(base.lg * scale) as ResponsiveRadii['lg'],
+    xl: Math.round(base.xl * scale) as ResponsiveRadii['xl'],
+    xxl: Math.round(base.xxl * scale) as ResponsiveRadii['xxl'],
+    xlMobile: Math.round(base.xlMobile * scale) as ResponsiveRadii['xlMobile'],
+    panel: Math.round(base.panel * scale) as ResponsiveRadii['panel'],
     full: base.full,
   };
 }

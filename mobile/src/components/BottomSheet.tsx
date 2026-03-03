@@ -3,6 +3,7 @@ import { View, TouchableWithoutFeedback, Modal, StyleSheet, StyleProp, ViewStyle
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../context/ThemeContext';
 import { spacing, radii } from '../utils/theme';
+import { sharedStyles } from '../utils/sharedStyles';
 
 interface BottomSheetProps {
   visible: boolean;
@@ -34,7 +35,7 @@ export default function BottomSheet({ visible, onClose, children, contentStyle }
             contentStyle,
           ]}
         >
-          <View style={[styles.handle, { backgroundColor: c.border }]} />
+          <View style={[sharedStyles.sheetHandle, { backgroundColor: c.border }]} />
           {children}
         </View>
       </View>
@@ -46,11 +47,4 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFillObject },
   sheet: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, maxHeight: '85%' },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: spacing.lg,
-  },
 });

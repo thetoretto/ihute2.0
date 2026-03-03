@@ -22,8 +22,8 @@ import {
   CarRefreshIndicator,
 } from '../../components';
 import { searchTrips, getHotpoints } from '../../services/api';
-import { spacing, typography, radii, colors } from '../../utils/theme';
-import { listBottomPaddingTab, screenContentPadding } from '../../utils/layout';
+import { spacing, typography, radii, sizes } from '../../utils/theme';
+import { listBottomPaddingTab, screenContentPadding, searchResultsListPadding } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import { selectorStyles } from '../../utils/selectorStyles';
 import type { Trip, Hotpoint } from '../../types';
@@ -142,7 +142,7 @@ export default function SearchResultsScreen() {
   ];
 
   return (
-    <Screen style={[styles.container, { paddingTop: insets.top }]}>
+    <Screen style={[styles.container, { paddingTop: insets.top, backgroundColor: c.passengerBgLight }]}>
       {/* Sticky header: search card with back + From? / To? + Sort results */}
       <View style={styles.stickyHeaderWrap}>
         <Card variant="elevated" padding="md" style={styles.searchCard}>
@@ -354,7 +354,7 @@ export default function SearchResultsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.passengerBgLight },
+  container: { flex: 1 },
   stickyHeaderWrap: {
     paddingHorizontal: screenContentPadding,
     paddingBottom: spacing.sm,
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     borderWidth: 1,
   },
-  typeChipIcon: { marginRight: 4 },
+  typeChipIcon: { marginRight: spacing.xs },
   typeChipText: { ...typography.caption, fontWeight: '700' },
   sortRow: {
     flexDirection: 'row',
@@ -407,24 +407,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   sortBtnText: { ...typography.caption, fontWeight: '800' },
-  ridesCount: { ...typography.caption, fontWeight: '800', textTransform: 'uppercase', fontSize: 10 },
+  ridesCount: typography.overline,
   listContent: {
-    paddingHorizontal: screenContentPadding,
+    paddingHorizontal: searchResultsListPadding,
     paddingTop: spacing.md,
     paddingBottom: listBottomPaddingTab,
   },
   listHeaderLabel: {
-    ...typography.caption,
+    ...typography.overline,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    fontSize: 10,
     marginBottom: spacing.sm,
   },
   emptyWrap: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 48,
+    paddingVertical: spacing.xxl,
   },
   emptyIcon: { marginBottom: spacing.md },
   emptyText: { ...typography.body, fontWeight: '700' },
@@ -439,8 +437,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl + 24,
   },
   sortSheetHandle: {
-    width: 40,
-    height: 4,
+    width: sizes.sheetHandle.width,
+    height: sizes.sheetHandle.height,
     borderRadius: radii.sm / 2,
     alignSelf: 'center',
     marginBottom: spacing.lg,

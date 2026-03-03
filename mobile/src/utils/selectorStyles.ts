@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { colors, spacing, radii, typography, buttonHeights } from './theme';
+import { colors, spacing, radii, typography, buttonHeights, borderWidths } from './theme';
 
 /**
  * Unified selector design: trigger, sheet/modal, and option row.
@@ -10,7 +10,7 @@ export const selectorStyles = StyleSheet.create({
     flexDirection: 'row' as const,
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: borderWidths.thin,
     borderColor: colors.border,
     borderRadius: radii.md,
     minHeight: buttonHeights.large,
@@ -42,7 +42,7 @@ export const selectorStyles = StyleSheet.create({
     flexDirection: 'row' as const,
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: borderWidths.thin,
     borderColor: colors.border,
     borderRadius: radii.md,
     minHeight: buttonHeights.large,
@@ -61,7 +61,7 @@ export const selectorStyles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     gap: spacing.sm,
-    borderBottomWidth: 1,
+    borderBottomWidth: borderWidths.thin,
     borderBottomColor: colors.borderLight,
   },
   optionText: { flex: 1 },

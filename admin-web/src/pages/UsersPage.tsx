@@ -91,7 +91,7 @@ export default function UsersPage() {
                     <span
                       key={role}
                       className={`inline-block px-2 py-0.5 rounded-lg text-[11px] font-bold mr-1 ${
-                        role === 'passenger' ? 'bg-green-100 text-green-700' : role === 'driver' ? 'bg-blue-100 text-blue-700' : 'bg-soft text-dark'
+                        role === 'passenger' ? 'bg-success-100 text-success-700' : role === 'driver' ? 'bg-info-100 text-info-700' : 'bg-soft text-dark'
                       }`}
                     >
                       {role}

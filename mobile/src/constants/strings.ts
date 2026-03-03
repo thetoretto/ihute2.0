@@ -10,7 +10,6 @@ export const strings = {
   tabs: {
     trips: 'Trips',
     activities: 'Activities',
-    messages: 'Messages',
     profile: 'Profile',
     dashboard: 'Dashboard',
     report: 'Report',
@@ -120,6 +119,7 @@ export const strings = {
     passengerActivities: 'Passenger Activities',
     driverActivities: 'Driver Activities',
     activities: 'Activities',
+    allActivities: 'All Activities',
   },
 
   common: {

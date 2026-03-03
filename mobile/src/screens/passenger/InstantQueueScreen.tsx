@@ -12,8 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen, HotpointPicker } from '../../components';
 import { getInstantQueue, getHotpoints } from '../../services/api';
 import { useThemeColors } from '../../context/ThemeContext';
-import { colors, spacing, typography, radii } from '../../utils/theme';
-import { listBottomPaddingTab } from '../../utils/layout';
+import { colors, spacing, typography, radii, borderWidths, sizes } from '../../utils/theme';
+import { listBottomPaddingTab, tightGap } from '../../utils/layout';
 import type { DriverInstantQueueEntry, Hotpoint } from '../../types';
 
 function formatRwf(value: number) {
@@ -165,9 +165,9 @@ const styles = StyleSheet.create({
   },
   entryRoute: { marginBottom: spacing.sm },
   entryRouteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  entryDot: { width: 10, height: 10, borderRadius: radii.sm },
-  entryDotDest: { width: 10, height: 10, borderRadius: radii.sm },
-  entryLine: { width: 2, height: 12, marginLeft: 4, marginVertical: 2 },
+  entryDot: { width: sizes.routeDot, height: sizes.routeDot, borderRadius: sizes.routeDot / 2 },
+  entryDotDest: { width: sizes.routeDot, height: sizes.routeDot, borderRadius: sizes.routeDot / 2 },
+  entryLine: { width: borderWidths.medium, height: sizes.timelineDotLg, marginLeft: spacing.xs, marginVertical: tightGap },
   entryPlace: { ...typography.body, flex: 1 },
   entryMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   entryDriver: { ...typography.caption },
