@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { getWalletBalance, getWalletTransactions } from '../../services/api';
 import { spacing, typography, radii } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal } from '../../utils/layout';
 
 export default function WalletScreen() {
   const { user } = useAuth();
@@ -48,7 +49,7 @@ export default function WalletScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  content: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.lg, paddingBottom: spacing.xl },
   title: { ...typography.h2, marginBottom: spacing.xs },
   balanceCard: { padding: spacing.xl, borderRadius: radii.lg, borderWidth: 1, marginBottom: spacing.xl },
   balanceLabel: { ...typography.overline, marginBottom: spacing.xs },

@@ -3,6 +3,7 @@ import { StyleSheet, Switch, Text, View } from 'react-native';
 import { Divider, Screen } from '../../components';
 import { useThemeColors } from '../../context/ThemeContext';
 import { spacing, typography, radii } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal } from '../../utils/layout';
 import { getMockStore, updateMockStore } from '../../services/api';
 import { strings } from '../../constants/strings';
 
@@ -96,7 +97,7 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  content: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.lg, paddingBottom: spacing.xl },
   title: { ...typography.h2, marginBottom: spacing.xs },
   subtitle: { ...typography.caption, marginBottom: spacing.lg },
   dividerTop: { marginVertical: 0, marginBottom: spacing.sm },

@@ -45,3 +45,11 @@
 ## Touch targets
 
 - Theme has sizes.touchTarget.min (44) and iconButton (40). Most icon buttons use iconButton (40); ensure no tappable area < 44 where possible.
+
+---
+
+## Phase 2–4 implementation summary
+
+- **Phase 2:** layout.ts updated so `layout.screen.horizontal` and `layout.driver.contentHorizontal` both use `spacing.lg` (24px). All screens using `screenContentPadding` or `driverContentHorizontal` now share the same horizontal inset.
+- **Phase 3:** ProfileScreen user-details block redesigned: unified padding via `landingHeaderPaddingHorizontal`, avatar sizes from `sizes.avatar.xl`, typography from theme (h2, caption, overline), negative margin removed; shadow color applied dynamically.
+- **Phase 4:** NotificationsScreen and WalletScreen use `landingHeaderPaddingHorizontal` for content padding. Remaining static `colors.*` in StyleSheets (e.g. DriverHomeScreen, PublishRideScreen) can be migrated to `useThemeColors()` in a later pass.

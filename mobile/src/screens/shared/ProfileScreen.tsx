@@ -11,7 +11,8 @@ import { formatRatingValue, Screen, LandingHeader } from '../../components';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeContext, useThemeColors } from '../../context/ThemeContext';
 import { useDriverTheme } from '../../context/DriverThemeContext';
-import { spacing, typography, radii, sizes, colors } from '../../utils/theme';
+import { spacing, typography, radii, sizes } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal } from '../../utils/layout';
 import { openWhatsAppDispute } from '../../utils/whatsapp';
 import { strings } from '../../constants/strings';
 
@@ -152,18 +153,18 @@ export default function ProfileScreen() {
         contentContainerStyle={[styles.content, { paddingTop: 0, paddingBottom: effectiveSpacing.xxl }]}
       >
         <LandingHeader title="Account" />
-        <View style={[styles.driverProfileHeader, { backgroundColor: themeColors.card, paddingTop: insets.top + effectiveSpacing.xl, paddingBottom: effectiveSpacing.lg }]}>
+        <View style={[styles.driverProfileHeader, { backgroundColor: themeColors.card, paddingTop: effectiveSpacing.xl, paddingBottom: effectiveSpacing.lg, paddingHorizontal: landingHeaderPaddingHorizontal }]}>
           <View style={styles.driverProfileAvatarWrap}>
             <TouchableOpacity style={[styles.driverProfileAvatar, { borderColor: themeColors.card }]} onPress={() => rootNavigate('EditProfile')}>
               {user?.avatarUri ? (
                 <Image source={{ uri: user.avatarUri }} style={styles.driverProfileAvatarImg} />
               ) : (
                 <View style={[styles.driverProfileAvatarPlaceholder, { backgroundColor: themeColors.surface }]}>
-                  <Ionicons name="person" size={48} color={themeColors.textMuted} />
+                  <Ionicons name="person" size={sizes.avatar.lg} color={themeColors.textMuted} />
                 </View>
               )}
             </TouchableOpacity>
-            <View style={[styles.driverProfileVerifiedBadge, { backgroundColor: d.instaGreen }]}>
+            <View style={[styles.driverProfileVerifiedBadge, { backgroundColor: d.instaGreen, borderColor: themeColors.surface }]}>
               <Ionicons name="checkmark" size={16} color={themeColors.onAppPrimary} />
             </View>
           </View>
@@ -171,7 +172,7 @@ export default function ProfileScreen() {
           <Text style={[styles.driverProfileMember, { color: themeColors.textMuted }]}>Member since {memberYear}</Text>
         </View>
 
-        <View style={[styles.driverProfileStatsRow, { paddingHorizontal: spacing.lg, marginTop: -24 }]}>
+        <View style={[styles.driverProfileStatsRow, { paddingHorizontal: landingHeaderPaddingHorizontal, marginTop: effectiveSpacing.md }]}>
           <TouchableOpacity style={[styles.driverProfileStatCard, styles.driverProfileStatCardPrimary, { backgroundColor: d.primary }]} onPress={() => rootNavigate('VehicleGarage')}>
             <Text style={[styles.driverProfileStatValue, { color: themeColors.onAppPrimary }]}>{firstVehicle ? `${firstVehicle.make} ${firstVehicle.model}` : 'My Vehicle'}</Text>
             <Text style={[styles.driverProfileStatLabel, { color: themeColors.onAppPrimaryMuted }]}>{firstVehicle?.licensePlate ?? 'Add vehicle'}</Text>
@@ -215,7 +216,7 @@ export default function ProfileScreen() {
     >
       <LandingHeader title="Account" />
       {/* Header block (mockup: white, rounded bottom, avatar, verified, rating, stats grid) */}
-      <View style={[styles.profileHeader, { backgroundColor: themeColors.card, paddingTop: effectiveSpacing.xl + insets.top, paddingBottom: effectiveSpacing.lg }]}>
+      <View style={[styles.profileHeader, { backgroundColor: themeColors.card, paddingTop: effectiveSpacing.xl, paddingBottom: effectiveSpacing.lg, paddingHorizontal: landingHeaderPaddingHorizontal, shadowColor: themeColors.cardShadowColor }]}>
         <View style={styles.profileHeaderRow}>
           <View style={styles.avatarWrap}>
             <TouchableOpacity
@@ -227,11 +228,11 @@ export default function ProfileScreen() {
                 <Image source={{ uri: user.avatarUri }} style={styles.avatarImage} />
               ) : (
                 <View style={[styles.avatarPlaceholder, { backgroundColor: themeColors.surface }]}>
-                  <Ionicons name="person" size={44} color={themeColors.textMuted} />
+                  <Ionicons name="person" size={sizes.avatar.lg} color={themeColors.textMuted} />
                 </View>
               )}
             </TouchableOpacity>
-            <View style={[styles.onlineDot, { backgroundColor: themeColors.success }]} />
+            <View style={[styles.onlineDot, { backgroundColor: themeColors.success, borderColor: themeColors.surface }]} />
           </View>
           <View style={styles.profileHeaderInfo}>
             <Text style={[styles.profileName, effectiveTypography.h2, { color: themeColors.text }]}>
@@ -506,13 +507,11 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: spacing.lg },
+  content: { paddingHorizontal: landingHeaderPaddingHorizontal },
   profileHeader: {
     borderBottomLeftRadius: radii.xl + 8,
     borderBottomRightRadius: radii.xl + 8,
-    paddingHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-    shadowColor: colors.cardShadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -525,8 +524,8 @@ const styles = StyleSheet.create({
   },
   avatarWrap: { position: 'relative' },
   avatar: {
-    width: 96,
-    height: 96,
+    width: sizes.avatar.xl,
+    height: sizes.avatar.xl,
     overflow: 'hidden',
     borderWidth: 4,
   },
@@ -541,14 +540,13 @@ const styles = StyleSheet.create({
     height: spacing.lg,
     borderRadius: radii.smMedium,
     borderWidth: spacing.xs,
-    borderColor: colors.surface,
   },
   profileHeaderInfo: { marginLeft: spacing.lg, flex: 1 },
   profileName: { marginBottom: spacing.xxs },
   verifiedLabel: { ...typography.bodySmall, fontWeight: '700', marginBottom: spacing.xxs },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   ratingValue: { ...typography.caption, fontWeight: '800' },
-  ridesCount: { ...typography.caption, fontSize: 10, fontWeight: '700', marginLeft: spacing.xxs },
+  ridesCount: { ...typography.overline, marginLeft: spacing.xxs },
   statsGrid: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -559,8 +557,8 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     alignItems: 'center',
   },
-  statValue: { ...typography.h2, fontSize: 20, fontWeight: '800' },
-  statLabel: { ...typography.caption, fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.xxs },
+  statValue: { ...typography.h2, marginBottom: spacing.xxs },
+  statLabel: { ...typography.overline, marginTop: spacing.xxs },
   preferencesCard: {
     borderRadius: radii.xl,
     borderWidth: 1,
@@ -607,8 +605,8 @@ const styles = StyleSheet.create({
   },
   driverProfileAvatarWrap: { position: 'relative', marginBottom: spacing.md },
   driverProfileAvatar: {
-    width: 112,
-    height: 112,
+    width: sizes.avatar.xl,
+    height: sizes.avatar.xl,
     borderRadius: radii.xl,
     overflow: 'hidden',
     borderWidth: spacing.xs,
@@ -623,12 +621,11 @@ const styles = StyleSheet.create({
     height: spacing.xl,
     borderRadius: radii.smMedium,
     borderWidth: spacing.xs,
-    borderColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  driverProfileName: { ...typography.h2, fontSize: 24, fontWeight: '800', marginBottom: spacing.xxs },
-  driverProfileMember: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  driverProfileName: { ...typography.h2, marginBottom: spacing.xxs },
+  driverProfileMember: { ...typography.caption, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
   driverProfileStatsRow: { flexDirection: 'row', gap: spacing.md },
   driverProfileStatCard: {
     flex: 1,
@@ -637,8 +634,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   driverProfileStatCardPrimary: { borderWidth: 0 },
-  driverProfileStatValue: { ...typography.h2, fontSize: 20, fontWeight: '800', marginBottom: spacing.xxs },
-  driverProfileStatLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  driverProfileStatValue: { ...typography.h2, marginBottom: spacing.xxs },
+  driverProfileStatLabel: { ...typography.overline },
   driverProfileLogout: {
     marginTop: spacing.sm,
     paddingVertical: spacing.md,
