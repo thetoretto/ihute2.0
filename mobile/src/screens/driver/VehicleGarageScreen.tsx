@@ -1,24 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useRootNavigation } from '../../context/RootNavigationContext';
 import { getUserVehicles } from '../../services/api';
 import { Button, EmptyState, Screen } from '../../components';
-import { buttonHeights, colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
-import { cardRadius, listBottomPaddingDefault } from '../../utils/layout';
+import { buttonHeights, spacing, typography, radii, sizes, cardShadow } from '../../utils/theme';
+import { cardRadius, driverContentHorizontal, listBottomPaddingDefault } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { Vehicle } from '../../types';
 
 export default function VehicleGarageScreen() {
   const { user } = useAuth();
   const c = useThemeColors();
+  const { rootNavigate } = useRootNavigation();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      getUserVehicles(user.id).then(setVehicles);
-    }
+  const loadVehicles = useCallback(() => {
+    if (user) getUserVehicles(user.id).then(setVehicles);
   }, [user]);
+
+  useEffect(() => loadVehicles(), [loadVehicles]);
+  useFocusEffect(loadVehicles);
 
   const   statusColor = (status: Vehicle['approvalStatus']) => {
     switch (status) {
@@ -30,26 +34,8 @@ export default function VehicleGarageScreen() {
   };
 
   return (
-    <Screen style={[styles.container, { backgroundColor: c.background }]}>
-      <Button
-        title="Add Vehicle"
-        onPress={() => {
-          const id = `v_mock_${Date.now()}`;
-          setVehicles((prev) => [
-            {
-              id,
-              make: 'Nissan',
-              model: 'Qashqai',
-              color: 'Blue',
-              licensePlate: `MCK-${id.slice(-4).toUpperCase()}`,
-              seats: 4,
-              approvalStatus: 'pending',
-            },
-            ...prev,
-          ]);
-        }}
-        style={styles.addBtn}
-      />
+    <Screen style={[styles.container, { backgroundColor: c.appBackground }, { paddingHorizontal: 0 }]}>
+      <Button title="Add Vehicle" onPress={() => rootNavigate('AddVehicle')} style={styles.addBtn} />
       {vehicles.length === 0 ? (
         <EmptyState
           title="No vehicles yet"
@@ -83,33 +69,10 @@ export default function VehicleGarageScreen() {
             </View>
             <View style={styles.actionRow}>
               <TouchableOpacity
-                onPress={() =>
-                  setVehicles((prev) =>
-                    prev.map((v) =>
-                      v.id === item.id
-                        ? { ...v, approvalStatus: v.approvalStatus === 'approved' ? 'pending' : 'approved' }
-                        : v
-                    )
-                  )
-                }
+                onPress={() => rootNavigate('EditVehicle', { vehicleId: item.id })}
                 style={[styles.actionBtn, { backgroundColor: c.primary }]}
               >
-                <Text style={[styles.actionText, { color: c.onPrimary }]}>Toggle approval</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() =>
-                  Alert.alert('Delete vehicle', 'Remove this mock vehicle?', [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Delete',
-                      style: 'destructive',
-                      onPress: () => setVehicles((prev) => prev.filter((v) => v.id !== item.id)),
-                    },
-                  ])
-                }
-                style={[styles.actionBtn, { borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }]}
-              >
-                <Text style={[styles.actionDangerText, { color: c.error }]}>Delete</Text>
+                <Text style={[styles.actionText, { color: c.onPrimary }]}>Edit</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -129,7 +92,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   cardRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  cardIconWrap: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
+  cardIconWrap: { width: sizes.avatar.lg, height: sizes.avatar.lg, borderRadius: radii.cardLarge, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
   cardBody: { flex: 1 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   vehicleName: { ...typography.h3 },
@@ -139,12 +102,12 @@ const styles = StyleSheet.create({
   seats: { ...typography.caption, marginTop: spacing.xs },
   actionRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   actionBtn: {
-    borderRadius: 12,
+    borderRadius: radii.button,
     minHeight: buttonHeights.small,
     paddingHorizontal: spacing.sm,
     justifyContent: 'center',
   },
   actionText: { ...typography.caption, fontWeight: '600' },
   actionDangerText: { ...typography.caption, fontWeight: '600' },
-  listContent: { paddingBottom: listBottomPaddingDefault },
+  listContent: { paddingBottom: listBottomPaddingDefault, paddingHorizontal: driverContentHorizontal },
 });

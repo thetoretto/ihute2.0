@@ -16,30 +16,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
 import { useRootNavigation } from '../../context/RootNavigationContext';
-import { getDriverTripActivities, getDriverActivityLog } from '../../services/api';
+import { getDriverTripActivities } from '../../services/api';
 import {
-  Card,
   EmptyState,
   Screen,
   Button,
   CarRefreshIndicator,
 } from '../../components';
 import { useTabbedList } from '../../hooks/useTabbedList';
-import { spacing, typography, radii, sizes, borderWidths, cardShadowStrong } from '../../utils/theme';
-import {
-  listBottomPaddingDefault,
-  listBottomPaddingWithFab,
-  fabBottomOffset,
-} from '../../utils/layout';
+import { spacing, typography, radii, sizes, borderWidths } from '../../utils/theme';
 import { useThemeColors } from '../../context/ThemeContext';
+import { useDriverTheme } from '../../context/DriverThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { strings } from '../../constants/strings';
-import type { DriverTripActivity, ActivityLogEntry, ActivityLogEntryKind } from '../../types';
+import { driverContentHorizontal, listBottomPaddingTab } from '../../utils/layout';
+import type { DriverTripActivity } from '../../types';
 
 const TABS = [
-  { key: 'all' as const, label: 'All' },
-  { key: 'upcoming' as const, label: 'Upcoming' },
-  { key: 'completed' as const, label: 'Completed' },
-  { key: 'log' as const, label: 'Log' },
+  { key: 'recent' as const, label: 'Recent' },
+  { key: 'scheduled' as const, label: 'Scheduled' },
+  { key: 'monthly' as const, label: 'Monthly' },
 ];
 
 function formatTimeAgo(departureTime: string): string {
@@ -71,79 +67,41 @@ export default function DriverMyRidesScreen() {
     return getDriverTripActivities(user.id);
   }, [user?.id]);
 
+  const now = Date.now();
+  const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+
   const tabbed = useTabbedList({
     tabs: TABS,
-    initialTab: 'all',
+    initialTab: 'recent',
     fetchData: fetchActivities,
-    filterByTab: (a, t) =>
-      t === 'log' ? false : t === 'all' || (t === 'upcoming' && a.trip.status === 'active') || (t === 'completed' && a.trip.status === 'completed'),
+    filterByTab: (a, t) => {
+      const tripTime = a.trip.departureTime ? new Date(a.trip.departureDate || new Date()).getTime() : 0;
+      if (t === 'recent') return a.trip.status === 'completed' || (a.trip.status === 'active' && tripTime >= oneWeekAgo);
+      if (t === 'scheduled') return a.trip.status === 'active';
+      if (t === 'monthly') return tripTime >= startOfMonth;
+      return true;
+    },
     deps: [user?.id],
   });
 
-  const { tab, setTab, list, error: loadError, refreshing, refresh } = tabbed;
+  const { tab, setTab, list, data: allActivities, error: loadError, refreshing, refresh } = tabbed;
+  const driver = useDriverTheme();
+  const insets = useSafeAreaInsets();
+  const d = driver.colors;
 
-  const [logEntries, setLogEntries] = useState<ActivityLogEntry[]>([]);
-  const [logLoading, setLogLoading] = useState(false);
-  const [logError, setLogError] = useState<string | null>(null);
-  const fetchLog = useCallback(async () => {
-    if (!user?.id) return;
-    setLogError(null);
-    setLogLoading(true);
-    try {
-      const data = await getDriverActivityLog(user.id);
-      setLogEntries(data);
-    } catch (e) {
-      setLogError(e instanceof Error ? e.message : 'Failed to load activity log');
-    } finally {
-      setLogLoading(false);
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (tab === 'log') void fetchLog();
-  }, [tab, fetchLog]);
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: strings.nav.allActivities,
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={() => {
-            Alert.alert(
-              'Options',
-              undefined,
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: isIncomeVisible ? 'Hide income' : 'View income',
-                  onPress: () => {
-                    setIsIncomeVisible((v) => !v);
-                    setTimeout(() => refresh(), 100);
-                  },
-                },
-                !isScanner
-                  ? {
-                      text: 'Scan ticket',
-                      onPress: () => navigation.navigate('DriverScanTicket'),
-                    }
-                  : undefined,
-              ].filter(Boolean) as { text: string; style?: 'cancel'; onPress?: () => void }[]
-            );
-          }}
-          style={styles.headerRightBtn}
-          hitSlop={12}
-        >
-          <Ionicons name="filter-outline" size={20} color={c.dark} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, c.dark, isIncomeVisible, isScanner, refresh]);
+  const weekActivities = allActivities.filter((a) => {
+    const depDate = (a.trip as { departureDate?: string })?.departureDate;
+    const t = depDate ? new Date(depDate).getTime() : new Date().getTime();
+    return t >= oneWeekAgo;
+  });
+  const weekEarnings = weekActivities.reduce((sum, a) => sum + (a.collectedAmount ?? 0), 0);
+  const pointsPlaceholder = (weekEarnings / 50 >= 1000 ? (weekEarnings / 50000).toFixed(1) + 'k' : Math.round(weekEarnings / 50).toString());
 
   useFocusEffect(
     useCallback(() => {
-      setTab('all');
       void refresh();
-    }, [setTab, refresh])
+    }, [refresh])
   );
 
   const onRefresh = async () => {
@@ -173,88 +131,14 @@ export default function DriverMyRidesScreen() {
     navigation.navigate('DriverScanTicket');
   };
 
-  const getLogIcon = (kind: ActivityLogEntryKind) => {
-    const map: Record<ActivityLogEntryKind, { icon: keyof typeof Ionicons.glyphMap; bg: string; color: string }> = {
-      trip_created: { icon: 'car', bg: c.primaryTint, color: c.primary },
-      booking_created: { icon: 'person-add', bg: c.primaryTint, color: c.primary },
-      ticket_scanned: { icon: 'checkmark-circle', bg: c.successTint, color: c.success },
-      car_full: { icon: 'people', bg: c.primaryTint, color: c.primary },
-      trip_cancelled: { icon: 'close-circle', bg: c.errorTint, color: c.error },
-      booking_cancelled: { icon: 'close-circle', bg: c.errorTint, color: c.error },
-      trip_completed: { icon: 'checkmark-done', bg: c.successTint, color: c.success },
-    };
-    const { icon, bg, color } = map[kind];
-    return (
-      <View style={[styles.iconBox, { backgroundColor: bg }]}>
-        <Ionicons name={icon} size={20} color={color} />
-      </View>
-    );
-  };
-
-  const renderLogTab = () => {
-    if (logLoading && logEntries.length === 0) {
-      return (
-        <View style={styles.logLoadingWrap}>
-          <ActivityIndicator size="large" color={c.primary} />
-          <Text style={[styles.logLoadingText, { color: c.textSecondary }]}>Loading activity log…</Text>
-        </View>
-      );
-    }
-    if (logError && logEntries.length === 0) {
-      return (
-        <View style={[styles.errorBanner, { backgroundColor: c.surfaceElevated, borderColor: c.error }]}>
-          <Text style={[styles.errorText, { color: c.error }]}>{logError}</Text>
-          <Button title="Retry" onPress={() => void fetchLog()} />
-        </View>
-      );
-    }
-    if (logEntries.length === 0) {
-      return (
-        <EmptyState
-          title="No activity yet"
-          subtitle="Trip and booking events will appear here."
-        />
-      );
-    }
-    return (
-      <FlatList
-        data={logEntries}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, styles.logListContent, styles.listContentWithFab]}
-        refreshControl={
-          <RefreshControl
-            refreshing={logLoading}
-            onRefresh={() => void fetchLog()}
-            colors={[c.primary]}
-            tintColor={c.primary}
-            progressBackgroundColor={c.surface}
-          />
-        }
-        overScrollMode="always"
-        removeClippedSubviews={Platform.OS === 'android'}
-        ListHeaderComponent={
-          <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>Activity log</Text>
-        }
-        renderItem={({ item }) => (
-          <Card variant="outlined" padding="md" style={styles.logCard}>
-            <View style={styles.logRow}>
-              {getLogIcon(item.kind)}
-              <View style={styles.logBody}>
-                <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>{item.title}</Text>
-                {item.subtitle ? (
-                  <Text style={[styles.cardDesc, { color: c.textSecondary }]} numberOfLines={1}>{item.subtitle}</Text>
-                ) : null}
-                <Text style={[styles.cardTime, { color: c.textMuted }]}>{formatLogTime(item.timestamp)}</Text>
-              </View>
-            </View>
-          </Card>
-        )}
-      />
-    );
+  const getActivityStatus = (item: DriverTripActivity): 'EARNED' | 'PAID' | 'VOID' => {
+    if (item.trip.status === 'cancelled') return 'VOID';
+    if (item.trip.status === 'completed') return 'EARNED';
+    return 'PAID';
   };
 
   return (
-    <Screen style={[styles.container, { backgroundColor: c.background }]}>
+    <Screen style={[styles.container, { backgroundColor: c.appBackground }, { paddingHorizontal: 0 }]}>
       {loadError ? (
         <View style={[styles.errorBanner, { backgroundColor: c.surfaceElevated, borderColor: c.error }]}>
           <Text style={[styles.errorText, { color: c.error }]}>{loadError}</Text>
@@ -262,41 +146,49 @@ export default function DriverMyRidesScreen() {
         </View>
       ) : null}
 
-      {/* Pill tabs - reference style */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabsScroll}
-        style={styles.tabsWrapper}
-      >
+      {/* Activities header (mockup) */}
+      <View style={[styles.activitiesHeader, { paddingTop: insets.top + spacing.lg, backgroundColor: d.card, borderBottomColor: c.border }]}>
+        <View style={styles.activitiesHeaderRow}>
+          <View>
+            <Text style={[styles.activitiesTitle, { color: d.primary }]}>Activities</Text>
+            <Text style={[styles.activitiesSubtitle, { color: c.textSecondary }]}>History and insights</Text>
+          </View>
+          <View style={[styles.activitiesHeaderIcon, { backgroundColor: c.ghostBg }]}>
+            <Ionicons name="bar-chart-outline" size={20} color={c.textMuted} />
+          </View>
+        </View>
+        <View style={styles.activitiesStatsRow}>
+          <View style={[styles.activitiesStatCard, { backgroundColor: c.appSurfaceMuted, borderColor: c.border }]}>
+            <Text style={[styles.activitiesStatLabel, { color: c.textSecondary }]}>This Week</Text>
+            <Text style={[styles.activitiesStatValue, { color: d.primary }]}>{weekActivities.length} Trips</Text>
+          </View>
+          <View style={[styles.activitiesStatCard, { backgroundColor: c.appSurfaceMuted, borderColor: c.border }]}>
+            <Text style={[styles.activitiesStatLabel, { color: c.textSecondary }]}>Earnings</Text>
+            <Text style={[styles.activitiesStatValue, { color: d.instaGreen }]}>RWF {(weekEarnings / 1000).toFixed(0)}k</Text>
+          </View>
+          <View style={[styles.activitiesStatCard, { backgroundColor: c.appSurfaceMuted, borderColor: c.border }]}>
+            <Text style={[styles.activitiesStatLabel, { color: c.textSecondary }]}>Points</Text>
+            <Text style={[styles.activitiesStatValue, { color: c.warning }]}>{pointsPlaceholder}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Tabs: Recent | Scheduled | Monthly */}
+      <View style={[styles.tabsRow, { borderBottomColor: c.border }]}>
         {TABS.map((t) => (
           <TouchableOpacity
             key={t.key}
             onPress={() => setTab(t.key)}
-            style={[
-              styles.tabPill,
-              { backgroundColor: tab === t.key ? c.dark : c.card, borderColor: c.border },
-            ]}
-            activeOpacity={0.8}
+            style={[styles.tabUnderline, tab === t.key && { borderBottomColor: d.primary, borderBottomWidth: 2 }]}
           >
-            <Text
-              style={[
-                styles.tabPillText,
-                { color: tab === t.key ? c.primary : c.textSecondary },
-                tab === t.key && styles.tabPillTextActive,
-              ]}
-            >
-              {t.label}
-            </Text>
+            <Text style={[styles.tabUnderlineText, { color: tab === t.key ? d.primary : c.textMuted }]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
-      {tab === 'log' ? (
-        renderLogTab()
-      ) : list.length === 0 ? (
+      {list.length === 0 ? (
         <EmptyState
-          title={tab === 'upcoming' ? 'No upcoming rides' : tab === 'completed' ? 'No completed rides' : 'No activities yet'}
+          title={tab === 'scheduled' ? 'No scheduled rides' : tab === 'monthly' ? 'No rides this month' : 'No activities yet'}
           subtitle="Publish a ride to get started."
         />
       ) : (
@@ -304,70 +196,71 @@ export default function DriverMyRidesScreen() {
           key={tab}
           data={list}
           keyExtractor={(item) => item.trip.id}
-          contentContainerStyle={[styles.listContent, styles.listContentWithFab]}
+          contentContainerStyle={[styles.listContent, { paddingBottom: listBottomPaddingTab }]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => void onRefresh()}
-              colors={[c.primary]}
-              tintColor={c.primary}
+              colors={[d.primary]}
+              tintColor={d.primary}
               progressBackgroundColor={c.surface}
             />
           }
           overScrollMode="always"
-          bounces={false}
-          alwaysBounceVertical={false}
-          decelerationRate="fast"
           removeClippedSubviews={Platform.OS === 'android'}
-          ListHeaderComponent={
-            <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>Today</Text>
-          }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-              onPress={() => onCardPress(item)}
-              activeOpacity={0.7}
-            >
-              {getActivityIcon(item)}
-              <View style={styles.cardBody}>
-                <View style={styles.cardRow}>
-                  <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>
-                    {item.trip.departureHotpoint?.name ?? '—'} → {item.trip.destinationHotpoint?.name ?? '—'}
-                  </Text>
-                  <Text style={[styles.cardAmount, { color: c.success }]}>
-                    {maskAmount(item.collectedAmount)}
-                  </Text>
+          renderItem={({ item }) => {
+            const status = getActivityStatus(item);
+            const isVoid = status === 'VOID';
+            return (
+              <TouchableOpacity
+                style={[styles.activityCard, { backgroundColor: d.card, borderColor: c.border }, isVoid && { opacity: 0.7 }]}
+                onPress={() => onCardPress(item)}
+                activeOpacity={0.7}
+              >
+                <View style={[
+                  styles.activityCardIcon,
+                  { backgroundColor: status === 'EARNED' ? d.instaGreenTint : status === 'PAID' ? d.accentTint : c.ghostBg },
+                ]}>
+                  <Ionicons
+                    name={status === 'VOID' ? 'close' : status === 'EARNED' ? 'checkmark' : 'time'}
+                    size={24}
+                    color={status === 'EARNED' ? d.instaGreen : status === 'PAID' ? d.accent : c.textMuted}
+                  />
                 </View>
-                <Text style={[styles.cardDesc, { color: c.textSecondary }]}>
-                  {item.bookedSeats} passengers • {item.trip.departureTime}
-                </Text>
-                <View style={styles.cardTimeRow}>
-                  <Ionicons name="time-outline" size={12} color={c.textMuted} />
-                  <Text style={[styles.cardTime, { color: c.textMuted }]}>
-                    {formatTimeAgo(item.trip.departureTime)}
-                  </Text>
+                <View style={styles.activityCardBody}>
+                  <View style={styles.activityCardRow}>
+                    <Text style={[styles.activityCardTitle, { color: d.primary }]} numberOfLines={1}>
+                      {item.trip.departureHotpoint?.name ?? '—'} → {item.trip.destinationHotpoint?.name ?? '—'}
+                    </Text>
+                    <Text style={[styles.activityCardAmount, { color: isVoid ? c.error : d.primary }]}>
+                      RWF {isIncomeVisible ? Number(item.collectedAmount ?? 0).toLocaleString('en-RW', { maximumFractionDigits: 0 }) : '••••••'}
+                    </Text>
+                  </View>
+                  <View style={styles.activityCardMeta}>
+                    <Text style={[styles.activityCardMetaText, { color: c.textSecondary }]}>
+                      {item.bookedSeats ?? 0} Passengers • {formatTimeAgo(item.trip.departureTime)}
+                    </Text>
+                    <View style={[
+                      styles.activityCardPill,
+                      status === 'EARNED' && { backgroundColor: d.instaGreenTint },
+                      status === 'PAID' && { backgroundColor: d.accentTint },
+                      status === 'VOID' && { backgroundColor: c.ghostBg },
+                    ]}>
+                      <Text style={[
+                        styles.activityCardPillText,
+                        status === 'EARNED' && { color: d.instaGreen },
+                        status === 'PAID' && { color: d.accent },
+                        status === 'VOID' && { color: c.textMuted },
+                      ]}>
+                        {status}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={c.textMuted} style={styles.chevron} />
-            </TouchableOpacity>
-          )}
-        />
-      )}
-
-      {/* FAB - reference style */}
-      {!isScanner && (
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: c.primary, bottom: listBottomPaddingDefault + fabBottomOffset }]}
-          onPress={() => {
-            navigation.goBack();
-            setTimeout(() => {
-              rootNavigate('Main', { screen: 'DriverPublish', params: { screen: 'PublishRide' } });
-            }, 100);
+              </TouchableOpacity>
+            );
           }}
-          activeOpacity={0.9}
-        >
-          <Ionicons name="add" size={26} color={c.onPrimary} />
-        </TouchableOpacity>
+        />
       )}
 
       <CarRefreshIndicator state={refreshState} />
@@ -385,12 +278,12 @@ const styles = StyleSheet.create({
   tabsScroll: {
     flexDirection: 'row',
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: driverContentHorizontal,
     paddingBottom: spacing.sm,
     alignItems: 'center',
   },
   tabPill: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: driverContentHorizontal,
     paddingVertical: spacing.sm,
     borderRadius: radii.full,
     borderWidth: borderWidths.thin,
@@ -401,7 +294,7 @@ const styles = StyleSheet.create({
     ...typography.overline,
     letterSpacing: 1.2,
     marginBottom: spacing.sm,
-    marginHorizontal: spacing.xs,
+    marginHorizontal: driverContentHorizontal,
   },
   card: {
     flexDirection: 'row',
@@ -427,8 +320,7 @@ const styles = StyleSheet.create({
   cardTimeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
   cardTime: { ...typography.caption10, fontWeight: '600' },
   chevron: { marginLeft: spacing.xs },
-  listContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
-  listContentWithFab: { paddingBottom: listBottomPaddingWithFab },
+  listContent: { paddingHorizontal: driverContentHorizontal, paddingTop: spacing.md },
   errorBanner: {
     marginBottom: spacing.md,
     padding: spacing.md,
@@ -437,29 +329,49 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   errorText: { ...typography.body },
-  fab: {
-    position: 'absolute',
-    right: spacing.lg,
-    width: sizes.avatar.xl,
-    height: sizes.avatar.xl,
+  activitiesHeader: {
+    paddingHorizontal: driverContentHorizontal,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: 1,
+  },
+  activitiesHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg },
+  activitiesTitle: { ...typography.h1, fontSize: 28, fontWeight: '800', marginBottom: spacing.xs },
+  activitiesSubtitle: { fontSize: 14 },
+  activitiesHeaderIcon: { width: sizes.touchTarget.iconButton, height: sizes.touchTarget.iconButton, borderRadius: radii.smMedium, alignItems: 'center', justifyContent: 'center' },
+  activitiesStatsRow: { flexDirection: 'row', gap: spacing.sm },
+  activitiesStatCard: {
+    flex: 1,
+    padding: spacing.sm,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+  },
+  activitiesStatLabel: { fontSize: 8, fontWeight: '800', textTransform: 'uppercase', marginBottom: spacing.xxs },
+  activitiesStatValue: { fontSize: 14, fontWeight: '800' },
+  tabsRow: { flexDirection: 'row', paddingHorizontal: driverContentHorizontal, gap: spacing.lg, paddingTop: spacing.lg, marginBottom: spacing.sm, borderBottomWidth: 1 },
+  tabUnderline: { paddingBottom: spacing.sm },
+  tabUnderlineText: { fontSize: 14, fontWeight: '800' },
+  activityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md + spacing.xs,
+    marginBottom: spacing.md,
+    borderRadius: radii.cardLarge,
+    borderWidth: 1,
+  },
+  activityCardIcon: {
+    width: sizes.avatar.lg,
+    height: sizes.avatar.lg,
     borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    ...cardShadowStrong,
+    marginRight: spacing.md,
   },
-  logLoadingWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-    gap: spacing.md,
-  },
-  logLoadingText: { ...typography.bodySmall },
-  logListContent: { paddingTop: spacing.sm },
-  logCard: { marginBottom: spacing.md },
-  logRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logBody: { flex: 1, minWidth: 0, marginLeft: spacing.md },
+  activityCardBody: { flex: 1, minWidth: 0 },
+  activityCardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.sm },
+  activityCardTitle: { ...typography.bodySmall, fontWeight: '800' },
+  activityCardAmount: { fontSize: 12, fontWeight: '800' },
+  activityCardMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: spacing.xs },
+  activityCardMetaText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', flex: 1 },
+  activityCardPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs, borderRadius: radii.xs },
+  activityCardPillText: { fontSize: 8, fontWeight: '800' },
 });

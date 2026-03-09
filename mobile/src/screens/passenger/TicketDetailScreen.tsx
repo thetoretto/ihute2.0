@@ -55,7 +55,7 @@ export default function TicketDetailScreen() {
 
   if (loading) {
     return (
-      <Screen style={[styles.center, { backgroundColor: c.background }]}>
+      <Screen style={[styles.center, { backgroundColor: c.appBackground }]}>
         <Text style={[styles.muted, { color: c.textSecondary }]}>Loading ticket...</Text>
       </Screen>
     );
@@ -63,7 +63,7 @@ export default function TicketDetailScreen() {
 
   if (!ticket) {
     return (
-      <Screen style={[styles.center, { backgroundColor: c.background }]}>
+      <Screen style={[styles.center, { backgroundColor: c.appBackground }]}>
         <Text style={[styles.muted, { color: c.textSecondary }]}>{error ?? 'Ticket unavailable.'}</Text>
         <Button title="Retry" onPress={() => void loadTicket()} style={styles.retryBtn} />
       </Screen>

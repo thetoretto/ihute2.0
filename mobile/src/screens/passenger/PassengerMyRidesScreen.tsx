@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   ScrollView,
   TouchableOpacity,
   LayoutAnimation,
@@ -24,21 +23,17 @@ import {
   cancelBooking,
 } from '../../services/api';
 import {
-  EmptyState,
   Screen,
   Button,
   CarRefreshIndicator,
   ExpansionDetailsCard,
   ExpandActionButton,
 } from '../../components';
-import { useTabbedList } from '../../hooks/useTabbedList';
-import { buttonHeights, spacing, typography, radii, borderWidths } from '../../utils/theme';
+import { buttonHeights, spacing, typography, radii, borderWidths, colors } from '../../utils/theme';
 import {
   listBottomPaddingTab,
-  cardRadius,
   listScreenHeaderPaddingVertical,
   listScreenHeaderPaddingHorizontal,
-  listContentPaddingTop,
   screenContentPadding,
   tightGap,
 } from '../../utils/layout';
@@ -46,42 +41,57 @@ import { sharedStyles } from '../../utils/sharedStyles';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { Booking } from '../../types';
 
-const TABS = [
-  { key: 'upcoming' as const, label: 'Upcoming' },
-  { key: 'ongoing' as const, label: 'Ongoing' },
-  { key: 'completed' as const, label: 'Completed' },
-  { key: 'cancelled' as const, label: 'Cancelled' },
-];
+function routeCode(name: string) {
+  if (name.length >= 3) return name.slice(0, 3).toUpperCase();
+  return name.toUpperCase();
+}
+
+function formatPastDate(dateStr: string) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return d.toLocaleDateString(undefined, { weekday: 'short' });
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 export default function PassengerMyRidesScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
   const c = useThemeColors();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshState, setRefreshState] = useState<'idle' | 'refreshing' | 'done'>('idle');
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [ratingsByBooking, setRatingsByBooking] = useState<Record<string, number>>({});
   const [ratingLoadingId, setRatingLoadingId] = useState<string | null>(null);
-  const [refreshState, setRefreshState] = useState<'idle' | 'refreshing' | 'done'>('idle');
 
   const fetchBookings = useCallback(async () => {
     if (!user) return [];
     return getUserBookings(user.id);
   }, [user?.id]);
 
-  const tabbed = useTabbedList({
-    tabs: TABS,
-    initialTab: 'upcoming',
-    fetchData: fetchBookings,
-    filterByTab: (b, t) => b.status === t,
-    deps: [user?.id],
-  });
-
-  const { tab, setTab, list, data: bookings, error: loadError, refreshing, refresh, setError } = tabbed;
+  const refresh = useCallback(async () => {
+    setLoadError(null);
+    try {
+      const data = await fetchBookings();
+      setBookings(data);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : 'Failed to load bookings');
+    }
+  }, [fetchBookings]);
 
   useEffect(() => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
       UIManager.setLayoutAnimationEnabledExperimental(true);
     }
   }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   useEffect(() => {
     const completed = bookings.filter((b) => b.status === 'completed');
@@ -110,10 +120,13 @@ export default function PassengerMyRidesScreen() {
   useFocusEffect(
     useCallback(() => {
       setExpandedId(null);
-      setTab('upcoming');
       void refresh();
-    }, [setTab, refresh])
+    }, [refresh])
   );
+
+  const upcoming = bookings.filter((b) => b.status === 'upcoming');
+  const completed = bookings.filter((b) => b.status === 'completed');
+  const firstUpcoming = upcoming[0] ?? null;
 
   const toggleExpanded = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
@@ -129,9 +142,7 @@ export default function PassengerMyRidesScreen() {
   };
 
   const onRateDriver = async (booking: Booking, score: number) => {
-    if (!user) {
-      return;
-    }
+    if (!user) return;
     try {
       setRatingLoadingId(booking.id);
       await rateDriverFromBooking({
@@ -148,176 +159,169 @@ export default function PassengerMyRidesScreen() {
   };
 
   const onRefresh = async () => {
+    setRefreshing(true);
     setRefreshState('refreshing');
     await refresh();
     setRefreshState('done');
+    setRefreshing(false);
     setTimeout(() => setRefreshState('idle'), 240);
   };
 
   const onCancelBooking = async (booking: Booking) => {
-    if (!user) {
-      return;
-    }
+    if (!user) return;
     Alert.alert(
       'Cancel booking',
       'Do you want to cancel this upcoming booking? Cancellations are free until 2 hours before departure. Refunds (if any) follow our refund policy.',
       [
-      { text: 'Keep', style: 'cancel' },
-      {
-        text: 'Cancel booking',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await cancelBooking(booking.id, user.id);
-            await refresh();
-          } catch (e) {
-            Alert.alert('Cancellation failed', e instanceof Error ? e.message : 'Could not cancel booking.');
-          }
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Cancel booking',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await cancelBooking(booking.id, user.id);
+              await refresh();
+            } catch (e) {
+              Alert.alert('Cancellation failed', e instanceof Error ? e.message : 'Could not cancel booking.');
+            }
+          },
         },
-      },
       ]
     );
   };
 
+  const formatUpcomingTime = (b: Booking) => {
+    const dateStr = b.trip.departureDate;
+    const timeStr = b.trip.departureTime?.slice(0, 5) ?? '';
+    if (!dateStr) return timeStr;
+    const d = new Date(dateStr);
+    const today = new Date();
+    const isToday = d.toDateString() === today.toDateString();
+    return isToday ? `Today, ${timeStr}` : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + (timeStr ? ` ${timeStr}` : '');
+  };
+
   return (
-    <Screen style={[styles.container, { backgroundColor: c.background }]}>
+    <Screen
+      style={[styles.container, { backgroundColor: c.appBackground }]}
+      scroll
+      contentContainerStyle={[styles.scrollContent, { paddingBottom: listBottomPaddingTab }]}
+      scrollProps={{
+        refreshControl: (
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[c.primary]}
+            tintColor={c.primary}
+            progressBackgroundColor={c.background}
+          />
+        ),
+      }}
+    >
       {loadError ? (
         <View style={[styles.errorBanner, { backgroundColor: c.surfaceElevated, borderColor: c.error }]}>
           <Text style={[styles.errorText, { color: c.error }]}>{loadError}</Text>
           <Button title="Retry" onPress={() => void refresh()} />
         </View>
       ) : null}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabsScroll}
-        style={styles.tabsWrapper}
-      >
-        {TABS.map((t) => (
+
+      <View style={[styles.header, { paddingHorizontal: listScreenHeaderPaddingHorizontal, paddingTop: listScreenHeaderPaddingVertical }]}>
+        <Text style={[styles.title, { color: c.text }]}>My Travels</Text>
+        <Text style={[styles.subtitle, { color: c.textMuted }]}>Tracking your city hops</Text>
+      </View>
+
+      {/* Upcoming: one prominent card */}
+      <View style={[styles.section, { paddingHorizontal: screenContentPadding }]}>
+        <Text style={[styles.sectionOverline, { color: c.textMuted }]}>Upcoming</Text>
+        {firstUpcoming ? (
           <TouchableOpacity
-            key={t.key}
-            onPress={() => setTab(t.key)}
-            style={[
-              styles.tabPill,
-              { backgroundColor: tab === t.key ? c.primary : c.background, borderColor: tab === t.key ? c.primary : c.cardBorder },
-            ]}
-            activeOpacity={0.8}
+            style={[styles.upcomingCard, { backgroundColor: c.primary }]}
+            onPress={() => navigation.navigate('TicketDetail', { bookingId: firstUpcoming.id })}
+            activeOpacity={0.9}
           >
-            <Text
-              style={[
-                styles.tabPillText,
-                { color: tab === t.key ? c.onPrimary : c.textSecondary },
-                tab === t.key && styles.tabPillTextActive,
-              ]}
-            >
-              {t.label}
-            </Text>
+            <View style={styles.upcomingCardTop}>
+              <View style={[styles.confirmedBadge, { backgroundColor: c.onAppPrimarySoft }]}>
+                <Text style={[styles.confirmedBadgeText, { color: c.onPrimary ?? c.text }]}>Confirmed</Text>
+              </View>
+              <Text style={[styles.upcomingTime, { color: c.onPrimary ?? c.text }]}>{formatUpcomingTime(firstUpcoming)}</Text>
+            </View>
+            <View style={styles.upcomingRouteRow}>
+              <View style={styles.routeBlock}>
+                <Text style={[styles.routeCode, { color: c.onPrimary ?? c.text }]}>{routeCode(firstUpcoming.trip.departureHotpoint.name)}</Text>
+                <Text style={[styles.routeCity, { color: c.onPrimary ?? c.text }]}>{firstUpcoming.trip.departureHotpoint.name}</Text>
+              </View>
+              <View style={styles.routeDots}>
+                <View style={[styles.routeDot, { backgroundColor: c.onPrimary ?? c.text }]} />
+                <View style={[styles.routeLine, { borderColor: c.onAppPrimaryMuted }]} />
+                <Ionicons name="arrow-forward" size={16} color={c.onPrimary ?? c.text} />
+                <View style={[styles.routeLine, { borderColor: c.onAppPrimaryMuted }]} />
+                <View style={[styles.routeDot, { backgroundColor: c.onAppPrimaryMuted }]} />
+              </View>
+              <View style={styles.routeBlock}>
+                <Text style={[styles.routeCode, { color: c.onPrimary ?? c.text }]}>{routeCode(firstUpcoming.trip.destinationHotpoint.name)}</Text>
+                <Text style={[styles.routeCity, { color: c.onPrimary ?? c.text }]}>{firstUpcoming.trip.destinationHotpoint.name}</Text>
+              </View>
+            </View>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
-      {list.length === 0 ? (
-        <EmptyState
-          title={tab === 'cancelled' ? 'No cancelled rides' : `No ${tab} rides`}
-          subtitle={tab === 'cancelled' ? 'Cancelled bookings will appear here.' : 'Book a ride to get started.'}
-        />
-      ) : (
-        <FlatList
-          key={tab}
-          data={list}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => void onRefresh()}
-              colors={[c.primary]}
-              tintColor={c.primary}
-              progressBackgroundColor={c.background}
-            />
-          }
-          overScrollMode="always"
-          bounces={false}
-          alwaysBounceVertical={false}
-          decelerationRate="fast"
-          removeClippedSubviews={Platform.OS === 'android'}
-          renderItem={({ item }) => {
-            const amountTotal = item.seats * item.trip.pricePerSeat;
-            const issuedOrCreated = item.ticketIssuedAt ?? item.createdAt;
-            const issuedLabel = item.ticketIssuedAt ? new Date(item.ticketIssuedAt).toLocaleDateString(undefined, { dateStyle: 'medium' }) : (item.createdAt ? new Date(item.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—');
-            const statusBadgeStyle = item.status === 'upcoming' ? styles.badgeUpcoming : item.status === 'ongoing' ? styles.badgeOngoing : item.status === 'completed' ? styles.badgeCompleted : styles.badgeCancelled;
-            const statusBadgeColor = item.status === 'upcoming' ? c.primary : item.status === 'ongoing' ? c.text : item.status === 'completed' ? c.success : c.textMuted;
-            return (
-            <View style={[styles.card, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
-              <View style={styles.headerRow}>
-                <View style={styles.routeBlock}>
-                  <View style={styles.cardFaceRow}>
-                    <Text style={[styles.badge, statusBadgeStyle, { color: statusBadgeColor }]}>
-                      {item.status === 'upcoming' ? 'Upcoming' : item.status === 'ongoing' ? 'Ongoing' : item.status === 'completed' ? 'Completed' : 'Cancelled'}
-                    </Text>
-                    <Text style={[styles.ticketNumberFace, { color: c.textMuted }]}>
-                      Ticket {item.ticketNumber ?? '—'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.route, { color: c.text }]}>
-                    {item.trip.departureHotpoint.name} → {item.trip.destinationHotpoint.name}
-                  </Text>
-                  <Text style={[styles.time, { color: c.textSecondary }]}>
-                    {item.trip.departureDate ? new Date(item.trip.departureDate).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : ''} {item.trip.departureTime?.slice(0, 5)} • {item.trip.driver.name}
-                  </Text>
-                  <View style={styles.metaRow}>
-                    <View style={[styles.paymentBadge, { backgroundColor: c.surfaceElevated || c.surface }]}>
-                      <Text style={[styles.paymentBadgeText, { color: c.text }]}>{item.paymentMethod.replace('_', ' ')}</Text>
+        ) : (
+          <View style={[styles.upcomingEmpty, { borderColor: c.borderLight }]}>
+            <Text style={[styles.upcomingEmptyText, { color: c.textMuted }]}>No upcoming trips</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Past Week */}
+      <View style={[styles.section, { paddingHorizontal: screenContentPadding }]}>
+        <Text style={[styles.sectionOverline, { color: c.textMuted }]}>Past Week</Text>
+        {completed.length === 0 ? (
+          <View style={[styles.pastEmpty, { borderColor: c.borderLight }]}>
+            <Text style={[styles.pastEmptyText, { color: c.textMuted }]}>No past trips yet</Text>
+          </View>
+        ) : (
+          <View style={styles.pastList}>
+            {completed.map((item) => {
+              const amountTotal = item.seats * item.trip.pricePerSeat;
+              const dateLabel = item.trip.departureDate ? formatPastDate(item.trip.departureDate) : (item.createdAt ? formatPastDate(item.createdAt) : '—');
+              const isExpanded = expandedId === item.id;
+              return (
+                <View key={item.id} style={[styles.pastCardWrap, { backgroundColor: c.surface, borderColor: c.borderLight }]}>
+                  <View style={styles.pastCardRow}>
+                    <View style={[styles.pastIconWrap, { backgroundColor: c.card }]}>
+                      <Ionicons name="checkmark-done" size={20} color={c.textMuted} />
                     </View>
-                    <Text style={[styles.amountFace, { color: c.text }]}>
+                    <TouchableOpacity
+                      style={styles.pastContent}
+                      onPress={() => toggleExpanded(item.id)}
+                    >
+                      <Text style={[styles.pastRoute, { color: c.text }]}>
+                        {item.trip.departureHotpoint.name} to {item.trip.destinationHotpoint.name}
+                      </Text>
+                      <Text style={[styles.pastMeta, { color: c.textMuted }]}>
+                        {dateLabel} • With {item.trip.driver.name}
+                      </Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.pastPrice, { color: c.text }]}>
                       {Number(amountTotal).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF
                     </Text>
+                    <ExpandActionButton expanded={isExpanded} onPress={() => toggleExpanded(item.id)} />
                   </View>
-                  {issuedOrCreated ? (
-                    <Text style={[styles.issuedFace, { color: c.textMuted }]}>Issued {issuedLabel}</Text>
-                  ) : null}
-                </View>
-                <ExpandActionButton
-                  expanded={expandedId === item.id}
-                  onPress={() => toggleExpanded(item.id)}
-                />
-              </View>
-              {expandedId === item.id ? (
-                <>
-                  <ExpansionDetailsCard
-                    tone="passenger"
-                    title="Ticket & trip details"
-                    rows={[
-                      { icon: 'ticket', label: 'Ticket number', value: item.ticketNumber ?? '—' },
-                      { icon: 'calendar-outline', label: 'Issued', value: issuedLabel },
-                      { icon: 'flag', label: 'Status', value: item.status.toUpperCase() },
-                      {
-                        icon: 'swap-horizontal',
-                        label: 'Trip type',
-                        value: item.trip.type === 'insta' ? 'Instant' : 'Scheduled',
-                      },
-                      {
-                        icon: 'card',
-                        label: 'Payment',
-                        value: item.paymentMethod.replace('_', ' '),
-                      },
-                      {
-                        icon: 'cash',
-                        label: 'Amount',
-                        value: `${Number(amountTotal).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF`,
-                      },
-                      { icon: 'time-outline', label: 'Scanned at', value: '—' },
-                      { icon: 'person-outline', label: 'Scanned by', value: '—' },
-                    ]}
-                  />
-                  <View style={styles.actionRow}>
-                    {item.status !== 'cancelled' ? (
-                      <>
+                  {isExpanded ? (
+                    <View style={styles.pastExpanded}>
+                      <ExpansionDetailsCard
+                        tone="passenger"
+                        title="Ticket & trip details"
+                        rows={[
+                          { icon: 'ticket', label: 'Ticket number', value: item.ticketNumber ?? '—' },
+                          { icon: 'flag', label: 'Status', value: item.status },
+                          { icon: 'cash', label: 'Amount', value: `${Number(amountTotal).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF` },
+                        ]}
+                      />
+                      <View style={styles.actionRow}>
                         <TouchableOpacity
                           style={[styles.actionBtn, { borderColor: c.primary, backgroundColor: c.primaryTint }]}
                           onPress={() => navigation.navigate('TicketDetail', { bookingId: item.id })}
                         >
                           <Ionicons name="document-text-outline" size={14} color={c.primary} />
-                          <Text style={[styles.actionText, { color: c.text }]}>View full ticket</Text>
+                          <Text style={[styles.actionText, { color: c.text }]}>View ticket</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={[styles.actionBtn, { borderColor: c.primary, backgroundColor: c.primaryTint }]}
@@ -326,53 +330,40 @@ export default function PassengerMyRidesScreen() {
                           <Ionicons name="download-outline" size={14} color={c.primary} />
                           <Text style={[styles.actionText, { color: c.text }]}>Download PDF</Text>
                         </TouchableOpacity>
-                      </>
-                    ) : null}
-                    {item.status === 'upcoming' ? (
-                      <TouchableOpacity
-                        style={[styles.actionBtn, { borderColor: c.error, backgroundColor: c.errorTint }]}
-                        onPress={() => void onCancelBooking(item)}
-                      >
-                        <Ionicons name="close-circle-outline" size={14} color={c.error} />
-                        <Text style={[styles.actionDangerText, { color: c.error }]}>Cancel booking</Text>
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-                  {item.status === 'completed' ? (
-                    <View style={[styles.ratingCard, { backgroundColor: c.surfaceElevated, borderColor: c.borderLight }]}>
-                      <Text style={[styles.ratingTitle, { color: c.textSecondary }]}>Rate this driver</Text>
-                      <View style={styles.ratingRow}>
-                        {[1, 2, 3, 4, 5].map((score) => (
-                          <TouchableOpacity
-                            key={`${item.id}-rating-${score}`}
-                            onPress={() => void onRateDriver(item, score)}
-                            disabled={ratingLoadingId === item.id || ratingsByBooking[item.id] != null}
-                            style={styles.starBtn}
-                          >
-                            <Ionicons
-                              name={
-                                score <= (ratingsByBooking[item.id] ?? 0)
-                                  ? 'star'
-                                  : 'star-outline'
-                              }
-                              size={18}
-                              color={c.primary}
-                            />
-                          </TouchableOpacity>
-                        ))}
                       </View>
-                      {ratingsByBooking[item.id] != null ? (
-                        <Text style={[styles.ratingLocked, { color: c.textMuted }]}>Thanks, you already submitted a rating.</Text>
+                      {item.status === 'completed' ? (
+                        <View style={[styles.ratingCard, { backgroundColor: c.surfaceElevated, borderColor: c.borderLight }]}>
+                          <Text style={[styles.ratingTitle, { color: c.textSecondary }]}>Rate this driver</Text>
+                          <View style={styles.ratingRow}>
+                            {[1, 2, 3, 4, 5].map((score) => (
+                              <TouchableOpacity
+                                key={`${item.id}-${score}`}
+                                onPress={() => void onRateDriver(item, score)}
+                                disabled={ratingLoadingId === item.id || ratingsByBooking[item.id] != null}
+                                style={styles.starBtn}
+                              >
+                                <Ionicons
+                                  name={score <= (ratingsByBooking[item.id] ?? 0) ? 'star' : 'star-outline'}
+                                  size={18}
+                                  color={c.primary}
+                                />
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                          {ratingsByBooking[item.id] != null && (
+                            <Text style={[styles.ratingLocked, { color: c.textMuted }]}>Thanks, you already submitted a rating.</Text>
+                          )}
+                        </View>
                       ) : null}
                     </View>
                   ) : null}
-                </>
-              ) : null}
-            </View>
-          );
-          }}
-        />
-      )}
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
+
       <CarRefreshIndicator state={refreshState} />
     </Screen>
   );
@@ -380,70 +371,104 @@ export default function PassengerMyRidesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  tabsWrapper: { marginBottom: spacing.sm },
-  tabsScroll: {
-    flexDirection: 'row',
-    paddingTop: listScreenHeaderPaddingVertical,
-    paddingHorizontal: listScreenHeaderPaddingHorizontal,
-    paddingBottom: spacing.sm,
+  scrollContent: {},
+  header: { marginBottom: spacing.md },
+  title: { ...typography.h2, fontSize: 28, fontWeight: '800' },
+  subtitle: { ...typography.bodySmall, fontWeight: '500', marginTop: spacing.xxs },
+  errorBanner: {
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: borderWidths.thin,
     gap: spacing.sm,
   },
-  tabPill: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: borderWidths.thin,
-  },
-  tabPillText: { ...typography.bodySmall, fontWeight: '700' },
-  tabPillTextActive: { fontWeight: '800' },
-  card: {
+  errorText: { ...typography.body },
+  section: { marginBottom: spacing.xl },
+  sectionOverline: {
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
     marginBottom: spacing.md,
+    paddingLeft: spacing.sm,
+  },
+  upcomingCard: {
+    borderRadius: radii.xlMobile,
     padding: spacing.lg,
-    borderRadius: cardRadius,
-    borderWidth: borderWidths.thin,
+    shadowColor: colors.cardShadowColor,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
   },
-  headerRow: {
-    ...sharedStyles.listRow,
-    alignItems: 'flex-start',
+  upcomingCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
-  routeBlock: { flex: 1, minWidth: 0 },
-  cardFaceRow: {
+  confirmedBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    borderRadius: radii.full,
+  },
+  confirmedBadgeText: {
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  upcomingTime: { ...typography.caption, fontWeight: '700', opacity: 0.9 },
+  upcomingRouteRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    marginBottom: spacing.xs,
-    gap: spacing.xs,
   },
-  badge: {
-    ...typography.overline,
-    letterSpacing: 1,
-  },
-  badgeUpcoming: {},
-  badgeOngoing: {},
-  badgeCompleted: {},
-  badgeCancelled: {},
-  ticketNumberFace: { ...typography.caption, fontWeight: '600' },
-  route: { ...typography.body, fontWeight: '700' },
-  time: { ...typography.bodySmall, fontWeight: '600', marginTop: spacing.xs },
-  metaRow: {
+  routeBlock: { flex: 1, alignItems: 'center' },
+  routeCode: { ...typography.h2, fontSize: 24, fontWeight: '800' },
+  routeCity: { ...typography.caption, fontSize: 10, textTransform: 'uppercase', opacity: 0.7, marginTop: tightGap },
+  routeDots: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-    flexWrap: 'wrap',
-  },
-  paymentBadge: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: tightGap,
-    borderRadius: radii.sm,
   },
-  paymentBadgeText: { ...typography.caption, fontWeight: '700' },
-  amountFace: { ...typography.bodySmall, fontWeight: '800' },
-  issuedFace: { ...typography.caption, marginTop: tightGap },
-  seats: { ...typography.bodySmall, fontWeight: '600', marginTop: spacing.xs },
+  routeDot: { width: 8, height: 8, borderRadius: 4 },
+  routeLine: { width: 24, height: 1, borderTopWidth: 1, marginHorizontal: spacing.xs },
+  upcomingEmpty: {
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderRadius: radii.lg,
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upcomingEmptyText: { ...typography.bodySmall },
+  pastList: { gap: spacing.sm },
+  pastCardWrap: {
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  pastCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  pastExpanded: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
+  pastIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  pastContent: { flex: 1, minWidth: 0 },
+  pastRoute: { ...typography.bodySmall, fontWeight: '700' },
+  pastMeta: { ...typography.caption, marginTop: tightGap },
+  pastPrice: { ...typography.body, fontWeight: '800' },
   actionRow: {
     ...sharedStyles.listRow,
     flexWrap: 'wrap',
@@ -459,36 +484,23 @@ const styles = StyleSheet.create({
     borderWidth: borderWidths.thin,
   },
   actionText: { ...typography.captionBold },
-  actionDangerText: { ...typography.captionBold },
   ratingCard: {
     marginTop: spacing.sm,
     borderWidth: borderWidths.thin,
     borderRadius: radii.md,
     padding: spacing.sm,
   },
-  ratingTitle: {
-    ...typography.captionBold,
-    marginBottom: spacing.xs,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  starBtn: {
-    padding: spacing.xs,
-  },
+  ratingTitle: { ...typography.captionBold, marginBottom: spacing.xs },
+  ratingRow: { flexDirection: 'row', gap: spacing.sm },
+  starBtn: { padding: spacing.xs },
   ratingLocked: { ...typography.captionBold, marginTop: spacing.xs },
-  listContent: {
-    paddingHorizontal: screenContentPadding,
-    paddingTop: listContentPaddingTop,
-    paddingBottom: listBottomPaddingTab,
+  pastEmpty: {
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderRadius: radii.lg,
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  errorBanner: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: borderWidths.thin,
-    gap: spacing.sm,
-  },
-  errorText: { ...typography.body },
+  pastEmptyText: { ...typography.bodySmall },
 });

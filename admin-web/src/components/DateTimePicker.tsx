@@ -303,7 +303,7 @@ export default function DateTimePicker({
             <div className="py-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="flex items-center justify-center gap-4">
                 <div className="flex flex-col items-center">
-                  <span className="text-[56px] font-light leading-none mb-2 text-dark">
+                  <span className="text-5xl font-light leading-none mb-2 text-dark">
                     {tempDate.getHours() === 0
                       ? '12'
                       : tempDate.getHours() > 12
@@ -341,7 +341,7 @@ export default function DateTimePicker({
                 </span>
 
                 <div className="flex flex-col items-center">
-                  <span className="text-[56px] font-light leading-none mb-2 text-dark">
+                  <span className="text-5xl font-light leading-none mb-2 text-dark">
                     {tempDate.getMinutes().toString().padStart(2, '0')}
                   </span>
                   <input

@@ -23,6 +23,11 @@ import {
   clearPendingOtp,
   getMockStore,
   updateMockStore,
+  getStoredUserVehicles,
+  addStoredUserVehicle,
+  updateStoredUserVehicle,
+  getStoredVehicleById,
+  getStoredVehicleOwnerId,
 } from './mockPersistence';
 import { BOOKING_ID_PREFIX } from '../../../shared/src/constants';
 import {
@@ -253,10 +258,112 @@ export async function getUserVehicles(userId: string): Promise<Vehicle[]> {
   const ownerId = user.agencySubRole === 'agency_scanner' && user.agencyId
     ? user.agencyId
     : userId;
-  const vehicles = mockVehicles.filter(
+  const fromMock = mockVehicles.filter(
     (v) => v.driverId === ownerId || (v as Vehicle).ownerId === ownerId
   );
-  return delay([...vehicles]);
+  const stored = await getStoredUserVehicles(userId);
+  const storedAsVehicles: Vehicle[] = stored.map((v) => ({
+    id: v.id,
+    make: v.make,
+    model: v.model,
+    color: v.color,
+    licensePlate: v.licensePlate,
+    seats: v.seats,
+    approvalStatus: v.approvalStatus,
+    driverId: v.driverId,
+    ownerId: v.ownerId,
+  }));
+  return delay([...fromMock, ...storedAsVehicles]);
+}
+
+export async function createVehicle(
+  userId: string,
+  data: { make: string; model: string; color: string; licensePlate: string; seats: number }
+): Promise<Vehicle> {
+  const v = await addStoredUserVehicle(userId, {
+    ...data,
+    approvalStatus: 'pending',
+    driverId: userId,
+    ownerId: userId,
+  });
+  return delay({
+    id: v.id,
+    make: v.make,
+    model: v.model,
+    color: v.color,
+    licensePlate: v.licensePlate,
+    seats: v.seats,
+    approvalStatus: v.approvalStatus,
+    driverId: v.driverId,
+    ownerId: v.ownerId,
+  });
+}
+
+export async function updateVehicle(
+  vehicleId: string,
+  data: Partial<{ make: string; model: string; color: string; licensePlate: string; seats: number }>
+): Promise<Vehicle | null> {
+  const ownerId = await getStoredVehicleOwnerId(vehicleId);
+  if (!ownerId) return delay(null);
+  const updated = await updateStoredUserVehicle(ownerId, vehicleId, data);
+  if (!updated) return delay(null);
+  return delay({
+    id: updated.id,
+    make: updated.make,
+    model: updated.model,
+    color: updated.color,
+    licensePlate: updated.licensePlate,
+    seats: updated.seats,
+    approvalStatus: updated.approvalStatus,
+    driverId: updated.driverId,
+    ownerId: updated.ownerId,
+  });
+}
+
+export async function getVehicle(vehicleId: string): Promise<Vehicle | null> {
+  const fromShared = mockVehicles.find((v) => v.id === vehicleId);
+  if (fromShared) return delay(fromShared as Vehicle);
+  const stored = await getStoredVehicleById(vehicleId);
+  if (!stored) return delay(null);
+  return delay({
+    id: stored.id,
+    make: stored.make,
+    model: stored.model,
+    color: stored.color,
+    licensePlate: stored.licensePlate,
+    seats: stored.seats,
+    approvalStatus: stored.approvalStatus,
+    driverId: stored.driverId,
+    ownerId: stored.ownerId,
+  });
+}
+
+export interface DriverEarningsEntry {
+  id: string;
+  tripId?: string;
+  label: string;
+  amount: number;
+  date: string;
+  type: 'trip' | 'payout';
+}
+
+export async function getDriverEarningsHistory(userId: string): Promise<DriverEarningsEntry[]> {
+  const activities = await getDriverTripActivities(userId);
+  const entries: DriverEarningsEntry[] = [];
+  for (const a of activities) {
+    if (a.collectedAmount > 0) {
+      entries.push({
+        id: `earn_${a.trip.id}`,
+        tripId: a.trip.id,
+        label: `${a.trip.departureHotpoint?.name ?? '—'} → ${a.trip.destinationHotpoint?.name ?? '—'}`,
+        amount: a.collectedAmount,
+        date: a.trip.departureDate ?? new Date().toISOString().slice(0, 10),
+        type: 'trip',
+      });
+    }
+  }
+  entries.sort((x, y) => new Date(y.date).getTime() - new Date(x.date).getTime());
+  return delay(entries);
 }
 
 export async function getDriverTripActivities(userId: string): Promise<DriverTripActivity[]> {

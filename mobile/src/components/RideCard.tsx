@@ -12,7 +12,7 @@ import type { Trip } from '../types';
 interface RideCardProps {
   trip: Trip;
   onPress: () => void;
-  variant?: 'default' | 'compact' | 'blablacar' | 'searchResults';
+  variant?: 'default' | 'compact' | 'blablacar' | 'searchResults' | 'dashboard';
 }
 
 export default function RideCard({ trip, onPress, variant = 'default' }: RideCardProps) {
@@ -22,6 +22,7 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
   const compact = variant === 'compact';
   const blablacar = variant === 'blablacar';
   const searchResults = variant === 'searchResults';
+  const dashboard = variant === 'dashboard';
 
   const animatePressIn = () => {
     Animated.timing(scale, {
@@ -117,6 +118,47 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
             <Text style={[styles.searchResultsSeatsLeft, { color: c.textMuted }]}>
               {trip.seatsAvailable} seat{trip.seatsAvailable !== 1 ? 's' : ''} left
             </Text>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
+
+  if (dashboard) {
+    const vehicleLabel = trip.vehicle ? `${trip.vehicle.make} ${trip.vehicle.model}` : 'Car';
+    return (
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <TouchableOpacity
+          style={[
+            styles.card,
+            styles.cardDashboard,
+            { backgroundColor: c.card, borderColor: isFull ? c.border : c.borderLight },
+          ]}
+          onPress={onPress}
+          disabled={isFull}
+          activeOpacity={0.98}
+          onPressIn={animatePressIn}
+          onPressOut={animatePressOut}
+        >
+          <View style={styles.dashboardLeft}>
+            {trip.driver.avatarUri ? (
+              <Image source={{ uri: trip.driver.avatarUri }} style={styles.dashboardAvatar} />
+            ) : (
+              <View style={[styles.dashboardAvatar, styles.dashboardAvatarPlc, { backgroundColor: c.surface }]}>
+                <Ionicons name="person" size={sizes.icon.medium} color={c.textMuted} />
+              </View>
+            )}
+            <View style={styles.dashboardInfo}>
+              <Text style={[styles.dashboardDriverName, { color: c.text }]} numberOfLines={1}>
+                {trip.driver.name}
+              </Text>
+              <Text style={[styles.dashboardMeta, { color: c.textMuted }]} numberOfLines={1}>
+                {vehicleLabel} • {trip.seatsAvailable} Seat{trip.seatsAvailable !== 1 ? 's' : ''}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.dashboardRight}>
+            <Text style={[styles.dashboardPrice, { color: c.primary }]}>{formatRwf(trip.pricePerSeat)}</Text>
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -267,6 +309,42 @@ const styles = StyleSheet.create({
     borderRadius: panelRadius,
     marginBottom: spacing.sm,
   },
+  cardDashboard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    borderRadius: radii.xlMobile,
+    marginBottom: spacing.md,
+    borderWidth: borderWidths.thin,
+  },
+  dashboardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+    minWidth: 0,
+  },
+  dashboardAvatar: {
+    width: sizes.avatar.xl,
+    height: sizes.avatar.xl,
+    borderRadius: radii.md,
+  },
+  dashboardAvatarPlc: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dashboardInfo: { flex: 1, minWidth: 0 },
+  dashboardDriverName: { ...typography.h3, fontSize: 18 },
+  dashboardMeta: {
+    ...typography.caption,
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    marginTop: spacing.xxs,
+  },
+  dashboardRight: { marginLeft: spacing.sm },
+  dashboardPrice: { ...typography.h2, fontSize: 24, fontWeight: '800' },
   blablacarLeft: {
     flexDirection: 'row',
     alignItems: 'center',

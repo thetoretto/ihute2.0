@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components';
 import { getDriverNotifications, markDriverNotificationsRead } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
-import { cardRadius, listBottomPaddingDefault } from '../../utils/layout';
+import { colors, spacing, typography, radii, sizes, cardShadow } from '../../utils/theme';
+import { cardRadius, driverContentHorizontal, listBottomPaddingDefault } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { DriverNotification } from '../../services/api';
 
@@ -103,7 +103,7 @@ export default function DriverNotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: spacing.lg, paddingBottom: listBottomPaddingDefault },
+  content: { paddingTop: spacing.lg, paddingBottom: listBottomPaddingDefault, paddingHorizontal: driverContentHorizontal },
   title: { ...typography.h2 },
   subtitle: { ...typography.bodySmall, marginTop: spacing.xs, marginBottom: spacing.lg },
   emptyCard: {
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: spacing.sm,
   },
-  cardIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
+  cardIcon: { width: sizes.avatar.xl, height: sizes.avatar.xl, borderRadius: radii.cardLarge, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
   cardBody: { flex: 1 },
   cardTitle: { ...typography.body, fontWeight: '700' },
   cardText: { ...typography.bodySmall, marginTop: spacing.xs },

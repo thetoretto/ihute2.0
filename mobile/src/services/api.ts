@@ -391,7 +391,7 @@ export async function sendConversationMessage(conversationId: string, text: stri
   return { id: `msg_${Date.now()}`, senderId, text, timestamp: new Date().toISOString() };
 }
 
-// Payment methods (real API only)
+// Payment methods
 export interface PaymentMethodItem {
   id: string;
   type: 'card' | 'mobile_money' | 'cash';
@@ -402,20 +402,95 @@ export interface PaymentMethodItem {
 
 export async function getPaymentMethods(userId: string): Promise<PaymentMethodItem[]> {
   if (USE_REAL_API) return request('GET', `/api/users/${userId}/payment-methods`);
-  return [];
+  const list = await mockPersistence.getStoredPaymentMethods(userId);
+  return list.map((m) => ({ ...m, type: m.type as PaymentMethodItem['type'] }));
 }
 
-export async function addPaymentMethod(userId: string, method: { type: string; label?: string; detail?: string; isDefault?: boolean }) {
+export async function addPaymentMethod(userId: string, method: { type: string; label?: string; detail?: string; isDefault?: boolean }): Promise<PaymentMethodItem | null> {
   if (USE_REAL_API) return request<PaymentMethodItem>('POST', `/api/users/${userId}/payment-methods`, method);
-  return null;
+  const created = await mockPersistence.addStoredPaymentMethod(userId, method);
+  return { ...created, type: created.type as PaymentMethodItem['type'] };
 }
 
 export async function removePaymentMethod(userId: string, methodId: string) {
   if (USE_REAL_API) await request('DELETE', `/api/users/${userId}/payment-methods/${methodId}`);
+  else await mockPersistence.removeStoredPaymentMethod(userId, methodId);
 }
 
 export async function setDefaultPaymentMethod(userId: string, methodId: string) {
   if (USE_REAL_API) await request('PATCH', `/api/users/${userId}/payment-methods/${methodId}/default`, {});
+  else await mockPersistence.setStoredDefaultPaymentMethod(userId, methodId);
+}
+
+// Wallet (mock when not real API)
+export async function getWalletBalance(userId: string): Promise<number> {
+  if (USE_REAL_API) return request<number>('GET', `/api/users/${userId}/wallet/balance`);
+  return mockPersistence.getStoredWalletBalance(userId);
+}
+
+export interface WalletTransaction {
+  id: string;
+  type: 'credit' | 'debit';
+  amount: number;
+  label: string;
+  date: string;
+}
+
+export async function getWalletTransactions(userId: string): Promise<WalletTransaction[]> {
+  if (USE_REAL_API) return request('GET', `/api/users/${userId}/wallet/transactions`);
+  return mockPersistence.getStoredWalletTransactions(userId);
+}
+
+// Auth: forgot / reset password
+export async function requestPasswordReset(email: string): Promise<void> {
+  if (USE_REAL_API) await request('POST', '/api/auth/forgot-password', { email });
+  else await mockPersistence.setPasswordResetToken(email);
+}
+
+export async function resetPassword(tokenOrEmail: string, newPassword: string): Promise<void> {
+  if (USE_REAL_API) await request('POST', '/api/auth/reset-password', { token: tokenOrEmail, newPassword });
+  else {
+    const entry = await mockPersistence.getPasswordResetToken(tokenOrEmail);
+    if (!entry) throw new Error('Invalid or expired reset link. Please request a new one.');
+    await mockPersistence.clearPasswordResetToken(tokenOrEmail);
+  }
+}
+
+// Vehicles: create / update / get one
+export async function createVehicle(userId: string, data: { make: string; model: string; color: string; licensePlate: string; seats: number }) {
+  if (USE_REAL_API) return request<Awaited<ReturnType<typeof mockApi.createVehicle>>>('POST', '/api/vehicles', { ...data, userId });
+  return mockApi.createVehicle(userId, data);
+}
+
+export async function updateVehicle(vehicleId: string, data: Partial<{ make: string; model: string; color: string; licensePlate: string; seats: number }>) {
+  if (USE_REAL_API) return request<Awaited<ReturnType<typeof mockApi.updateVehicle>>>('PUT', `/api/vehicles/${vehicleId}`, data);
+  return mockApi.updateVehicle(vehicleId, data);
+}
+
+export async function getVehicle(vehicleId: string) {
+  if (USE_REAL_API) {
+    try {
+      return await request<Awaited<ReturnType<typeof mockApi.getVehicle>>>('GET', `/api/vehicles/${vehicleId}`);
+    } catch {
+      return null;
+    }
+  }
+  return mockApi.getVehicle(vehicleId);
+}
+
+// Driver earnings history
+export interface DriverEarningsEntry {
+  id: string;
+  tripId?: string;
+  label: string;
+  amount: number;
+  date: string;
+  type: 'trip' | 'payout';
+}
+
+export async function getDriverEarningsHistory(userId: string): Promise<DriverEarningsEntry[]> {
+  if (USE_REAL_API) return request('GET', `/api/driver/earnings?userId=${encodeURIComponent(userId)}`);
+  return mockApi.getDriverEarningsHistory(userId);
 }
 
 // Trip by id (for RideDetailScreen when using real API)

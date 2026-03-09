@@ -42,7 +42,7 @@ export default function Button({
       borderColor: c.textMuted,
     },
     outline: {
-      backgroundColor: 'transparent',
+      backgroundColor: c.buttonSecondaryBg,
       borderWidth: 1,
       borderColor: c.primaryButtonBorder,
     },
@@ -59,7 +59,7 @@ export default function Button({
     danger: {
       backgroundColor: c.accent,
       borderWidth: 0,
-      borderColor: 'transparent',
+      borderColor: c.buttonSecondaryBg,
     },
   };
   const textColor =

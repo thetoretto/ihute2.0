@@ -1,16 +1,16 @@
 /**
  * Design system – mobile theme
  *
- * Core palette (6 colors): All token values are derived from these or from
- * documented extended palette (success, warning, agency).
+ * All UI color tokens are derived from the 6-color palette only:
+ *   #171C22 (dark) – text, headers, tab bar, primary dark surfaces
+ *   #F8F3EF (cream) – backgrounds, on-dark text
+ *   #DF0827 (red) – accent, error, critical, agency role
+ *   #94A9BC (muted) – secondary text, borders, info
+ *   #E6DBEB (lavender) – borders, subtle surfaces
+ *   #FEE46B (yellow) – primary CTA, success, warning, star rating
  *
- * Light: Surfaces = cream (#F8F3EF) + white; text = dark (#171C22) + muted (#94A9BC);
- * primary/CTA = yellow (#FEE46B); critical = red (#DF0827).
- *
- * Dark: Elevation = #171C22 → #1E252D → #252D38; body text = cream (#F8F3EF);
- * links = muted (#94A9BC); captions/tertiary = lavender (#E6DBEB).
- *
- * Extended: success (green), warning (amber), agency (indigo) for semantic/role use.
+ * Light: Surfaces = cream + white; text = dark + muted; primary/CTA = yellow; critical = red.
+ * Dark: Elevation from dark; body text = cream; borders = lavender rgba.
  */
 
 // --- Core palette (single source of truth) ---
@@ -96,25 +96,65 @@ export const colors = {
   overlay: 'rgba(23,28,34,0.35)',
   overlayModal: 'rgba(0,0,0,0.4)',
 
+  // --- App-wide design system (all roles: headers, nav, surfaces) ---
+  /** Headers, main buttons – from palette dark. */
+  appPrimary: CORE_DARK,
+  /** CTAs, active nav, focus – from palette yellow. */
+  appAccent: CORE_YELLOW,
+  /** Online, confirmed, success – from palette yellow. */
+  appSuccess: CORE_YELLOW,
+  /** Main screen background – from palette cream. */
+  appBackground: CORE_CREAM,
+  /** Inactive tab bar icon color. */
+  navInactiveIcon: CORE_DARK,
+  /** Text/icons on appPrimary (e.g. header). */
+  onAppPrimary: ON_ACCENT,
+  /** Floating tab bar background (80% opacity). */
+  tabBarBlurBg: 'rgba(255,255,255,0.8)',
+  /** Toast background – from palette dark. */
+  toastBackground: CORE_DARK,
+  /** Toast border. */
+  toastBorder: 'rgba(255,255,255,0.1)',
+  /** Muted text/icon on appPrimary background. */
+  onAppPrimaryMuted: 'rgba(255,255,255,0.6)',
+  /** Soft line/divider on appPrimary. */
+  onAppPrimarySoft: 'rgba(255,255,255,0.2)',
+  /** Button overlay on dark (e.g. "View ride"). */
+  surfaceOverlay: 'rgba(0,0,0,0.2)',
+  /** Light surface for stat cards – from palette lavender. */
+  appSurfaceMuted: CORE_LAVENDER,
+  /** Text on success/live blocks – from palette dark. */
+  appSuccessDark: CORE_DARK,
+  /** Shadow for cards (design system). */
+  cardShadowColor: CORE_DARK,
+
   // --- Role (passenger, driver, agency) ---
   passengerBrand: CORE_YELLOW,
   passengerDark: CORE_DARK,
   passengerBgLight: CORE_CREAM,
   passengerOnBrand: CORE_DARK,
   driverDark: CORE_DARK,
-  agency: '#6366f1',
-  agencyDark: '#4f46e5',
-  agencyTint: 'rgba(99,102,241,0.14)',
-  agencyBorder: 'rgba(99,102,241,0.5)',
+  /** Driver app – from palette. */
+  driverPrimary: CORE_DARK,
+  driverAccent: CORE_YELLOW,
+  driverBg: CORE_CREAM,
+  driverInstaGreen: CORE_YELLOW,
+  driverPrimaryTint: 'rgba(23,28,34,0.08)',
+  driverAccentTint: 'rgba(254,228,107,0.12)',
+  driverInstaGreenTint: 'rgba(254,228,107,0.12)',
+  agency: CORE_RED,
+  agencyDark: CORE_RED,
+  agencyTint: 'rgba(223,8,39,0.14)',
+  agencyBorder: 'rgba(223,8,39,0.5)',
 
-  // --- Semantic (extended palette) ---
-  success: '#00D382',
-  successLight: '#5EEAD4',
-  successTint: 'rgba(0,211,130,0.12)',
-  warning: '#B7791F',
-  warningTint: 'rgba(183,121,31,0.12)',
-  info: '#1E88E5',
-  starRating: '#FBBF24',
+  // --- Semantic (from palette) ---
+  success: CORE_YELLOW,
+  successLight: CORE_YELLOW,
+  successTint: 'rgba(254,228,107,0.12)',
+  warning: CORE_YELLOW,
+  warningTint: 'rgba(254,228,107,0.12)',
+  info: CORE_MUTED,
+  starRating: CORE_YELLOW,
 
   // --- Other ---
   onAccent: ON_ACCENT,
@@ -131,6 +171,23 @@ export const colorsDark = {
   card: ELEVATION_1,
   popupSurface: ELEVATION_2,
   ghostBg: ELEVATION_1,
+
+  // --- App-wide (dark mode) – from palette ---
+  appPrimary: CORE_DARK,
+  appAccent: CORE_YELLOW,
+  appSuccess: CORE_YELLOW,
+  appBackground: ELEVATION_1,
+  navInactiveIcon: CORE_CREAM,
+  onAppPrimary: ON_ACCENT,
+  tabBarBlurBg: 'rgba(30,37,45,0.9)',
+  toastBackground: CORE_DARK,
+  toastBorder: 'rgba(255,255,255,0.1)',
+  onAppPrimaryMuted: 'rgba(255,255,255,0.6)',
+  onAppPrimarySoft: 'rgba(255,255,255,0.2)',
+  surfaceOverlay: 'rgba(0,0,0,0.2)',
+  appSurfaceMuted: ELEVATION_2,
+  appSuccessDark: CORE_DARK,
+  cardShadowColor: CORE_DARK,
 
   // --- Text hierarchy ---
   text: CORE_CREAM,
@@ -163,40 +220,54 @@ export const colorsDark = {
   passengerDark: CORE_DARK,
   passengerBgLight: ELEVATION_1,
   passengerOnBrand: CORE_DARK,
+  driverPrimary: CORE_DARK,
+  driverAccent: CORE_YELLOW,
+  driverBg: CORE_CREAM,
+  driverInstaGreen: CORE_YELLOW,
+  driverPrimaryTint: 'rgba(23,28,34,0.15)',
+  driverAccentTint: 'rgba(254,228,107,0.15)',
+  driverInstaGreenTint: 'rgba(254,228,107,0.15)',
 
-  // --- Tints ---
+  // --- Tints (from palette) ---
   primaryTint: 'rgba(254,228,107,0.18)',
   errorTint: 'rgba(223,8,39,0.18)',
-  warningTint: 'rgba(183,121,31,0.18)',
+  warningTint: 'rgba(254,228,107,0.18)',
 
   onAccent: ON_ACCENT,
 } as const;
 
 export type ColorScheme = 'light' | 'dark';
 
+/** Spacing scale – aligned with shared/design-tokens/CONTRACT.md (4,8,12,16,24,32,40,48). */
 export const spacing = {
   xxs: 2,
   xs: 4,
   smDense: 6,
   sm: 8,
+  smMd: 12,
   md: 16,
   lg: 24,
   xl: 32,
+  xlLg: 40,
   xxl: 48,
 } as const;
 
+/** Border radius – aligned with shared/design-tokens/CONTRACT.md (sm/md/lg/xl, no deep radii). */
 export const radii = {
   xxs: 3,
   xs: 6,
   sm: 8,
   smMedium: 12,
-  button: 20,
-  md: 16,
-  lg: 28,
-  xl: 40,
-  xxl: 28,
-  xlMobile: 32,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  /** Buttons – contract md (12px). */
+  button: 12,
   panel: 24,
+  cardLarge: 24,
+  xlMobile: 24,
+  xxl: 24,
+  cardXLarge: 24,
   full: 9999,
 } as const;
 
@@ -234,6 +305,15 @@ export const cardShadowStrong = {
   shadowOpacity: 0.12,
   shadowRadius: 12,
   elevation: 6,
+};
+
+/** Card shadow (design system) – from palette dark. */
+export const cardShadowTeal = {
+  shadowColor: CORE_DARK,
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.05,
+  shadowRadius: 20,
+  elevation: 4,
 };
 
 export const buttonHeights = {

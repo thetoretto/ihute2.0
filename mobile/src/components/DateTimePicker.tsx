@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../context/ThemeContext';
-import { spacing, typography, radii, sizes } from '../utils/theme';
+import { spacing, typography, radii, sizes, colors } from '../utils/theme';
 
 export type DateTimePickerMode = 'date' | 'time' | 'datetime';
 
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: colors.buttonSecondaryBg,
   },
   tabActive: {},
   tabText: { ...typography.bodySmall, fontWeight: '600' },

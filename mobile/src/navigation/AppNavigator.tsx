@@ -10,6 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useThemeColors } from '../context/ThemeContext';
 import { spacing, typography, radii, sizes, buttonHeights } from '../utils/theme';
+import { UnifiedFloatingTabBar } from './DriverTabBar';
+import { ToastProvider } from '../context/ToastContext';
 import { useResponsiveTheme } from '../utils/responsiveTheme';
 import { strings } from '../constants/strings';
 
@@ -21,13 +23,13 @@ const ONBOARDING_STORAGE_KEY = '@ihute_has_seen_onboarding';
 function useStackScreenOptions() {
   const c = useThemeColors();
   return {
-    headerStyle: { backgroundColor: c.primary },
-    headerTintColor: c.dark,
-    headerTitleStyle: { color: c.dark, ...typography.h3 },
+    headerStyle: { backgroundColor: c.appPrimary },
+    headerTintColor: c.onAppPrimary,
+    headerTitleStyle: { color: c.onAppPrimary, ...typography.h3 },
     headerTitle: () => <LogoHeader />,
     headerShadowVisible: false,
     headerTitleAlign: 'center' as const,
-    contentStyle: { backgroundColor: c.background },
+    contentStyle: { backgroundColor: c.appBackground },
     animation: 'slide_from_right' as const,
     animationDuration: 250,
   };
@@ -39,34 +41,34 @@ function useTabBarScreenOptionsBase() {
   const insets = useSafeAreaInsets();
   return {
     tabBarStyle: {
-      backgroundColor: c.tabBarBackground,
-      borderTopColor: c.tabBarBorder,
+      backgroundColor: c.tabBarBlurBg,
+      borderTopColor: c.borderLight,
       borderTopWidth: 1,
       paddingTop: spacing.sm,
       paddingBottom: Math.max(insets.bottom, spacing.sm),
     },
-    tabBarActiveTintColor: c.primary,
-    tabBarInactiveTintColor: c.textMuted,
-    headerStyle: { backgroundColor: c.primary },
-    headerTintColor: c.dark,
+    tabBarActiveTintColor: c.appAccent,
+    tabBarInactiveTintColor: c.navInactiveIcon,
+    headerStyle: { backgroundColor: c.appPrimary },
+    headerTintColor: c.onAppPrimary,
     headerTitle: () => <LogoHeader />,
     headerTitleAlign: 'center' as const,
     animation: 'fade' as const,
-    sceneStyle: { backgroundColor: c.background },
+    sceneStyle: { backgroundColor: c.appBackground },
   };
 }
 
-/** Shared tab navigator screenOptions (height, padding, label style, item style). Pass tintColor for role-specific active tint (e.g. c.agency). */
+/** Shared tab navigator screenOptions (height, padding, label style, item style). Pass tintColor for role-specific active tint. */
 function useTabNavigatorScreenOptions(opts?: { tintColor?: string; headerTintColor?: string }) {
   const c = useThemeColors();
   const responsiveTheme = useResponsiveTheme();
   const base = useTabBarScreenOptionsBase();
-  const tint = opts?.tintColor ?? c.primary;
-  const headerTint = opts?.headerTintColor ?? c.dark;
+  const tint = opts?.tintColor ?? c.appAccent;
+  const headerTint = opts?.headerTintColor ?? c.onAppPrimary;
   return {
     ...base,
     tabBarActiveTintColor: tint,
-    tabBarInactiveTintColor: c.textMuted,
+    tabBarInactiveTintColor: c.navInactiveIcon,
     headerTintColor: headerTint,
     tabBarStyle: {
       ...base.tabBarStyle,
@@ -90,6 +92,8 @@ const LogoHeader = () => (
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import VerifyOTPScreen from '../screens/auth/VerifyOTPScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
 import CompleteProfileScreen from '../screens/auth/CompleteProfileScreen';
 import OnboardingScreen from '../screens/auth/OnboardingScreen';
 
@@ -120,6 +124,15 @@ import WithdrawalMethodsScreen from '../screens/shared/WithdrawalMethodsScreen';
 import NotificationsScreen from '../screens/shared/NotificationsScreen';
 import PrivacyScreen from '../screens/shared/PrivacyScreen';
 import EditProfileScreen from '../screens/shared/EditProfileScreen';
+import AddCardScreen from '../screens/shared/AddCardScreen';
+import AddMobileMoneyScreen from '../screens/shared/AddMobileMoneyScreen';
+import WalletScreen from '../screens/shared/WalletScreen';
+import TermsOfServiceScreen from '../screens/shared/TermsOfServiceScreen';
+import EarningsScreen from '../screens/shared/EarningsScreen';
+import FAQScreen from '../screens/shared/FAQScreen';
+import AboutScreen from '../screens/shared/AboutScreen';
+import AddVehicleScreen from '../screens/driver/AddVehicleScreen';
+import EditVehicleScreen from '../screens/driver/EditVehicleScreen';
 
 const AuthStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
@@ -132,6 +145,8 @@ function AuthNavigator() {
     <AuthStack.Navigator screenOptions={screenOptions} initialRouteName="Login">
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: strings.auth.forgotPassword.replace('?', '') }} />
+      <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: strings.auth.resetPassword }} />
       <AuthStack.Screen
         name="VerifyOTP"
         component={VerifyOTPScreen}
@@ -196,6 +211,25 @@ function DriverPublishStack() {
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ title: 'Publish ride', headerShown: true }} />
+    </Stack.Navigator>
+  );
+}
+
+/** Activity tab: single screen (header owned by DriverMyRidesScreen). */
+function DriverActivityTabStack() {
+  const screenOptions = useStackScreenOptions();
+  return (
+    <Stack.Navigator screenOptions={screenOptions}>
+      <Stack.Screen
+        name="DriverMyRides"
+        component={DriverMyRidesScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="DriverScanTicket"
+        component={DriverScanTicketScreen}
+        options={{ title: strings.nav.scanTicket }}
+      />
     </Stack.Navigator>
   );
 }
@@ -283,18 +317,20 @@ function DriverMyRidesStack() {
 }
 
 function PassengerTabsNavigator() {
-  const responsiveTheme = useResponsiveTheme();
   const c = useThemeColors();
-  const screenOptions = useTabNavigatorScreenOptions();
+  const responsiveTheme = useResponsiveTheme();
+  const screenOptions = { ...useTabNavigatorScreenOptions(), headerShown: false, sceneStyle: { backgroundColor: c.appBackground } };
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
   return (
-    <Tabs.Navigator screenOptions={screenOptions}>
+    <Tabs.Navigator
+      screenOptions={screenOptions}
+      tabBar={(props) => <UnifiedFloatingTabBar {...props} />}
+    >
       <Tabs.Screen
         name="PassengerFind"
         component={PassengerHomeStack}
         options={{
-          tabBarLabel: strings.tabs.trips,
-          headerShown: false,
+          tabBarLabel: strings.tabs.search,
           tabBarIcon: ({ color }) => <Ionicons name="search" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -302,8 +338,7 @@ function PassengerTabsNavigator() {
         name="PassengerBookings"
         component={PassengerMyRidesStack}
         options={{
-          tabBarLabel: strings.tabs.activities,
-          headerShown: false,
+          tabBarLabel: strings.tabs.travels,
           tabBarIcon: ({ color }) => <Ionicons name="pulse" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -312,7 +347,6 @@ function PassengerTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: strings.tabs.profile,
-          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="person" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -323,19 +357,31 @@ function PassengerTabsNavigator() {
 function DriverTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
   const c = useThemeColors();
-  const screenOptions = useTabNavigatorScreenOptions();
+  const screenOptions = {
+    ...useTabNavigatorScreenOptions({ tintColor: c.appAccent }),
+    sceneStyle: { backgroundColor: c.appBackground },
+    headerShown: false,
+  };
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
   return (
-    <Tabs.Navigator screenOptions={screenOptions}>
+    <Tabs.Navigator
+      screenOptions={screenOptions}
+      tabBar={(props) => <UnifiedFloatingTabBar {...props} centerRouteName="DriverPublish" />}
+    >
       <Tabs.Screen
         name="DriverCenter"
         component={DriverHomeStack}
         options={{
           tabBarLabel: 'Home',
-          headerShown: false,
-          tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={tabBarIconSize} color={focused ? c.primary : color} />
-          ),
+          tabBarIcon: ({ color }) => <Ionicons name="home" size={tabBarIconSize} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="DriverActivity"
+        component={DriverActivityTabStack}
+        options={{
+          tabBarLabel: 'Activity',
+          tabBarIcon: ({ color }) => <Ionicons name="clipboard" size={tabBarIconSize} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -343,21 +389,15 @@ function DriverTabsNavigator() {
         component={DriverPublishStack}
         options={{
           tabBarLabel: strings.tabs.publish,
-          headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <Ionicons name="add-circle" size={28} color={c.primary} />
-          ),
+          tabBarIcon: () => null,
         }}
       />
       <Tabs.Screen
         name="DriverProfile"
         component={ProfileScreen}
         options={{
-          tabBarLabel: strings.tabs.profile,
-          headerShown: false,
-          tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={tabBarIconSize} color={focused ? c.primary : color} />
-          ),
+          tabBarLabel: 'Account',
+          tabBarIcon: ({ color }) => <Ionicons name="person" size={tabBarIconSize} color={color} />,
         }}
       />
     </Tabs.Navigator>
@@ -367,16 +407,18 @@ function DriverTabsNavigator() {
 function AgencyTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
   const c = useThemeColors();
-  const screenOptions = useTabNavigatorScreenOptions({ tintColor: c.agency, headerTintColor: c.agency });
+  const screenOptions = useTabNavigatorScreenOptions({ tintColor: c.appAccent, headerTintColor: c.onAppPrimary });
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
   return (
-    <Tabs.Navigator screenOptions={screenOptions}>
+    <Tabs.Navigator
+      screenOptions={{ ...screenOptions, headerShown: false, sceneStyle: { backgroundColor: c.appBackground } }}
+      tabBar={(props) => <UnifiedFloatingTabBar {...props} />}
+    >
       <Tabs.Screen
         name="AgencyCenter"
         component={DriverHomeStack}
         options={{
           tabBarLabel: strings.tabs.dashboard,
-          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="car" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -385,7 +427,6 @@ function AgencyTabsNavigator() {
         component={ScannerReportStack}
         options={{
           tabBarLabel: strings.tabs.report,
-          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="document-text" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -394,7 +435,6 @@ function AgencyTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: strings.tabs.profile,
-          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="person" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -405,16 +445,18 @@ function AgencyTabsNavigator() {
 function ScannerTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
   const c = useThemeColors();
-  const screenOptions = useTabNavigatorScreenOptions({ tintColor: c.agency, headerTintColor: c.agency });
+  const screenOptions = useTabNavigatorScreenOptions({ tintColor: c.appAccent, headerTintColor: c.onAppPrimary });
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
   return (
-    <Tabs.Navigator screenOptions={screenOptions}>
+    <Tabs.Navigator
+      screenOptions={{ ...screenOptions, headerShown: false, sceneStyle: { backgroundColor: c.appBackground } }}
+      tabBar={(props) => <UnifiedFloatingTabBar {...props} />}
+    >
       <Tabs.Screen
         name="ScannerCenter"
         component={ScannerHomeStack}
         options={{
           tabBarLabel: strings.tabs.dashboard,
-          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="car" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -423,7 +465,6 @@ function ScannerTabsNavigator() {
         component={ScannerReportStack}
         options={{
           tabBarLabel: strings.tabs.report,
-          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="document-text" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -432,7 +473,6 @@ function ScannerTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: strings.tabs.profile,
-          headerShown: false,
           tabBarIcon: ({ color }) => <Ionicons name="person" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -464,46 +504,32 @@ function MainRoleNavigator() {
 
   const isScanner = currentRole === 'agency' && agencySubRole === 'agency_scanner';
 
-  return currentRole === 'driver' ? (
-    <Animated.View
-      style={{
-        flex: 1,
-        opacity,
-        transform: [{ translateY }],
-      }}
-    >
-      <DriverTabsNavigator key="driver-tabs" />
-    </Animated.View>
-  ) : isScanner ? (
-    <Animated.View
-      style={{
-        flex: 1,
-        opacity,
-        transform: [{ translateY }],
-      }}
-    >
-      <ScannerTabsNavigator key="scanner-tabs" />
-    </Animated.View>
-  ) : currentRole === 'agency' ? (
-    <Animated.View
-      style={{
-        flex: 1,
-        opacity,
-        transform: [{ translateY }],
-      }}
-    >
-      <AgencyTabsNavigator key="agency-tabs" />
-    </Animated.View>
-  ) : (
-    <Animated.View
-      style={{
-        flex: 1,
-        opacity,
-        transform: [{ translateY }],
-      }}
-    >
-      <PassengerTabsNavigator key="passenger-tabs" />
-    </Animated.View>
+  const animatedStyle = {
+    flex: 1,
+    opacity,
+    transform: [{ translateY }],
+  };
+
+  return (
+    <ToastProvider>
+      {currentRole === 'driver' ? (
+        <Animated.View style={animatedStyle}>
+          <DriverTabsNavigator key="driver-tabs" />
+        </Animated.View>
+      ) : isScanner ? (
+        <Animated.View style={animatedStyle}>
+          <ScannerTabsNavigator key="scanner-tabs" />
+        </Animated.View>
+      ) : currentRole === 'agency' ? (
+        <Animated.View style={animatedStyle}>
+          <AgencyTabsNavigator key="agency-tabs" />
+        </Animated.View>
+      ) : (
+        <Animated.View style={animatedStyle}>
+          <PassengerTabsNavigator key="passenger-tabs" />
+        </Animated.View>
+      )}
+    </ToastProvider>
   );
 }
 
@@ -512,9 +538,9 @@ function useRootHeaderOptions() {
   const c = useThemeColors();
   return {
     headerShown: true as const,
-    headerStyle: { backgroundColor: c.primary },
-    headerTintColor: c.dark,
-    headerTitleStyle: { color: c.dark, ...typography.h3 },
+    headerStyle: { backgroundColor: c.appPrimary },
+    headerTintColor: c.onAppPrimary,
+    headerTitleStyle: { color: c.onAppPrimary, ...typography.h3 },
     headerShadowVisible: false,
     headerTitleAlign: 'center' as const,
   };
@@ -619,6 +645,51 @@ export default function AppNavigator() {
               name="EditProfile"
               component={EditProfileScreen}
               options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: 'Edit profile' }}
+            />
+            <RootStack.Screen
+              name="AddCard"
+              component={AddCardScreen}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.addCard }}
+            />
+            <RootStack.Screen
+              name="AddMobileMoney"
+              component={AddMobileMoneyScreen}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.addMobileMoney }}
+            />
+            <RootStack.Screen
+              name="Wallet"
+              component={WalletScreen}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.wallet }}
+            />
+            <RootStack.Screen
+              name="TermsOfService"
+              component={TermsOfServiceScreen}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.termsOfService }}
+            />
+            <RootStack.Screen
+              name="AddVehicle"
+              component={AddVehicleScreen}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.addVehicle }}
+            />
+            <RootStack.Screen
+              name="EditVehicle"
+              component={EditVehicleScreen}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.editVehicle }}
+            />
+            <RootStack.Screen
+              name="Earnings"
+              component={EarningsScreen}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.earnings }}
+            />
+            <RootStack.Screen
+              name="FAQ"
+              component={FAQScreen}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.faq }}
+            />
+            <RootStack.Screen
+              name="About"
+              component={AboutScreen}
+              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: strings.nav.about }}
             />
             <RootStack.Screen
               name="DriverActivityDetails"

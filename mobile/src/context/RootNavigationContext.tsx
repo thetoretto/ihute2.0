@@ -5,6 +5,15 @@ export type RootParamList = {
   VehicleGarage: undefined;
   DriverActivityListStack: undefined;
   EditProfile: undefined;
+  AddCard: undefined;
+  AddMobileMoney: undefined;
+  Wallet: undefined;
+  TermsOfService: undefined;
+  AddVehicle: undefined;
+  EditVehicle: { vehicleId: string };
+  Earnings: undefined;
+  FAQ: undefined;
+  About: undefined;
   [key: string]: undefined | object;
 };
 

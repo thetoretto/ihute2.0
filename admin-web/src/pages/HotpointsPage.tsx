@@ -124,9 +124,9 @@ export default function HotpointsPage() {
     }
   };
 
-  const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
+  const th = 'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+    <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-2xl font-black text-dark">Hot points</h3>
         <button type="button" className="px-4 py-2 bg-primary text-dark rounded-xl font-bold text-sm" onClick={() => { setAdding(true); setForm(emptyForm); }}>
@@ -180,8 +180,8 @@ export default function HotpointsPage() {
         </table>
       </div>
       {adding && (
-        <div className="fixed inset-0 bg-dark/40 flex items-center justify-center z-[1000]" role="dialog" aria-modal="true">
-          <div className="bg-white border border-soft rounded-xl p-5 max-w-[420px] w-[90%] shadow-soft">
+        <div className="fixed inset-0 bg-dark/40 flex items-center justify-center z-modal" role="dialog" aria-modal="true">
+          <div className="bg-white border border-soft rounded-xl p-5 max-w-md w-modal shadow-soft">
             <h3 className="text-lg font-black text-dark m-0 mb-3">Add hot point</h3>
             <div className="mb-3"><label className="block mb-1 text-sm text-muted">Name</label><input value={form.name ?? ''} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
             <div className="mb-3"><label className="block mb-1 text-sm text-muted">Address</label><input value={form.address ?? ''} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
@@ -191,15 +191,15 @@ export default function HotpointsPage() {
               <div className="flex-1"><label className="block mb-1 text-sm text-muted">Longitude</label><input type="number" step="any" value={form.longitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, longitude: Number(e.target.value) }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
             </div>
             <div className="flex gap-2 flex-wrap mt-4">
-              <button type="button" className="min-h-[38px] px-4 py-0 bg-primary text-dark border border-primary/50 rounded-xl font-semibold cursor-pointer" onClick={handleSaveNew}>Save</button>
-              <button type="button" className="min-h-[38px] px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setAdding(false)}>Cancel</button>
+              <button type="button" className="min-h-10 px-4 py-0 bg-primary text-dark border border-primary/50 rounded-xl font-semibold cursor-pointer" onClick={handleSaveNew}>Save</button>
+              <button type="button" className="min-h-10 px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setAdding(false)}>Cancel</button>
             </div>
           </div>
         </div>
       )}
       {editing && (
-        <div className="fixed inset-0 bg-dark/40 flex items-center justify-center z-[1000]" role="dialog" aria-modal="true">
-          <div className="bg-white border border-soft rounded-xl p-5 max-w-[420px] w-[90%] shadow-soft">
+        <div className="fixed inset-0 bg-dark/40 flex items-center justify-center z-modal" role="dialog" aria-modal="true">
+          <div className="bg-white border border-soft rounded-xl p-5 max-w-md w-modal shadow-soft">
             <h3 className="text-lg font-black text-dark m-0 mb-3">Edit hot point</h3>
             <div className="mb-3"><label className="block mb-1 text-sm text-muted">Name</label><input value={form.name ?? ''} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
             <div className="mb-3"><label className="block mb-1 text-sm text-muted">Address</label><input value={form.address ?? ''} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
@@ -209,8 +209,8 @@ export default function HotpointsPage() {
               <div className="flex-1"><label className="block mb-1 text-sm text-muted">Longitude</label><input type="number" step="any" value={form.longitude ?? ''} onChange={(e) => setForm((f) => ({ ...f, longitude: Number(e.target.value) }))} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" /></div>
             </div>
             <div className="flex gap-2 flex-wrap mt-4">
-              <button type="button" className="min-h-[38px] px-4 py-0 bg-primary text-dark border border-primary/50 rounded-xl font-semibold cursor-pointer" onClick={handleSaveEdit}>Save</button>
-              <button type="button" className="min-h-[38px] px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setEditing(null)}>Cancel</button>
+              <button type="button" className="min-h-10 px-4 py-0 bg-primary text-dark border border-primary/50 rounded-xl font-semibold cursor-pointer" onClick={handleSaveEdit}>Save</button>
+              <button type="button" className="min-h-10 px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setEditing(null)}>Cancel</button>
             </div>
           </div>
         </div>

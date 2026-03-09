@@ -210,7 +210,7 @@ export default function PassengerBookingScreen() {
   const stepLabels = ['Trip', 'Seats', 'Payment'] as const;
 
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
+    <View style={[styles.container, { backgroundColor: c.appBackground }]}>
       {/* Header: card-style to match RideDetail */}
       <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.borderLight, paddingTop: insets.top }]}>
         <TouchableOpacity

@@ -8,9 +8,10 @@ import { validateTicketQr } from '../../services/api';
 import { incrementScannerTicketCount } from '../../services/api';
 import { buttonHeights, colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
 import { useThemeColors } from '../../context/ThemeContext';
+import { driverContentHorizontal } from '../../utils/layout';
 import type { TicketQrValidationResult } from '../../types';
 
-const PANEL_RADIUS = 24;
+const PANEL_RADIUS = radii.panel;
 
 export default function DriverScanTicketScreen() {
   const { user } = useAuth();
@@ -63,7 +64,8 @@ export default function DriverScanTicketScreen() {
   }
 
   return (
-    <Screen style={styles.container}>
+    <Screen style={[styles.container, { paddingHorizontal: 0 }]}>
+      <View style={styles.page}>
       <View style={[styles.cameraWrap, { borderColor: c.border }, cardShadow]}>
         <CameraView
           style={styles.camera}
@@ -109,12 +111,14 @@ export default function DriverScanTicketScreen() {
           <Text style={[styles.scanAgainText, { color: c.onPrimary }]}>Scan again</Text>
         </TouchableOpacity>
       </View>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  page: { flex: 1, paddingHorizontal: driverContentHorizontal },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -169,7 +173,7 @@ const styles = StyleSheet.create({
   resultCard: {
     marginTop: spacing.xs,
     padding: spacing.md,
-    borderRadius: 16,
+    borderRadius: radii.lg,
     borderWidth: 1,
     gap: spacing.xs,
   },

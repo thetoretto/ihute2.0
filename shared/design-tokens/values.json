@@ -1,0 +1,40 @@
+{
+  "colors": {
+    "primary": "#FEE46B",
+    "primaryActive": "#FDD835",
+    "onPrimary": "#171C22",
+    "background": "#F8F3EF",
+    "surface": "#FFFFFF",
+    "text": "#171C22",
+    "muted": "#64748B",
+    "error": "#DF0827",
+    "border": "#E6DBEB",
+    "success": "#22c55e",
+    "warning": "#B7791F",
+    "dark": "#171C22",
+    "darkElevation1": "#1E252D",
+    "darkElevation2": "#252D38"
+  },
+  "typography": {
+    "xs": { "fontSize": 10, "fontWeight": "700" },
+    "sm": { "fontSize": 12, "fontWeight": "400" },
+    "md": { "fontSize": 14, "fontWeight": "400" },
+    "base": { "fontSize": 16, "fontWeight": "400" },
+    "lg": { "fontSize": 18, "fontWeight": "600" },
+    "xl": { "fontSize": 20, "fontWeight": "700" },
+    "2xl": { "fontSize": 28, "fontWeight": "700" },
+    "3xl": { "fontSize": 32, "fontWeight": "800" }
+  },
+  "spacing": [4, 8, 12, 16, 24, 32, 40, 48],
+  "radius": {
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "pill": 9999
+  },
+  "elevation": {
+    "soft": "0 8px 30px rgb(0 0 0 / 0.04)",
+    "medium": "0 4px 12px rgb(0 0 0 / 0.06)"
+  }
+}

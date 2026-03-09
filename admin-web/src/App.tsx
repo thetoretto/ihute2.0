@@ -167,7 +167,7 @@ function Layout({ user, onLogout }: LayoutProps) {
             if (visibleLinks.length === 0) return null;
             return (
               <div key={section.label}>
-                <p className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-dark/60">
+                <p className="px-4 py-2 text-xs font-black uppercase tracking-widest text-dark/60">
                   {section.label}
                 </p>
                 {visibleLinks.map(({ to, label, labelForAgency, end, icon }) => {
@@ -239,8 +239,8 @@ function Layout({ user, onLogout }: LayoutProps) {
             </div>
             <div className="flex items-center gap-2 sm:gap-3 border-l pl-3 sm:pl-6 border-soft">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold truncate max-w-[120px]">{user.name}</p>
-                <p className="text-[10px] text-muted font-bold uppercase tracking-widest">
+                <p className="text-sm font-bold truncate max-w-truncate-name">{user.name}</p>
+                <p className="text-xs text-muted font-bold uppercase tracking-widest">
                   {user.adminType === 'agency' ? 'Agency Admin' : 'System Admin'}
                 </p>
               </div>

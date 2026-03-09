@@ -55,9 +55,9 @@ export default function TicketsPage() {
     void refresh();
   }, [refresh]);
 
-  const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
+  const th = 'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+    <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-2xl font-black text-dark">Tickets</h3>
         <button type="button" className="px-4 py-2 bg-primary text-dark rounded-xl font-bold text-sm" onClick={() => downloadCsv(bookings)}>Export CSV</button>
@@ -87,7 +87,7 @@ export default function TicketsPage() {
                 <td className="py-5 text-sm">{b.trip.departureTime}</td>
                 <td className="py-5 text-sm">{b.seats}</td>
                 <td className="py-5">
-                  <span className={`inline-block px-2 py-0.5 rounded-lg text-[11px] font-bold mr-1 ${b.paymentMethod === 'cash' ? 'bg-success-100 text-success-700' : b.paymentMethod === 'mobile_money' ? 'bg-info-100 text-info-700' : 'bg-soft text-dark'}`}>
+                  <span className={`inline-block px-2 py-0.5 rounded-lg text-sm font-bold mr-1 ${b.paymentMethod === 'cash' ? 'bg-success-100 text-success-700' : b.paymentMethod === 'mobile_money' ? 'bg-info-100 text-info-700' : 'bg-soft text-dark'}`}>
                     {b.paymentMethod.replace('_', ' ')}
                   </span>
                   {Number(b.seats * b.trip.pricePerSeat).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF

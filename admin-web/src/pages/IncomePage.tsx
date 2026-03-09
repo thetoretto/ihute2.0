@@ -29,7 +29,7 @@ function downloadEarningsCsv(scope?: ReturnType<typeof useAdminScope>) {
 }
 
 const tableTh =
-  'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
+  'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
 
 export default function IncomePage() {
   const scope = useAdminScope();
@@ -51,7 +51,7 @@ export default function IncomePage() {
     <div className="space-y-8">
       {/* KPI cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-dark rounded-[32px] p-6 text-white relative overflow-hidden">
+        <div className="bg-dark rounded-xl p-6 text-white relative overflow-hidden">
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-primary opacity-10 rounded-full blur-2xl" />
           <div className="relative z-10 flex justify-between items-start">
             <div>
@@ -68,7 +68,7 @@ export default function IncomePage() {
             <CreditCard className="text-primary" size={28} />
           </div>
         </div>
-        <div className="bg-white rounded-[32px] p-6 shadow-sm border border-soft">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-soft">
           <p className="text-muted text-xs font-bold uppercase tracking-widest">
             App commission
           </p>
@@ -79,7 +79,7 @@ export default function IncomePage() {
             RWF
           </p>
         </div>
-        <div className="bg-white rounded-[32px] p-6 shadow-sm border border-soft">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-soft">
           <p className="text-muted text-xs font-bold uppercase tracking-widest">
             Net platform earnings
           </p>
@@ -92,7 +92,7 @@ export default function IncomePage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+      <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-black text-dark">Income</h3>
           <div className="flex gap-4">

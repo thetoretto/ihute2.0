@@ -47,12 +47,12 @@ export default function WithdrawalMethodsScreen() {
   };
 
   return (
-    <Screen scroll style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
+    <Screen scroll style={[styles.container, { backgroundColor: themeColors.appBackground }]} contentContainerStyle={styles.content}>
       <Text style={[styles.title, { color: themeColors.text }]}>{strings.profile.withdrawalMethods}</Text>
-      <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>{strings.profile.withdrawalSubtitle}</Text>
+      <Text style={[styles.subtitle, { color: themeColors.textMuted }]}>{strings.profile.withdrawalSubtitle}</Text>
 
       <Text style={[styles.sectionLabel, { color: themeColors.textMuted }]}>Mobile Money</Text>
-      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
         <Ionicons name="phone-portrait-outline" size={20} color={themeColors.primary} />
         <TextInput
           style={[styles.input, { color: themeColors.text }]}
@@ -66,7 +66,7 @@ export default function WithdrawalMethodsScreen() {
       </View>
 
       <Text style={[styles.sectionLabel, { color: themeColors.textMuted }]}>Bank transfer</Text>
-      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
         <Ionicons name="business-outline" size={20} color={themeColors.primary} />
         <TextInput
           style={[styles.input, { color: themeColors.text }]}
@@ -77,7 +77,7 @@ export default function WithdrawalMethodsScreen() {
           autoCapitalize="words"
         />
       </View>
-      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
         <Ionicons name="card-outline" size={20} color={themeColors.primary} />
         <TextInput
           style={[styles.input, { color: themeColors.text }]}
@@ -89,7 +89,7 @@ export default function WithdrawalMethodsScreen() {
           autoCapitalize="none"
         />
       </View>
-      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
         <Ionicons name="person-outline" size={20} color={themeColors.primary} />
         <TextInput
           style={[styles.input, { color: themeColors.text }]}
@@ -108,16 +108,16 @@ export default function WithdrawalMethodsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
-  title: { ...typography.h2 },
-  subtitle: { marginTop: spacing.xs, marginBottom: spacing.lg },
-  sectionLabel: { ...typography.caption, marginTop: spacing.sm, marginBottom: spacing.xs },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  title: { ...typography.h2, marginBottom: spacing.xs },
+  subtitle: { ...typography.caption, marginBottom: spacing.lg },
+  sectionLabel: { ...typography.overline, marginTop: spacing.sm, marginBottom: spacing.xs },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     padding: spacing.md,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     borderWidth: 1,
     marginBottom: spacing.sm,
   },

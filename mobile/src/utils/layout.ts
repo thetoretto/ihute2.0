@@ -1,86 +1,104 @@
 import { spacing, radii, typography, sizes } from './theme';
 
 /**
- * Horizontal padding for screen content. Align with Screen's horizontalPadding
- * when using layout constants in StyleSheet (static) or use useResponsiveLayout().horizontalPadding in components.
+ * UI Component Offsets
+ * Grouping these allows for easier updates if the UI library changes.
  */
-export const screenContentPadding = spacing.lg;
-
-/**
- * Smaller horizontal padding for the search results list so trip cards span more width on mobile.
- */
-export const searchResultsListPadding = spacing.md;
-
-/**
- * Bottom padding for list content on tab screens (clears tab bar).
- */
-export const listBottomPaddingTab = spacing.xl + 80;
-
-/**
- * Bottom padding for list content on stack-only or modal screens.
- */
-export const listBottomPaddingDefault = spacing.xl;
-
-/**
- * Vertical and horizontal padding for the header/tabs area on list screens.
- */
-export const listScreenHeaderPaddingVertical = spacing.lg;
-export const listScreenHeaderPaddingHorizontal = screenContentPadding;
-
-/**
- * Top padding for list content below header/tabs.
- */
-export const listContentPaddingTop = spacing.sm;
-
-/**
- * FAB bottom offset and list bottom padding when a FAB is present.
- */
-export const fabBottomOffset = spacing.sm;
-export const listBottomPaddingWithFab = listBottomPaddingDefault + 72;
-
-/**
- * Tight vertical gap for card elements (replaces magic 2).
- */
-export const tightGap = spacing.xxs;
-
-/**
- * Standard radius for content cards and panels across the app.
- */
-export const cardRadius = radii.lg;
-
-/**
- * Panel / info block radius (e.g. blablacar card, detail info block).
- */
-export const panelRadius = radii.panel;
-
-/**
- * Header bar: icon button and icon sizes (from theme sizes).
- */
-export const headerIconButtonSize = sizes.touchTarget.iconButton;
-export const headerIconSize = sizes.icon.medium;
-
-/**
- * Timeline dot size and divider.
- */
-export const timelineDotSize = sizes.timelineDot;
-export const timelineDotSizeLg = sizes.timelineDotLg;
-
-/**
- * Extra content padding when a fixed footer is present (avoids content hidden behind CTA).
- */
-export const contentBottomPaddingWithFooter = spacing.xxl + 72;
-
-/**
- * Bottom padding for scroll content in multi-step flows (e.g. PassengerBookingScreen).
- */
-export const scrollStepBottomPadding = 220;
-export const dividerHeight = 1;
-
-/**
- * Section title style for consistent headings on list and detail screens.
- */
-export const sectionTitleStyle = {
-  ...typography.h3,
-  fontWeight: '700' as const,
-  marginBottom: spacing.sm,
+const OFFSETS = {
+  TAB_BAR_HEIGHT: 80,
+  FAB_HEIGHT: 72,
+  FOOTER_HEIGHT: 72,
+  DIVIDER: 1,
 };
+
+/** Design system: max viewport width (mobile-first, centered on desktop). */
+export const MAX_VIEWPORT_WIDTH = 450;
+
+/** Design system: content padding bottom so scroll clears floating nav. */
+export const CONTENT_PADDING_BOTTOM_TAB_SCREEN = 120;
+
+/** Toast offset above tab bar (bottom-28). */
+export const TOAST_BOTTOM_OFFSET = 28;
+
+/** Toast container bottom position (above floating nav). */
+export const TOAST_BOTTOM = OFFSETS.TAB_BAR_HEIGHT + TOAST_BOTTOM_OFFSET;
+
+/**
+ * Screen & Container Padding
+ */
+export const layout = {
+  screen: {
+    horizontal: spacing.sm,
+    searchHorizontal: spacing.md,
+  },
+
+  // Driver screens: use one canonical horizontal inset
+  driver: {
+    contentHorizontal: spacing.md,
+  },
+  
+  // Lists & Scrolling
+  list: {
+    headerVertical: spacing.lg,
+    headerHorizontal: spacing.md, // Keeping in sync with screen.horizontal
+    contentTop: spacing.sm,
+    gapTight: spacing.xxs,
+    
+    // Bottom Paddings (Logical grouping)
+    bottom: {
+      default: spacing.xl,
+      tabScreen: CONTENT_PADDING_BOTTOM_TAB_SCREEN,
+      withFab: spacing.xl + OFFSETS.FAB_HEIGHT,
+      withFooter: spacing.xxl + OFFSETS.FOOTER_HEIGHT,
+      multiStepFlow: 220,
+    },
+  },
+
+  // Components
+  card: {
+    radius: radii.lg,
+    panelRadius: radii.panel,
+  },
+
+  // Interactive Elements
+  header: {
+    buttonSize: sizes.touchTarget.iconButton,
+    iconSize: sizes.icon.medium,
+  },
+
+  // Specialized UI
+  timeline: {
+    dot: sizes.timelineDot,
+    dotLg: sizes.timelineDotLg,
+    divider: OFFSETS.DIVIDER,
+  },
+};
+
+/**
+ * Shared Typography Styles
+ */
+export const sharedStyles = {
+  sectionTitle: {
+    ...typography.h3,
+    fontWeight: '700' as const,
+    marginBottom: spacing.sm,
+  },
+};
+
+// For backward compatibility or specific direct imports
+export const screenContentPadding = layout.screen.horizontal;
+export const dividerHeight = OFFSETS.DIVIDER;
+export const timelineDotSize = layout.timeline.dot;
+export const panelRadius = layout.card.panelRadius;
+export const contentBottomPaddingWithFooter = layout.list.bottom.withFooter;
+export const timelineDotSizeLg = layout.timeline.dotLg;
+export const cardRadius = layout.card.radius;
+export const listBottomPaddingTab = layout.list.bottom.tabScreen;
+export const listBottomPaddingDefault = layout.list.bottom.default;
+export const sectionTitleStyle = sharedStyles.sectionTitle;
+export const tightGap = layout.list.gapTight;
+export const searchResultsListPadding = layout.screen.searchHorizontal;
+export const scrollStepBottomPadding = 120;
+export const listScreenHeaderPaddingVertical = layout.list.headerVertical;
+export const listScreenHeaderPaddingHorizontal = layout.list.headerHorizontal;
+export const driverContentHorizontal = layout.driver.contentHorizontal;

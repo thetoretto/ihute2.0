@@ -39,12 +39,16 @@ import {
   setDriverDriveMode,
   clearDriverDriveMode,
   getHotpoints,
+  getWalletBalance,
 } from '../../services/api';
 import { getUnreadDriverNotificationCount, getScannerTicketCount } from '../../services/api';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeColors } from '../../context/ThemeContext';
+import { useDriverTheme } from '../../context/DriverThemeContext';
+import { useToast } from '../../context/ToastContext';
 import { colors, spacing, typography, radii, sizes, cardShadow, borderWidths } from '../../utils/theme';
-import { cardRadius, listBottomPaddingTab, sectionTitleStyle, tightGap } from '../../utils/layout';
+import { cardRadius, driverContentHorizontal, layout, listBottomPaddingTab, sectionTitleStyle, tightGap } from '../../utils/layout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { DriverTripActivity, Hotpoint } from '../../types';
 import type { DriverDriveModeStatus } from '../../services/api';
 
@@ -87,7 +91,11 @@ export default function DriverHomeScreen() {
     remainingSeats: number;
     income: number;
   } | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const incomeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const driverTheme = useDriverTheme();
+  const toast = useToast();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -138,6 +146,11 @@ export default function DriverHomeScreen() {
     if (!user?.id) return;
     getUnreadDriverNotificationCount(user.id).then(setUnreadNotifications);
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id || currentRole !== 'driver') return;
+    getWalletBalance(user.id).then(setWalletBalance);
+  }, [user?.id, currentRole]);
 
   useFocusEffect(
     useCallback(() => {
@@ -201,13 +214,15 @@ export default function DriverHomeScreen() {
   const upcomingActive = activities.filter((a) => a.trip.status === 'active');
   const nextRide = upcomingActive[0];
   const scheduledCount = upcomingActive.length;
+  const isDriverMockup = currentRole === 'driver' && !isScanner;
+  const d = driverTheme?.colors ?? c;
 
   return (
     <Screen
-      scroll
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: effectiveSpacing.lg, paddingBottom: listBottomPaddingTab }]}
-      scrollProps={{
+      scroll={!isDriverMockup}
+      style={[styles.container, { backgroundColor: c.appBackground }, isDriverMockup ? { paddingHorizontal: 0 } : null]}
+      contentContainerStyle={isDriverMockup ? undefined : [styles.content, { paddingTop: effectiveSpacing.lg, paddingBottom: listBottomPaddingTab }]}
+      scrollProps={isDriverMockup ? undefined : {
         refreshControl: (
           <RefreshControl
             refreshing={refreshing}
@@ -219,6 +234,134 @@ export default function DriverHomeScreen() {
         ),
       }}
     >
+      {isDriverMockup ? (
+        <View style={[styles.driverMockupWrapper, { paddingTop: (insets?.top ?? 0) + effectiveSpacing.lg }]}>
+          <View style={[styles.driverMockupHeader, { borderBottomColor: c.border }]}>
+            <View style={styles.driverHeaderLeft}>
+              <Text style={[styles.driverGreeting, { color: d.primary }]}>Hello, {getGreetingName(user?.displayName ?? user?.email ?? '')}!</Text>
+              <View style={styles.driverHeaderBadges}>
+                <View style={styles.driverTierPill}><Text style={styles.driverTierPillText}>Gold Pro</Text></View>
+                <Text style={[styles.driverRatingBadge, { color: c.textSecondary }]}>{formatRatingValue(ratingSummary?.average ?? 0, '0.00')} ★ Rating</Text>
+              </View>
+            </View>
+            <View style={styles.driverHeaderRight}>
+              <TouchableOpacity style={styles.driverIconBtn} onPress={() => navigation.navigate('DriverNotifications' as never)}>
+                <Ionicons name="notifications-outline" size={20} color={c.textSecondary} />
+                {unreadNotifications > 0 ? <View style={styles.driverNotificationDot} /> : null}
+              </TouchableOpacity>
+              <View style={[styles.driverAvatarWrap, { borderColor: c.card }]}>
+                {user?.photoURL ? <Image source={{ uri: user.photoURL }} style={styles.driverAvatar} /> : (
+                  <View style={[styles.driverAvatarPlaceholder, { backgroundColor: c.ghostBg }]}>
+                    <Text style={[styles.driverAvatarInitial, { color: d.primary }]}>{(user?.displayName ?? user?.email ?? 'D').charAt(0).toUpperCase()}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+          <ScrollView
+            style={styles.driverMockupScroll}
+            contentContainerStyle={[styles.driverMockupScrollContent, { paddingBottom: listBottomPaddingTab }]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[c.primary]}
+                tintColor={c.primary}
+                progressBackgroundColor={c.surface}
+              />
+            }
+          >
+          <View style={[styles.driverWalletCard, { backgroundColor: d.card, borderColor: c.border }, cardShadow]}>
+            <View style={styles.driverWalletLeft}>
+              <View style={[styles.driverWalletIcon, { backgroundColor: d.accentTint }]}><Ionicons name="cash-outline" size={20} color={d.accent} /></View>
+              <View>
+                <Text style={[styles.driverWalletLabel, { color: c.textSecondary }]}>Current Balance</Text>
+                <Text style={[styles.driverWalletAmount, { color: d.primary }]}>RWF {walletBalance.toLocaleString('en-RW', { maximumFractionDigits: 0 })}</Text>
+              </View>
+            </View>
+            <TouchableOpacity style={[styles.driverWithdrawBtn, { backgroundColor: d.primary }]} onPress={() => rootNavigate('WithdrawalMethods')}>
+              <Text style={[styles.driverWithdrawBtnText, { color: d.onPrimary }]}>Withdraw</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[styles.driverInstantModeCard, { backgroundColor: d.card, borderColor: c.border }]}>
+            <View style={styles.driverInstantModeLeft}>
+              <View style={[styles.driverStatusDot, { backgroundColor: driverModeOn ? d.instaGreen : c.border }]} />
+              <View>
+                <Text style={[styles.driverInstantModeTitle, { color: d.primary }]}>Instant Mode</Text>
+                <Text style={[styles.driverInstantModeSub, { color: c.textSecondary }]}>{driverModeOn ? 'Online • Ready for Insta Trips' : 'Offline • On-demand disabled'}</Text>
+              </View>
+            </View>
+            <Switch value={driverModeOn} onValueChange={(val) => { if (val) setDriveModeModalVisible(true); else if (user?.id) clearDriverDriveMode(user.id).then(() => { setDriverModeOn(false); setDriveModeStatus(null); }).catch(() => setDriverModeOn(false)); else setDriverModeOn(false); }} trackColor={{ false: c.border, true: d.instaGreen }} thumbColor={c.card} />
+          </View>
+          {driverModeOn && (
+            <View style={[styles.driverLiveBlock, { backgroundColor: d.instaGreenTint, borderColor: d.instaGreen }]}>
+              <View style={[styles.driverLiveIconWrap, { backgroundColor: d.instaGreen }]}><Ionicons name="search" size={24} color={c.card} /></View>
+              <Text style={[styles.driverLiveTitle, { color: c.appSuccessDark }]}>Live & Searching</Text>
+              <Text style={[styles.driverLiveSub, { color: c.appSuccessDark }]}>You are visible to riders nearby</Text>
+            </View>
+          )}
+          <View style={styles.driverSection}>
+            <Text style={[styles.driverSectionTitle, { color: d.primary }]}>Active Trip</Text>
+            {nextRide ? (
+              <View style={[styles.driverActiveTripCard, { backgroundColor: d.primary }, cardShadow]}>
+                <View style={styles.driverActiveTripTop}>
+                  <View style={[styles.driverInProgressPill, { backgroundColor: d.instaGreen }]}><Text style={styles.driverInProgressPillText}>In Progress</Text></View>
+                  <View style={styles.driverLiveIndicator}><View style={styles.driverLiveDot} /><Text style={styles.driverLiveLabel}>Live</Text></View>
+                </View>
+                <View style={styles.driverRouteRow}>
+                  <View><Text style={styles.driverRouteCode}>{nextRide.trip.departureHotpoint?.name?.slice(0, 3).toUpperCase() ?? 'KGL'}</Text><Text style={styles.driverRouteCity}>{nextRide.trip.departureHotpoint?.name ?? 'Kigali'}</Text></View>
+                  <View style={styles.driverRouteLine}><View style={styles.driverRouteLineInner} /><Ionicons name="flash" size={20} color={d.instaGreen} /><View style={styles.driverRouteLineInner} /></View>
+                  <View style={{ alignItems: 'flex-end' }}><Text style={styles.driverRouteCode}>{nextRide.trip.destinationHotpoint?.name?.slice(0, 3).toUpperCase() ?? 'MUS'}</Text><Text style={styles.driverRouteCity}>{nextRide.trip.destinationHotpoint?.name ?? 'Destination'}</Text></View>
+                </View>
+                <View style={styles.driverPassengerRow}>
+                  <View style={styles.driverPassengerLeft}><View style={[styles.driverPassengerAvatar, { borderColor: d.instaGreen }]} /><View><Text style={styles.driverPassengerLabel}>Passenger</Text><Text style={styles.driverPassengerName}>{nextRide.bookingsCount} Booked</Text></View></View>
+                  <View><Text style={styles.driverPassengerLabel}>Occupancy</Text><Text style={styles.driverPassengerName}>{nextRide.bookedSeats ?? 0}/{nextRide.trip.seatsAvailable ?? 4} Booked</Text></View>
+                </View>
+                <TouchableOpacity style={[styles.driverViewRideBtn, { backgroundColor: c.surfaceOverlay }]} onPress={() => rootNavigate('DriverActivityListStack')}><Text style={styles.driverViewRideBtnText}>View ride</Text></TouchableOpacity>
+              </View>
+            ) : (
+              <View style={[styles.driverActiveTripCard, styles.driverActiveTripCardEmpty, { backgroundColor: d.card, borderColor: c.border }]}>
+                <Text style={[styles.driverNoActiveTrip, { color: c.textSecondary }]}>No active trip</Text>
+                <TouchableOpacity style={[styles.driverViewRideBtn, { backgroundColor: d.primary }]} onPress={() => rootNavigate('DriverActivityListStack')}><Text style={[styles.driverViewRideBtnText, { color: d.onPrimary }]}>View all activities</Text></TouchableOpacity>
+              </View>
+            )}
+          </View>
+          <View style={styles.driverSection}>
+            <Text style={[styles.driverSectionTitle, { color: d.primary }]}>Pending Approvals</Text>
+            <View style={[styles.driverPendingCard, { backgroundColor: d.card, borderColor: c.border }]}>
+              <View style={[styles.driverPendingAvatar, { backgroundColor: d.accentTint }]} />
+              <View style={styles.driverPendingBody}><Text style={[styles.driverPendingName, { color: d.primary }]}>Jean Paul</Text><Text style={[styles.driverPendingMeta, { color: c.textSecondary }]}>Request for 1 seat to Musanze</Text></View>
+              <View style={styles.driverPendingActions}>
+                <TouchableOpacity style={styles.driverApproveBtn} onPress={() => toast?.showToast('Booking Approved!')}><Ionicons name="checkmark" size={20} color={d.success} /></TouchableOpacity>
+                <TouchableOpacity style={styles.driverRejectBtn}><Ionicons name="close" size={20} color={c.error} /></TouchableOpacity>
+              </View>
+            </View>
+          </View>
+          {user?.roles?.length && user.roles.length > 1 ? <View style={{ marginBottom: effectiveSpacing.md }}><RoleToggle currentRole={currentRole} onSwitch={switchRole} hasApprovedVehicle={hasApprovedVehicle} availableRoles={user.roles} onNavigateToVehicleGarage={() => rootNavigate('VehicleGarage')} /></View> : null}
+          </ScrollView>
+          <Modal visible={driveModeModalVisible} animationType="slide" transparent>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
+              <View style={[styles.driveModeSheet, { backgroundColor: c.appBackground }]}>
+                <Text style={[styles.driveModeModalTitle, { color: c.text }]}>Set your route</Text>
+                <Text style={[styles.driveModeModalSub, { color: c.textSecondary }]}>From?, To?, Car capacity, Cost (all required)</Text>
+                <ScrollView keyboardShouldPersistTaps="handled" style={styles.driveModeModalScroll}>
+                  <View style={[styles.routePickerRow, { borderBottomColor: c.border }]}><Text style={[styles.driveModeLabel, { color: c.textSecondary }]}>From?</Text><HotpointPicker value={driveModeFrom} hotpoints={hotpoints} onSelect={setDriveModeFrom} placeholder="From?" triggerStyle={[styles.driveModeTrigger, { borderBottomColor: c.border }]} /></View>
+                  <View style={[styles.routePickerRow, { borderBottomColor: c.border }]}><Text style={[styles.driveModeLabel, { color: c.textSecondary }]}>To?</Text><HotpointPicker value={driveModeTo} hotpoints={hotpoints} onSelect={setDriveModeTo} placeholder="To?" triggerStyle={[styles.driveModeTrigger, { borderBottomColor: c.border }]} /></View>
+                  <View style={[styles.routePickerRow, { borderBottomColor: c.border }]}><Text style={[styles.driveModeLabel, { color: c.textSecondary }]}>Car capacity</Text><TextInput style={[styles.driveModeInput, { color: c.text, borderColor: c.border }]} placeholder="e.g. 4" placeholderTextColor={c.textSecondary} value={driveModeSeats === 0 ? '' : String(driveModeSeats)} keyboardType="number-pad" onChangeText={(t) => setDriveModeSeats(Math.max(0, parseInt(t, 10) || 0))} /></View>
+                  <View style={[styles.routePickerRow, { borderBottomColor: c.border }]}><Text style={[styles.driveModeLabel, { color: c.textSecondary }]}>Cost</Text><TextInput style={[styles.driveModeInput, { color: c.text, borderColor: c.border }]} placeholder="Price per seat (RWF)" placeholderTextColor={c.textSecondary} value={driveModeCost} keyboardType="number-pad" onChangeText={setDriveModeCost} /></View>
+                </ScrollView>
+                <View style={styles.driveModeModalFooter}>
+                  <TouchableOpacity style={[styles.driveModeCancelBtn, { borderColor: c.border }]} onPress={() => setDriveModeModalVisible(false)}><Text style={[styles.driveModeCancelText, { color: c.text }]}>Cancel</Text></TouchableOpacity>
+                  <TouchableOpacity style={[styles.driveModeSubmitBtn, { backgroundColor: d.primary }]} onPress={async () => { if (!user?.id || !driveModeFrom || !driveModeTo) { Alert.alert('Required', 'Please set From?, To?, Car capacity, and Cost.'); return; } const seats = driveModeSeats >= 1 ? driveModeSeats : 0; const cost = parseInt(driveModeCost, 10); if (seats < 1 || isNaN(cost) || cost < 0) { Alert.alert('Required', 'Car capacity must be at least 1 and Cost must be a valid number.'); return; } try { await setDriverDriveMode({ driverId: user.id, fromId: driveModeFrom.id, toId: driveModeTo.id, seatsAvailable: seats, pricePerSeat: cost }); setDriverModeOn(true); setDriveModeStatus({ inDriveMode: true, from: driveModeFrom, to: driveModeTo, seatsAvailable: seats, pricePerSeat: cost, driver: user, updatedAt: new Date().toISOString() }); setDriveModeModalVisible(false); toast?.showToast('Instant Mode: ON'); } catch (e) { Alert.alert('Error', e instanceof Error ? e.message : 'Could not turn on drive mode.'); } }}><Text style={[styles.driveModeSubmitText, { color: d.onPrimary }]}>Turn on drive mode</Text></TouchableOpacity>
+                </View>
+              </View>
+            </KeyboardAvoidingView>
+          </Modal>
+        </View>
+      ) : (
+        <>
       {/* Header: greeting + avatar */}
       <View style={[styles.headerRow, { marginBottom: effectiveSpacing.md }]}>
         <View style={styles.headerTextWrap}>
@@ -336,7 +479,7 @@ export default function DriverHomeScreen() {
             ]}
           >
             <View style={styles.driverModeLeft}>
-              <View style={[styles.driverModeIconWrap, { backgroundColor: c.background }]}>
+              <View style={[styles.driverModeIconWrap, { backgroundColor: c.appBackground }]}>
                 <Ionicons name="car-sport" size={20} color={c.primary} />
               </View>
               <View>
@@ -370,7 +513,7 @@ export default function DriverHomeScreen() {
           </View>
           <Modal visible={driveModeModalVisible} animationType="slide" transparent>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
-              <View style={[styles.driveModeSheet, { backgroundColor: c.background }]}>
+              <View style={[styles.driveModeSheet, { backgroundColor: c.appBackground }]}>
                 <Text style={[styles.driveModeModalTitle, { color: c.text }]}>Set your route</Text>
                 <Text style={[styles.driveModeModalSub, { color: c.textSecondary }]}>From?, To?, Car capacity, Cost (all required)</Text>
                 <ScrollView keyboardShouldPersistTaps="handled" style={styles.driveModeModalScroll}>
@@ -626,6 +769,8 @@ export default function DriverHomeScreen() {
           )}
         </>
       ) : null}
+        </>
+      )}
       <CarRefreshIndicator state={refreshState} />
     </Screen>
   );
@@ -815,4 +960,111 @@ const styles = StyleSheet.create({
   route: { ...typography.body, color: colors.text, flex: 1 },
   time: { ...typography.caption, color: colors.textSecondary },
   meta: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
+  // Driver mockup
+  driverMockupWrapper: { flex: 1 },
+  driverMockupScroll: { flex: 1 },
+  driverMockupScrollContent: { paddingHorizontal: driverContentHorizontal, paddingTop: spacing.md },
+  driverMockupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: driverContentHorizontal,
+    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
+    backgroundColor: colors.card,
+    borderBottomWidth: 1,
+  },
+  driverHeaderLeft: {},
+  driverGreeting: { ...typography.h2, fontSize: 24, fontWeight: '800' },
+  driverHeaderBadges: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
+  driverTierPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs, backgroundColor: colors.warningTint, borderRadius: radii.xxs },
+  driverTierPillText: { fontSize: 9, fontWeight: '800', color: colors.warning, textTransform: 'uppercase' },
+  driverRatingBadge: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  driverHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  driverIconBtn: { width: sizes.touchTarget.min, height: sizes.touchTarget.min, borderRadius: radii.lg, backgroundColor: colors.ghostBg, borderWidth: 1, borderColor: colors.borderLight, alignItems: 'center', justifyContent: 'center' },
+  driverNotificationDot: { position: 'absolute', top: spacing.smMd, right: spacing.smMd, width: sizes.timelineDot, height: sizes.timelineDot, borderRadius: radii.xxs, backgroundColor: colors.error, borderWidth: 2, borderColor: colors.card },
+  driverAvatarWrap: { width: sizes.touchTarget.min, height: sizes.touchTarget.min, borderRadius: radii.lg, overflow: 'hidden', borderWidth: 2 },
+  driverAvatar: { width: '100%', height: '100%' },
+  driverAvatarPlaceholder: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+  driverAvatarInitial: { ...typography.h3 },
+  driverWalletCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: radii.cardLarge,
+    borderWidth: 1,
+  },
+  driverWalletLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  driverWalletIcon: { width: sizes.touchTarget.iconButton, height: sizes.touchTarget.iconButton, borderRadius: radii.xl, alignItems: 'center', justifyContent: 'center' },
+  driverWalletLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  driverWalletAmount: { ...typography.bodyBold18, fontSize: 18 },
+  driverWithdrawBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.button },
+  driverWithdrawBtnText: { fontSize: 10, fontWeight: '800', color: colors.onAppPrimary },
+  driverInstantModeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md + spacing.xs,
+    marginBottom: spacing.md,
+    borderRadius: radii.cardLarge,
+    borderWidth: 1,
+  },
+  driverInstantModeLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  driverStatusDot: { width: sizes.timelineDotLg, height: sizes.timelineDotLg, borderRadius: radii.xs },
+  driverInstantModeTitle: { ...typography.bodySmall, fontWeight: '800' },
+  driverInstantModeSub: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
+  driverLiveBlock: {
+    marginBottom: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.cardLarge,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  driverLiveIconWrap: { width: sizes.avatar.lg, height: sizes.avatar.lg, borderRadius: radii.cardLarge, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
+  driverLiveTitle: { ...typography.bodySmall, fontWeight: '800', marginBottom: spacing.xs },
+  driverLiveSub: { fontSize: 12, fontWeight: '700' },
+  driverSection: { marginBottom: spacing.lg },
+  driverSectionTitle: { ...typography.bodyBold18, marginBottom: spacing.md },
+  driverActiveTripCard: {
+    borderRadius: radii.cardXLarge,
+    padding: spacing.lg,
+    overflow: 'hidden',
+  },
+  driverActiveTripCardEmpty: { borderWidth: 1, alignItems: 'center', paddingVertical: spacing.xl },
+  driverActiveTripTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg },
+  driverInProgressPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radii.full },
+  driverInProgressPillText: { fontSize: 10, fontWeight: '700', color: colors.onAppPrimary, textTransform: 'uppercase', letterSpacing: 1 },
+  driverLiveIndicator: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  driverLiveDot: { width: sizes.timelineDot, height: sizes.timelineDot, borderRadius: radii.xxs, backgroundColor: colors.error },
+  driverLiveLabel: { fontSize: 12, fontWeight: '700', color: colors.onAppPrimaryMuted },
+  driverRouteRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
+  driverRouteLine: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.sm },
+  driverRouteLineInner: { flex: 1, height: 1, backgroundColor: colors.onAppPrimarySoft },
+  driverRouteCode: { fontSize: 22, fontWeight: '800', color: colors.onAppPrimary },
+  driverRouteCity: { fontSize: 10, fontWeight: '700', color: colors.onAppPrimaryMuted, textTransform: 'uppercase' },
+  driverPassengerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceOverlay, borderRadius: radii.lg, padding: spacing.md },
+  driverPassengerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  driverPassengerAvatar: { width: sizes.touchTarget.iconButton, height: sizes.touchTarget.iconButton, borderRadius: radii.xl, borderWidth: 2 },
+  driverPassengerLabel: { fontSize: 10, fontWeight: '700', color: colors.onAppPrimaryMuted, textTransform: 'uppercase' },
+  driverPassengerName: { fontSize: 12, fontWeight: '800', color: colors.onAppPrimary },
+  driverViewRideBtn: { marginTop: spacing.md, paddingVertical: spacing.sm + spacing.xs, paddingHorizontal: spacing.lg, borderRadius: radii.button, alignSelf: 'stretch', alignItems: 'center' },
+  driverViewRideBtnText: { fontSize: 12, fontWeight: '800', color: colors.onAppPrimary },
+  driverNoActiveTrip: { ...typography.bodySmall, marginBottom: spacing.md },
+  driverPendingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radii.cardLarge,
+    borderWidth: 1,
+    gap: spacing.md,
+  },
+  driverPendingAvatar: { width: sizes.avatar.lg, height: sizes.avatar.lg, borderRadius: radii.lg },
+  driverPendingBody: { flex: 1 },
+  driverPendingName: { ...typography.bodySmall, fontWeight: '700' },
+  driverPendingMeta: { fontSize: 10, color: colors.textSecondary },
+  driverPendingActions: { flexDirection: 'row', gap: spacing.sm },
+  driverApproveBtn: { padding: spacing.sm, backgroundColor: colors.successTint, borderRadius: radii.button },
+  driverRejectBtn: { padding: spacing.sm, backgroundColor: colors.errorTint, borderRadius: radii.button },
 });

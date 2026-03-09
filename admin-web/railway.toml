@@ -1,0 +1,9 @@
+# Railway config for ihute admin dashboard (admin-web).
+# In Railway dashboard, set this service's Root Directory to "admin-web".
+# Set env var VITE_API_BASE_URL to your deployed API URL (e.g. https://your-api.up.railway.app).
+
+[build]
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "npm start"

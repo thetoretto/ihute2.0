@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { getDriverActivitySummary } from '../../services/api';
 import { spacing, radii, typography } from '../../utils/theme';
+import { driverContentHorizontal } from '../../utils/layout';
 
 interface Summary {
   doneCount: number;
@@ -40,7 +41,7 @@ export default function DriverActivityDetailsScreen() {
 
   if (!summary && loading) {
     return (
-      <Screen style={[styles.container, { backgroundColor: c.background }]}>
+      <Screen style={[styles.container, { backgroundColor: c.appBackground }]}>
         <Text style={[styles.loading, { color: c.textSecondary }]}>Loading activity details...</Text>
       </Screen>
     );
@@ -48,7 +49,7 @@ export default function DriverActivityDetailsScreen() {
 
   if (!summary) {
     return (
-      <Screen style={[styles.container, { backgroundColor: c.background }]}>
+      <Screen style={[styles.container, { backgroundColor: c.appBackground }]}>
         <Text style={[styles.loading, { color: c.textSecondary }]}>No activity summary yet.</Text>
         <TouchableOpacity style={[styles.refreshBtn, { borderColor: c.borderLight, backgroundColor: c.surface }]} onPress={() => void load()}>
           <Text style={[styles.refreshBtnText, { color: c.primary }]}>Refresh</Text>
@@ -66,7 +67,7 @@ export default function DriverActivityDetailsScreen() {
   ];
 
   return (
-    <Screen scroll style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
+    <Screen scroll style={[styles.container, { backgroundColor: c.appBackground }]} contentContainerStyle={styles.content}>
       <View style={styles.headerRow}>
         <View>
           <Text style={[styles.title, { color: c.text }]}>Driver activity details</Text>
@@ -91,7 +92,7 @@ export default function DriverActivityDetailsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl, paddingHorizontal: driverContentHorizontal },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.sm },
   title: { ...typography.h2, marginBottom: spacing.xs },
   subtitle: { ...typography.bodySmall, marginBottom: spacing.lg },

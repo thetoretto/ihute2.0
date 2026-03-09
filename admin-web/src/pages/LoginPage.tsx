@@ -40,7 +40,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-6">
-      <div className="bg-white border border-soft rounded-2xl p-10 w-full max-w-[420px] shadow-soft">
+      <div className="bg-white border border-soft rounded-2xl p-10 w-full max-w-md shadow-soft">
         <div className="flex items-center gap-3 mb-2">
           <img src="/logo.png" className="h-16 w-auto rounded-xl block mb-1" alt="ihute" />
         </div>
@@ -91,12 +91,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         </form>
 
         <div className="border-t border-soft pt-5">
-          <p className="text-[11px] font-semibold text-muted uppercase tracking-widest m-0 mb-2.5">Test accounts</p>
+          <p className="text-sm font-semibold text-muted uppercase tracking-widest m-0 mb-2.5">Test accounts</p>
           {TEST_CREDS.map((cred) => (
             <button
               key={cred.email}
               type="button"
-              className="w-full flex items-center min-h-[38px] text-left bg-white border border-soft text-muted py-0 px-3 rounded-xl cursor-pointer mb-1.5 last:mb-0 transition-all hover:border-primary hover:text-dark hover:bg-primary"
+              className="w-full flex items-center min-h-10 text-left bg-white border border-soft text-muted py-0 px-3 rounded-xl cursor-pointer mb-1.5 last:mb-0 transition-all hover:border-primary hover:text-dark hover:bg-primary"
               onClick={() => { setEmail(cred.email); setPassword('demo'); setError(''); }}
             >
               {cred.label} — {cred.email}

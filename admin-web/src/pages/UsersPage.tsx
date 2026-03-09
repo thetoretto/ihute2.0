@@ -51,7 +51,7 @@ export default function UsersPage() {
   );
 
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+    <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
       <div className="flex justify-between items-center mb-8">
         <h3 className="text-2xl font-black text-dark">Users</h3>
         <div className="flex gap-2">
@@ -73,11 +73,11 @@ export default function UsersPage() {
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-surface">
-              <th className="pb-4 text-[10px] uppercase font-black text-muted tracking-widest">Name</th>
-              <th className="pb-4 text-[10px] uppercase font-black text-muted tracking-widest">Email</th>
-              <th className="pb-4 text-[10px] uppercase font-black text-muted tracking-widest">Phone</th>
-              <th className="pb-4 text-[10px] uppercase font-black text-muted tracking-widest">Roles</th>
-              <th className="pb-4 text-[10px] uppercase font-black text-muted tracking-widest">Rating</th>
+              <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">Name</th>
+              <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">Email</th>
+              <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">Phone</th>
+              <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">Roles</th>
+              <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">Rating</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-surface">
@@ -90,7 +90,7 @@ export default function UsersPage() {
                   {user.roles.map((role) => (
                     <span
                       key={role}
-                      className={`inline-block px-2 py-0.5 rounded-lg text-[11px] font-bold mr-1 ${
+                      className={`inline-block px-2 py-0.5 rounded-lg text-sm font-bold mr-1 ${
                         role === 'passenger' ? 'bg-success-100 text-success-700' : role === 'driver' ? 'bg-info-100 text-info-700' : 'bg-soft text-dark'
                       }`}
                     >

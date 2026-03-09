@@ -35,9 +35,9 @@ export default function AgencyManagementPage() {
   );
 
   if (!scope?.agencyId) {
-    const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
+    const th = 'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
     return (
-      <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+      <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
         <h3 className="text-2xl font-black text-dark mb-2">Agencies</h3>
         <p className="text-muted text-sm mb-6">
           All agencies on the platform. Manage drivers and agency accounts from Users.
@@ -65,7 +65,7 @@ export default function AgencyManagementPage() {
                     <td className="py-5 text-sm text-dark/80">{agency.email}</td>
                     <td className="py-5 text-sm text-dark/80">{agency.phone}</td>
                     <td className="py-5">
-                      <span className="inline-block px-2 py-0.5 rounded-lg text-[11px] font-bold bg-soft text-dark">
+                      <span className="inline-block px-2 py-0.5 rounded-lg text-sm font-bold bg-soft text-dark">
                         Agency
                       </span>
                     </td>
@@ -88,7 +88,7 @@ export default function AgencyManagementPage() {
 
   return (
     <div className="space-y-8">
-      <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+      <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
         <h3 className="text-2xl font-black text-dark mb-2">Agency management</h3>
         <p className="text-muted text-sm mb-6">Overview of your agency&apos;s operations.</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   MapPin,
-  Calendar,
   SlidersHorizontal,
   Star,
   Zap,
@@ -9,7 +8,6 @@ import {
   Wind,
   Info,
   Navigation,
-  ChevronDown,
 } from 'lucide-react';
 import { mockHotpoints } from '@shared/mocks';
 import type { Trip } from '@shared/types';
@@ -128,6 +126,11 @@ function TripCardV2({
                 <Star size={10} fill="currentColor" /> {trip.driver.rating?.toFixed(1) ?? '—'}
               </span>
             </div>
+            {trip.type === 'insta' && (
+              <span className="trip-card-v2-driver-instant" title="Instant Booking">
+                <Zap size={14} />
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -189,6 +192,7 @@ export default function AvailableTripsPage({
   const [apiTrips, setApiTrips] = useState<Trip[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
+  const [finderOpen, setFinderOpen] = useState(false);
 
   useEffect(() => {
     setFromId(criteria.fromId);
@@ -236,6 +240,7 @@ export default function AvailableTripsPage({
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setFinderOpen(false);
     onSearch({
       fromId,
       toId,
@@ -250,11 +255,33 @@ export default function AvailableTripsPage({
     ? date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
     : 'Today';
 
+  const fromName = fromId ? cityOptions.find((c) => c.id === fromId)?.name ?? 'Any city' : 'Any city';
+  const toName = toId ? cityOptions.find((c) => c.id === toId)?.name ?? 'Anywhere' : 'Anywhere';
+  const dateShort = date
+    ? date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+    : 'Any date';
+  const passengers = Math.max(1, Number(travelers) || 1);
+  const searchSummaryText = `${fromName} → ${toName} · ${passengers} passenger${passengers !== 1 ? 's' : ''} · ${dateShort}`;
+
   return (
     <section className="trips-page trips-page-v2">
       <div className="trips-v2-wrap">
+        <div className="trips-search-summary">
+          <span className="trips-search-summary-text" title={searchSummaryText}>
+            {searchSummaryText}
+          </span>
+          <button
+            type="button"
+            className="trips-search-summary-btn"
+            onClick={() => setFinderOpen((o) => !o)}
+            aria-expanded={finderOpen}
+          >
+            Change
+          </button>
+        </div>
         <div className="trips-v2-layout">
           <aside className="trips-sidebar">
+            <div className={`trips-finder-collapse ${!finderOpen ? 'is-closed' : ''}`}>
             <div className="trips-finder">
               <h3 className="trips-finder-title">
                 <SlidersHorizontal size={18} />
@@ -351,6 +378,7 @@ export default function AvailableTripsPage({
                 </button>
               </form>
             </div>
+            </div>
           </aside>
 
           <div className="trips-feed">
@@ -361,14 +389,30 @@ export default function AvailableTripsPage({
                   Showing {trips.length} trips{availableCount !== trips.length ? ` · ${availableCount} available` : ''} across East Africa
                 </p>
               </div>
-              <div className="trips-feed-toolbar">
-                <button type="button" className="trips-feed-sort">
-                  Sort: Latest <ChevronDown size={14} />
-                </button>
-                <button type="button" className="trips-feed-sort">
-                  Currency: RWF <ChevronDown size={14} />
-                </button>
-              </div>
+            </div>
+
+            <div className="trips-sort-bar">
+              <button
+                type="button"
+                className={`trips-sort-option ${sortBy === 'earliest' ? 'trips-sort-option--active' : ''}`}
+                onClick={() => setSortBy('earliest')}
+              >
+                Earliest
+              </button>
+              <button
+                type="button"
+                className={`trips-sort-option ${sortBy === 'price' ? 'trips-sort-option--active' : ''}`}
+                onClick={() => setSortBy('price')}
+              >
+                Cheapest
+              </button>
+              <button
+                type="button"
+                className={`trips-sort-option ${sortBy === 'rating' ? 'trips-sort-option--active' : ''}`}
+                onClick={() => setSortBy('rating')}
+              >
+                Rating
+              </button>
             </div>
 
             <div className="trips-day-sep">

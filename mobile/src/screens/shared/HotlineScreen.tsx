@@ -30,7 +30,7 @@ export default function HotlineScreen() {
   };
 
   return (
-    <Screen style={[styles.container, { backgroundColor: themeColors.background }]}>
+    <Screen style={[styles.container, { backgroundColor: themeColors.appBackground }]}>
       <Ionicons name="call" size={64} color={themeColors.primary} />
       <Text style={[styles.title, { color: themeColors.text }]}>{strings.profile.hotlineNeedHelp}</Text>
       <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>{strings.profile.hotlineSubtitle}</Text>

@@ -44,23 +44,26 @@ export default function PrivacyScreen() {
   };
 
   return (
-    <Screen scroll style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
+    <Screen scroll style={[styles.container, { backgroundColor: themeColors.appBackground }]} contentContainerStyle={styles.content}>
       <Text style={[styles.title, { color: themeColors.text }]}>{strings.profile.privacy}</Text>
-      <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>{strings.profile.privacySubtitle}</Text>
+      <Text style={[styles.subtitle, { color: themeColors.textMuted }]}>{strings.profile.privacySubtitle}</Text>
       {isExporting ? <Text style={[styles.exportInfo, { color: themeColors.text }]}>{strings.profile.exportPreparing}</Text> : null}
 
       {actions.map((item) => (
         <TouchableOpacity
           key={item.id}
-          style={[styles.card, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}
+          style={[styles.card, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}
           onPress={() => onActionPress(item.id, item.title)}
+          activeOpacity={0.85}
         >
-          <Ionicons name={item.icon} size={20} color={item.danger ? themeColors.error : themeColors.primary} />
+          <View style={[styles.iconBox, { backgroundColor: themeColors.ghostBg }]}>
+            <Ionicons name={item.icon} size={20} color={item.danger ? themeColors.error : themeColors.primary} />
+          </View>
           <View style={styles.textWrap}>
             <Text style={[styles.cardTitle, item.danger && { color: themeColors.error }]}>{item.title}</Text>
-            <Text style={[styles.cardSub, { color: themeColors.textSecondary }]}>{item.subtitle}</Text>
+            <Text style={[styles.cardSub, { color: themeColors.textMuted }]}>{item.subtitle}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={themeColors.textSecondary} />
+          <Ionicons name="chevron-forward" size={18} color={themeColors.textMuted} />
         </TouchableOpacity>
       ))}
     </Screen>
@@ -69,20 +72,28 @@ export default function PrivacyScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
-  title: { ...typography.h2 },
-  subtitle: { marginTop: spacing.xs, marginBottom: spacing.lg },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  title: { ...typography.h2, marginBottom: spacing.xs },
+  subtitle: { ...typography.caption, marginBottom: spacing.lg },
   exportInfo: { ...typography.caption, marginBottom: spacing.sm },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radii.md,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.lg,
     borderWidth: 1,
     marginBottom: spacing.sm,
   },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.smMedium,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
   textWrap: { flex: 1 },
-  cardTitle: { ...typography.body },
-  cardSub: { ...typography.caption, marginTop: spacing.xs },
+  cardTitle: { ...typography.body, fontWeight: '600' },
+  cardSub: { ...typography.caption, marginTop: spacing.xxs },
 });

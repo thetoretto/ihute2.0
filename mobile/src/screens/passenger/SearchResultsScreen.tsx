@@ -142,7 +142,7 @@ export default function SearchResultsScreen() {
   ];
 
   return (
-    <Screen style={[styles.container, { paddingTop: insets.top, backgroundColor: c.passengerBgLight }]}>
+    <Screen style={[styles.container, { paddingTop: insets.top, backgroundColor: c.appBackground }]}>
       {/* Sticky header: search card with back + From? / To? + Sort results */}
       <View style={styles.stickyHeaderWrap}>
         <Card variant="elevated" padding="md" style={styles.searchCard}>

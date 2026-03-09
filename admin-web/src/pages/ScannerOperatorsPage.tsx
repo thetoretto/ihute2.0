@@ -15,10 +15,10 @@ export default function ScannerOperatorsPage() {
     );
   }, [scope]);
 
-  const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
+  const th = 'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
   if (!scope?.agencyId) {
     return (
-      <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+      <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
         <h3 className="text-2xl font-black text-dark mb-2">Scanner operators</h3>
         <p className="text-muted text-sm mb-2">
           Scanner operators are agency users: they belong to an agency and are created by that agency&apos;s admin. They can scan tickets for agency trips.
@@ -31,7 +31,7 @@ export default function ScannerOperatorsPage() {
   }
 
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+    <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
       <h3 className="text-2xl font-black text-dark mb-2">Scanner operators</h3>
       <p className="text-muted text-sm mb-2">
         Scanner operators are your agency&apos;s users. They are created by you (the agency admin) and can scan tickets and view trip capacity. They cannot edit trips or manage vehicles.
@@ -58,7 +58,7 @@ export default function ScannerOperatorsPage() {
                   <td className="py-5 font-bold text-sm">{op.name}</td>
                   <td className="py-5 text-sm">{op.email}</td>
                   <td className="py-5 text-sm">{op.phone}</td>
-                  <td className="py-5"><span className="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-soft text-dark">Scanner</span></td>
+                  <td className="py-5"><span className="px-2 py-0.5 rounded-lg text-sm font-bold bg-soft text-dark">Scanner</span></td>
                 </tr>
               ))}
             </tbody>

@@ -167,7 +167,7 @@ export default function DateTimePicker({
           type="button"
           onClick={openPicker}
           disabled={disabled}
-          className="w-full bg-white border border-soft p-4 rounded-2xl shadow-sm flex items-center justify-between active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-white border border-soft p-4 rounded-xl shadow-soft flex items-center justify-between active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex flex-col items-start">
             <span className="text-lg font-semibold text-dark">
@@ -185,7 +185,7 @@ export default function DateTimePicker({
 
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity"
+          className="fixed inset-0 lp-modal-backdrop z-40 transition-opacity"
           onClick={() => setIsOpen(false)}
           aria-hidden
         />
@@ -193,7 +193,7 @@ export default function DateTimePicker({
 
       <div
         className={`fixed inset-x-0 bottom-0 z-50 transform transition-transform duration-300 ease-out safe-area-bottom ${
-          isSearchVariant ? 'rs-search-date-dropdown rs-date-sheet-search rounded-t-2xl' : 'rs-date-sheet'
+          isSearchVariant ? 'rs-search-date-dropdown rs-date-sheet-search rounded-t-xl' : 'rs-date-sheet'
         } ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
       >
         <div className="rs-date-sheet-inner">

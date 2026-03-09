@@ -130,7 +130,7 @@ export default function DashboardPage() {
       {/* Hero cards - 3 column grid (template style) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Primary dark card - Total Revenue */}
-        <div className="bg-dark rounded-[32px] p-8 text-white relative overflow-hidden shadow-2xl">
+        <div className="bg-dark rounded-xl p-8 text-white relative overflow-hidden shadow-2xl">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary opacity-10 rounded-full blur-3xl" />
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
         </div>
 
         {/* User activity / trend bar card */}
-        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+        <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
           <div className="flex justify-between items-center mb-6">
             <p className="text-muted text-xs font-bold uppercase tracking-widest">
               Earnings trend
@@ -202,7 +202,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick action / stats card */}
-        <div className="bg-soft rounded-[32px] p-8 border border-white relative overflow-hidden">
+        <div className="bg-soft rounded-xl p-8 border border-white relative overflow-hidden">
           <div className="relative z-10">
             <h3 className="text-xl font-black text-dark mb-2">Quick stats</h3>
             <p className="text-dark/60 text-sm mb-6 leading-relaxed">
@@ -224,16 +224,16 @@ export default function DashboardPage() {
 
       {/* Second row: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+        <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
           <h3 className="text-lg font-black text-dark mb-4">Trend</h3>
           <BarChartTrend data={trendData} height={260} />
         </div>
-        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+        <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
           <h3 className="text-lg font-black text-dark mb-4">Earnings by route</h3>
           {donutData.length > 0 ? (
             <DonutChartBreakdown data={donutData} centerLabel="RWF" height={260} />
           ) : (
-            <div className="min-h-[260px] flex items-center justify-center text-muted">
+            <div className="min-h-64 flex items-center justify-center text-muted">
               No earnings data
             </div>
           )}
@@ -241,7 +241,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Transaction history table (template style) */}
-      <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+      <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
         <div className="flex justify-between items-center mb-8">
           <h3 className="text-2xl font-black text-dark">Transaction history</h3>
           <div className="flex gap-4">
@@ -264,16 +264,16 @@ export default function DashboardPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-surface">
-                <th className="pb-4 text-[10px] uppercase font-black text-muted tracking-widest">
+                <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">
                   Client / Route
                 </th>
-                <th className="pb-4 text-[10px] uppercase font-black text-muted tracking-widest">
+                <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">
                   Date
                 </th>
-                <th className="pb-4 text-[10px] uppercase font-black text-muted tracking-widest">
+                <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">
                   Status
                 </th>
-                <th className="pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-right">
+                <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest text-right">
                   Amount
                 </th>
               </tr>
@@ -305,7 +305,7 @@ export default function DashboardPage() {
                           </div>
                           <div>
                             <p className="font-bold text-sm">{b.passenger.name}</p>
-                            <p className="text-[11px] text-muted">
+                            <p className="text-sm text-muted">
                               {b.trip.departureHotpoint.name} →{' '}
                               {b.trip.destinationHotpoint.name}
                             </p>
@@ -319,7 +319,7 @@ export default function DashboardPage() {
                       </td>
                       <td className="py-5">
                         <span
-                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                          className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
                             b.status === 'completed'
                               ? 'bg-success-100 text-success-700'
                               : 'bg-primary text-dark'
@@ -342,7 +342,7 @@ export default function DashboardPage() {
 
       {/* Disputes widget + Quick links */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+        <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
           <h3 className="text-2xl font-black text-dark mb-4">Support (Disputes)</h3>
           <div className="flex gap-2 mb-4 flex-wrap">
             {(['all', 'open', 'in_review', 'resolved'] as const).map((tab) => (
@@ -371,7 +371,7 @@ export default function DashboardPage() {
                     className="flex justify-between items-start py-2 border-b border-surface last:border-0"
                   >
                     <div>
-                      <p className="text-[11px] text-muted">
+                      <p className="text-sm text-muted">
                         {getReporterDisplay(d.reporterId, usersForDisplay)}
                       </p>
                       <p className="font-bold text-sm">
@@ -380,7 +380,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                      className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
                         d.status === 'resolved'
                           ? 'bg-neutral-100 text-neutral-700'
                           : d.status === 'in_review'
@@ -403,7 +403,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+        <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
           <h3 className="text-2xl font-black text-dark mb-4">Quick links</h3>
           <div className="flex flex-wrap gap-3">
             <Link

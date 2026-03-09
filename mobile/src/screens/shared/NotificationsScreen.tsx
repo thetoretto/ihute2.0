@@ -16,7 +16,7 @@ interface ToggleRowProps {
 
 function ToggleRow({ label, description, value, onChange, themeColors }: ToggleRowProps) {
   return (
-    <View style={[styles.row, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+    <View style={[styles.row, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
       <View style={styles.textWrap}>
         <Text style={[styles.rowTitle, { color: themeColors.text }]}>{label}</Text>
         <Text style={[styles.rowSub, { color: themeColors.textSecondary }]}>{description}</Text>
@@ -60,7 +60,7 @@ export default function NotificationsScreen() {
   }, [messageAlerts, promo, tripUpdates]);
 
   return (
-    <Screen scroll style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={styles.content}>
+    <Screen scroll style={[styles.container, { backgroundColor: themeColors.appBackground }]} contentContainerStyle={styles.content}>
       <Text style={[styles.title, { color: themeColors.text }]}>{strings.profile.notifications}</Text>
       <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>{strings.profile.notificationsSubtitle}</Text>
       <Divider marginVertical={0} style={[styles.dividerTop, { backgroundColor: themeColors.border }]} />
@@ -96,17 +96,18 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
-  title: { ...typography.h2 },
-  subtitle: { marginTop: spacing.xs, marginBottom: spacing.lg },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  title: { ...typography.h2, marginBottom: spacing.xs },
+  subtitle: { ...typography.caption, marginBottom: spacing.lg },
   dividerTop: { marginVertical: 0, marginBottom: spacing.sm },
-  sectionLabel: { ...typography.caption, marginTop: spacing.xs, marginBottom: spacing.xs },
+  sectionLabel: { ...typography.overline, marginTop: spacing.xs, marginBottom: spacing.xs },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.md,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.lg,
     borderWidth: 1,
     marginBottom: spacing.sm,
   },

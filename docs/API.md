@@ -37,3 +37,25 @@ Example for local development (same server for all):
 | Tickets, ratings, notifications, scanner | ✓ | — | —            |
 
 Route constants and method names are defined in `shared/src/api/endpoints.ts` for consistency across apps.
+
+## Deploying on Railway
+
+The repo is set up for deployment on [Railway](https://railway.app). Use one API service and optionally separate services for admin-web and landing-page.
+
+1. **Connect the repo**: In Railway, create a new project and deploy from the ihute2.0 GitHub repo.
+
+2. **API service (required)**  
+   - Set **Root Directory** to `server`.  
+   - Railway runs `npm install` and `npm start`; the API listens on `PORT` (set by Railway).  
+   - After deploy, copy the service’s **public URL** (e.g. `https://ihute-api-production-xxxx.up.railway.app`). This is your **API base URL**.
+
+3. **Admin and Landing services (optional)**  
+   For each of `admin-web` and `landing-page`:  
+   - Set **Root Directory** to `admin-web` or `landing-page`.  
+   - Set env var **`VITE_API_BASE_URL`** to the API base URL from step 2 (no trailing slash).  
+   - Build runs `npm install && npm run build`; start runs `npm start` (serves the `dist` folder).
+
+4. **Mobile**  
+   For production builds (e.g. EAS), set **`EXPO_PUBLIC_API_BASE_URL`** to the same API base URL and **`EXPO_PUBLIC_USE_REAL_API=true`**.
+
+Admin, landing, and mobile must all use the **same** API base URL so they share one backend.

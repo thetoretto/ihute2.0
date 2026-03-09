@@ -89,9 +89,9 @@ export default function DisputesPage() {
     }
   };
 
-  const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
+  const th = 'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+    <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-2xl font-black text-dark">Disputes</h3>
         <div className="flex gap-2">
@@ -137,7 +137,7 @@ export default function DisputesPage() {
                   <td className="py-5 text-sm">{getReporterName(d.reporterId)}</td>
                   <td className="py-5 text-sm">{d.type}</td>
                   <td className="py-5">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
                       d.status === 'resolved' ? 'bg-neutral-100 text-neutral-700' : d.status === 'in_review' ? 'bg-info-100 text-info-700' : 'bg-primary text-dark'
                     }`}>
                       {d.status.toUpperCase()}
@@ -161,12 +161,12 @@ export default function DisputesPage() {
       </div>
 
       {detail && (
-        <div className="fixed inset-0 bg-dark/40 flex items-center justify-center z-[1000]" role="dialog" aria-modal="true">
-          <div className="bg-white border border-soft rounded-xl p-5 max-w-[560px] w-[90%] shadow-soft">
+        <div className="fixed inset-0 bg-dark/40 flex items-center justify-center z-modal" role="dialog" aria-modal="true">
+          <div className="bg-white border border-soft rounded-xl p-5 max-w-xl w-modal shadow-soft">
             <h3 className="text-lg font-black text-dark m-0 mb-3">Dispute {detail.id}</h3>
             <p><strong>Booking:</strong> {detail.bookingId} · <strong>Route:</strong> {getRoute(detail)}</p>
             <p><strong>Reporter:</strong> {getReporterName(detail.reporterId)} · <strong>Type:</strong> {detail.type} · <strong>Status:</strong>{' '}
-            <span className={`inline-block px-2.5 py-1 rounded-xl text-[10px] font-black uppercase ${
+            <span className={`inline-block px-2.5 py-1 rounded-xl text-xs font-black uppercase ${
               detail.status === 'resolved' ? 'bg-neutral-100 text-neutral-700' : detail.status === 'in_review' ? 'bg-info-100 text-info-700' : 'bg-primary text-dark'
             }`}>
               {detail.status.toUpperCase()}
@@ -185,8 +185,8 @@ export default function DisputesPage() {
                   <input value={resolvedBy} onChange={(e) => setResolvedBy(e.target.value)} className="w-full py-2 px-2.5 border border-soft rounded-xl bg-white text-dark outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20" />
                 </div>
                 <div className="flex gap-2 flex-wrap mt-4">
-                  <button type="button" className="min-h-[38px] px-4 py-0 bg-primary text-dark border border-primary/50 rounded-xl font-semibold cursor-pointer" onClick={handleResolve}>Mark resolved</button>
-                  <button type="button" className="min-h-[38px] px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setDetail(null)}>Close</button>
+                  <button type="button" className="min-h-10 px-4 py-0 bg-primary text-dark border border-primary/50 rounded-xl font-semibold cursor-pointer" onClick={handleResolve}>Mark resolved</button>
+                  <button type="button" className="min-h-10 px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setDetail(null)}>Close</button>
                 </div>
               </>
             )}
@@ -194,7 +194,7 @@ export default function DisputesPage() {
               <>
                 <p><strong>Resolution:</strong> {detail.resolution}</p>
                 <p className="text-muted mb-4">Resolved by {detail.resolvedBy} at {detail.resolvedAt ? new Date(detail.resolvedAt).toLocaleString() : ''}</p>
-                <button type="button" className="min-h-[38px] px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setDetail(null)}>Close</button>
+                <button type="button" className="min-h-10 px-4 py-0 bg-muted text-dark border border-soft rounded-xl font-semibold cursor-pointer" onClick={() => setDetail(null)}>Close</button>
               </>
             )}
           </div>

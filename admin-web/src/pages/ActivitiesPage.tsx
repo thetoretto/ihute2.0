@@ -75,9 +75,9 @@ export default function ActivitiesPage() {
     });
   }, [statusFilter, routeFilter, dateFrom, dateTo, bookings]);
 
-  const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
+  const th = 'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+    <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
       <h3 className="text-2xl font-black text-dark mb-2">Activities</h3>
       <p className="text-muted text-sm mb-6">Trips and bookings across all users. Use filters to narrow by route, status, or date.</p>
 
@@ -132,7 +132,7 @@ export default function ActivitiesPage() {
                 <td className="py-5 font-bold text-sm">{trip.departureHotpoint.name} → {trip.destinationHotpoint.name}</td>
                 <td className="py-5 text-sm">{trip.type}</td>
                 <td className="py-5">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${trip.status === 'active' ? 'bg-primary text-dark' : trip.status === 'completed' ? 'bg-success-100 text-success-700' : trip.status === 'cancelled' ? 'bg-danger-100 text-danger-700' : 'bg-neutral-100 text-neutral-700'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${trip.status === 'active' ? 'bg-primary text-dark' : trip.status === 'completed' ? 'bg-success-100 text-success-700' : trip.status === 'cancelled' ? 'bg-danger-100 text-danger-700' : 'bg-neutral-100 text-neutral-700'}`}>
                     {trip.status.toUpperCase()}
                   </span>
                 </td>
@@ -167,13 +167,13 @@ export default function ActivitiesPage() {
                 <td className="py-5 font-bold text-sm">{booking.passenger.name}</td>
                 <td className="py-5 text-sm">{booking.trip.departureHotpoint.name} → {booking.trip.destinationHotpoint.name}</td>
                 <td className="py-5">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${booking.status === 'upcoming' ? 'bg-primary text-dark' : booking.status === 'ongoing' ? 'bg-info-100 text-info-700' : booking.status === 'completed' ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${booking.status === 'upcoming' ? 'bg-primary text-dark' : booking.status === 'ongoing' ? 'bg-info-100 text-info-700' : booking.status === 'completed' ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'}`}>
                     {booking.status.toUpperCase()}
                   </span>
                 </td>
                 <td className="py-5 text-sm">{booking.seats}</td>
                 <td className="py-5">
-                  <span className={`inline-block px-2 py-0.5 rounded-lg text-[11px] font-bold ${booking.paymentMethod === 'cash' ? 'bg-success-100 text-success-700' : booking.paymentMethod === 'mobile_money' ? 'bg-info-100 text-info-700' : 'bg-soft text-dark'}`}>
+                  <span className={`inline-block px-2 py-0.5 rounded-lg text-sm font-bold ${booking.paymentMethod === 'cash' ? 'bg-success-100 text-success-700' : booking.paymentMethod === 'mobile_money' ? 'bg-info-100 text-info-700' : 'bg-soft text-dark'}`}>
                     {booking.paymentMethod.replace('_', ' ')}
                   </span>
                 </td>

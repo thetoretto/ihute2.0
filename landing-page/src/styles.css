@@ -47,11 +47,29 @@
   --lp-overlay-60: rgba(255, 255, 255, 0.6);
   --lp-overlay-90: rgba(255, 255, 255, 0.9);
   --lp-dark-hero: #252d38;
+  --lp-dark-elevation-1: #1E252D;
+  --lp-dark-elevation-2: #252D38;
+  --lp-dark-elevation-2-hover: #2d3642;
+  --lp-on-dark-muted: rgba(255, 255, 255, 0.7);
+  --lp-on-dark-soft: rgba(255, 255, 255, 0.2);
+  --lp-on-dark-50: rgba(255, 255, 255, 0.5);
+  --lp-on-dark-60: rgba(255, 255, 255, 0.6);
+  --lp-on-dark-80: rgba(255, 255, 255, 0.8);
+  --lp-on-dark-border: rgba(255, 255, 255, 0.12);
+  --lp-on-dark-border-strong: rgba(255, 255, 255, 0.18);
+  --lp-on-dark-10: rgba(255, 255, 255, 0.1);
   --lp-text-alpha-08: rgba(23, 28, 34, 0.08);
   --lp-text-alpha-15: rgba(23, 28, 34, 0.15);
   --lp-overlay-dark-60: rgba(0, 0, 0, 0.6);
   --lp-error-alpha-06: rgba(223, 8, 39, 0.06);
+  --lp-error-border: rgba(223, 8, 39, 0.2);
   --lp-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --lp-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --lp-shadow-card-strong: 0 10px 24px rgba(0, 0, 0, 0.05);
+  --lp-shadow-dropdown: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 4px 12px -4px rgba(0, 0, 0, 0.04);
+  --lp-shadow-toggle: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --lp-shadow-ticket: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  --lp-shadow-sheet: 0 -4px 24px rgba(0, 0, 0, 0.08);
   --lp-border-12: rgba(23, 28, 34, 0.12);
   --lp-border-20: rgba(23, 28, 34, 0.2);
   /* Layout (single source – same on all screens) */
@@ -120,6 +138,11 @@ button {
   cursor: pointer;
   border: 0;
   background: transparent;
+}
+
+.lp-modal-backdrop {
+  background: var(--lp-overlay-dark-60);
+  backdrop-filter: blur(4px);
 }
 
 .lp-container {
@@ -590,7 +613,7 @@ button {
 }
 
 .popular-route-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--lp-shadow-hover);
   border-color: var(--lp-border);
 }
 
@@ -797,7 +820,7 @@ button {
   background: var(--lp-white);
   border: 1px solid var(--lp-line-soft);
   padding: 22px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--lp-shadow-card-strong);
 }
 
 .how-float-card h3 {
@@ -1087,7 +1110,7 @@ button {
 .empty-state .empty-state-subtitle { color: var(--lp-muted); }
 
 .benefits-bbc-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--lp-shadow-hover);
 }
 
 .benefits-bbc-icon {
@@ -1128,7 +1151,7 @@ button {
 }
 
 .travel-mode-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--lp-shadow-hover);
   border-color: var(--lp-border);
 }
 
@@ -1733,32 +1756,32 @@ button {
   max-width: var(--lp-container-width);
   margin: 0 auto;
   background: var(--rs-surface);
-  border: 1px solid var(--rs-border);
-  border-radius: var(--lp-radius-lg);
-  padding: 16px;
+  border: 2px solid var(--lp-primary);
+  border-radius: var(--lp-radius-md);
+  padding: 12px;
   box-sizing: content-box;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--lp-shadow-soft);
 }
 
 .rs-search-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: 8px;
 }
 
 @media (min-width: 768px) {
   .rs-search-grid {
     grid-template-columns: 1fr 1fr 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
     align-items: stretch;
   }
 }
 
 .rs-search-cell {
-  padding: 12px 16px;
-  border-radius: 0.75rem;
+  padding: 10px 12px;
+  border-radius: 0.5rem;
   min-width: 0;
-  min-height: 72px;
+  min-height: 56px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1769,7 +1792,7 @@ button {
 
 @media (min-width: 768px) {
   .rs-search-cell {
-    padding: 16px;
+    padding: 12px;
   }
 }
 
@@ -1798,12 +1821,12 @@ button {
 
 .rs-search-label {
   display: block;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--rs-slate-400);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .rs-search-type-chips {
@@ -1843,8 +1866,8 @@ button {
 .rs-search-select-wrap {
   background: var(--rs-slate-50);
   border: 1px solid var(--rs-border);
-  border-radius: 0.75rem;
-  padding: 10px 36px 10px 12px;
+  border-radius: 0.5rem;
+  padding: 8px 32px 8px 10px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -1861,21 +1884,21 @@ button {
 .rs-search-select-wrap select,
 .rs-search-select-wrap .rs-search-input {
   width: 100%;
-  min-height: 40px;
+  min-height: 34px;
   padding: 0;
   background: transparent;
   border: 0;
   outline: none;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--rs-slate-800);
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394A9BC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394A9BC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 16px;
+  background-position: right 6px center;
+  background-size: 14px;
   cursor: pointer;
 }
 .rs-search-select-wrap select option:first-child,
@@ -1886,24 +1909,24 @@ button {
 /* Styled dropdown panel (custom From/To list + date calendar match) */
 .rs-search-dropdown {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
   background: var(--rs-surface);
   border: 1px solid var(--rs-border);
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 4px 12px -4px rgba(0, 0, 0, 0.04);
+  border-radius: 0.5rem;
+  box-shadow: var(--lp-shadow-dropdown);
   z-index: 100;
-  max-height: 280px;
+  max-height: 240px;
   overflow-y: auto;
 }
 
 .rs-search-dropdown-option {
   display: block;
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   text-align: left;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--rs-slate-800);
   background: transparent;
@@ -1925,16 +1948,16 @@ button {
 /* Search field trigger (custom select + date) – same look */
 .rs-search-trigger {
   width: 100%;
-  min-height: 40px;
+  min-height: 34px;
   padding: 0;
   border: 0;
   outline: none;
   background: transparent;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394A9BC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394A9BC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 16px;
-  font-size: 14px;
+  background-position: right 6px center;
+  background-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--rs-slate-800);
   text-align: left;
@@ -1948,16 +1971,16 @@ button {
 /* Date trigger in hero – same look as From/To dropdown triggers */
 .rs-search-select-wrap .rs-search-date-trigger {
   width: 100%;
-  min-height: 40px;
+  min-height: 34px;
   padding: 0;
   border: 0;
   outline: none;
   background: transparent;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394A9BC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394A9BC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 16px;
-  font-size: 14px;
+  background-position: right 6px center;
+  background-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--rs-slate-800);
   text-align: left;
@@ -1972,14 +1995,14 @@ button {
 .rs-search-date-dropdown {
   background: var(--rs-surface) !important;
   border: 1px solid var(--rs-border) !important;
-  border-radius: 0.75rem !important;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 4px 12px -4px rgba(0, 0, 0, 0.04) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: var(--lp-shadow-dropdown) !important;
 }
 
 /* Date/time picker sheet – layout from design system (no hardcoded px) */
 .rs-date-sheet {
   background: var(--lp-white);
-  box-shadow: var(--lp-shadow-soft), 0 -4px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--lp-shadow-soft), var(--lp-shadow-sheet);
   border-top-left-radius: var(--lp-radius-2xl);
   border-top-right-radius: var(--lp-radius-2xl);
 }
@@ -2014,7 +2037,7 @@ button {
   background: transparent;
   border: 0;
   outline: none;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--rs-slate-800);
 }
@@ -2025,53 +2048,53 @@ button {
 }
 
 .rs-search-cell .w-full label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--rs-slate-400);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 .rs-search-cell .w-full button {
   border: 0;
   background: transparent;
   padding: 0;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   box-shadow: none;
   min-height: auto;
   text-align: left;
 }
 .rs-search-cell .w-full button span:first-child {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--rs-slate-800);
 }
 
 .rs-search-btn-cell {
   align-self: stretch;
-  padding: 16px;
-  min-height: 72px;
+  padding: 12px;
+  min-height: 56px;
   display: flex;
   align-items: stretch;
   justify-content: stretch;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
 }
 
 .rs-search-btn {
   width: 100%;
   height: 100%;
-  min-height: 56px;
+  min-height: 44px;
   background: var(--lp-primary);
   color: var(--lp-on-primary);
   border: 0;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   transition: background 0.2s;
   box-shadow: var(--lp-shadow-soft);
   vertical-align: middle;
@@ -2079,6 +2102,27 @@ button {
 
 .rs-search-btn:hover {
   background: var(--lp-primary-active);
+}
+
+@media (max-width: 480px) {
+  .rs-search-widget {
+    padding: 10px;
+  }
+  .rs-search-grid {
+    gap: 6px;
+  }
+  .rs-search-cell {
+    padding: 8px 10px;
+    min-height: 50px;
+  }
+  .rs-search-btn-cell {
+    padding: 10px;
+    min-height: 48px;
+  }
+  .rs-search-btn {
+    min-height: 40px;
+    font-size: 12px;
+  }
 }
 
 /* How it works */
@@ -2246,7 +2290,7 @@ button {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: rgba(147, 197, 253, 0.95);
+  color: var(--lp-primary);
   margin-bottom: 4px;
 }
 
@@ -2710,6 +2754,132 @@ button {
   box-sizing: border-box;
 }
 
+/* Sticky search summary (mobile only) */
+.trips-search-summary {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .trips-search-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: var(--lp-header-offset);
+    z-index: 30;
+    width: 100%;
+    margin-left: calc(-1 * var(--lp-gutter-narrow));
+    margin-right: calc(-1 * var(--lp-gutter-narrow));
+    padding: 12px var(--lp-gutter-narrow);
+    background: var(--lp-dark);
+    color: var(--lp-white);
+    border-bottom: 1px solid var(--lp-on-dark-border);
+    box-sizing: border-box;
+  }
+  .trips-search-summary-text {
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .trips-search-summary-btn {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--lp-primary);
+    background: transparent;
+    color: var(--lp-primary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .trips-search-summary-btn:hover {
+    background: var(--lp-primary);
+    color: var(--lp-on-primary);
+  }
+}
+
+/* Collapsible Trip Finder on mobile */
+.trips-finder-collapse {
+  display: block;
+}
+
+@media (max-width: 1023px) {
+  .trips-finder-collapse.is-closed {
+    display: none;
+  }
+}
+
+/* Sticky sort bar */
+.trips-sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1023px) {
+  .trips-sort-bar {
+    position: sticky;
+    top: calc(var(--lp-header-offset) + 49px);
+    z-index: 25;
+    padding: 10px 0 12px;
+    background: var(--lp-dark);
+    margin-left: calc(-1 * var(--lp-gutter-narrow));
+    margin-right: calc(-1 * var(--lp-gutter-narrow));
+    padding-left: var(--lp-gutter-narrow);
+    padding-right: var(--lp-gutter-narrow);
+    border-bottom: 1px solid var(--lp-on-dark-10);
+  }
+}
+
+.trips-sort-option {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--lp-line-soft);
+  background: var(--lp-white);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--lp-muted);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.trips-sort-option:hover {
+  background: var(--lp-bg-main);
+  color: var(--lp-text);
+}
+
+.trips-sort-option--active {
+  border-color: var(--lp-primary);
+  background: var(--lp-primary);
+  color: var(--lp-on-primary);
+}
+
+@media (max-width: 1023px) {
+  .trips-sort-option {
+    background: var(--lp-on-dark-10);
+    border-color: var(--lp-on-dark-soft);
+    color: var(--lp-on-dark-80);
+  }
+  .trips-sort-option:hover {
+    background: var(--lp-on-dark-border);
+    color: var(--lp-white);
+  }
+  .trips-sort-option--active {
+    background: var(--lp-primary);
+    border-color: var(--lp-primary);
+    color: var(--lp-on-primary);
+  }
+}
+
 .trips-v2-layout {
   display: flex;
   flex-direction: column;
@@ -2869,7 +3039,7 @@ button {
   background: var(--lp-white);
   top: 2px;
   left: 2px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: var(--lp-shadow-toggle);
   transition: transform 0.2s;
 }
 
@@ -2982,7 +3152,7 @@ button {
 
 .trips-feed-error {
   font-size: 14px;
-  color: var(--lp-error, #b91c1c);
+  color: var(--lp-error);
   margin: 12px 0 0;
 }
 
@@ -3050,11 +3220,12 @@ button {
   border: 1px solid var(--lp-line-soft);
   border-radius: 12px;
   overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .trip-card-v2:hover {
   border-color: var(--lp-border);
+  background: var(--lp-bg-main);
 }
 
 .trip-card-v2--expanded {
@@ -3083,6 +3254,7 @@ button {
   align-items: center;
   gap: 16px;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 @media (min-width: 768px) {
@@ -3091,6 +3263,13 @@ button {
     align-items: center;
     gap: 8px;
     min-width: 70px;
+  }
+}
+
+@media (max-width: 767px) {
+  .trip-card-v2-time {
+    min-width: 56px;
+    width: 56px;
   }
 }
 
@@ -3128,6 +3307,7 @@ button {
 .trip-card-v2-route {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .trip-card-v2-from,
@@ -3145,6 +3325,9 @@ button {
   font-size: 16px;
   font-weight: 800;
   color: var(--lp-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .trip-card-v2-route small {
@@ -3152,6 +3335,9 @@ button {
   font-size: 12px;
   color: var(--lp-muted);
   margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .trip-card-v2-meta {
@@ -3160,6 +3346,7 @@ button {
   justify-content: center;
   align-items: flex-start;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 @media (min-width: 768px) {
@@ -3189,6 +3376,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .trip-card-v2-driver-avatar {
@@ -3198,6 +3386,16 @@ button {
   object-fit: cover;
   flex-shrink: 0;
   border: 1px solid var(--lp-line-soft);
+}
+
+@media (max-width: 767px) {
+  .trip-card-v2-driver-avatar,
+  .trip-card-v2-driver-initial {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 11px;
+  }
 }
 
 .trip-card-v2-driver-initial {
@@ -3212,6 +3410,13 @@ button {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.trip-card-v2-driver-instant {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--lp-primary);
 }
 
 .trip-card-v2-driver-info {
@@ -3229,6 +3434,9 @@ button {
   font-size: 12px;
   font-weight: 700;
   color: var(--lp-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .trip-card-v2-driver-rating {
@@ -3374,6 +3582,85 @@ button {
 .trips-load-more-btn:hover {
   color: var(--lp-primary);
   border-color: var(--lp-primary);
+}
+
+/* Mobile dark theme for trips page (BlaBlaCar 2026 style) */
+@media (max-width: 1023px) {
+  .trips-page-v2 {
+    background: var(--lp-dark);
+    padding-top: 0;
+  }
+  .trips-v2-wrap {
+    padding-top: 0;
+  }
+  .trips-feed-title {
+    color: var(--lp-white);
+  }
+  .trips-feed-subtitle {
+    color: var(--lp-on-dark-muted);
+  }
+  .trips-day-sep span {
+    color: var(--lp-primary);
+  }
+  .trips-day-sep::after {
+    background: var(--lp-on-dark-soft);
+  }
+  .trips-feed-loading {
+    color: var(--lp-on-dark-60);
+  }
+  .trip-card-v2 {
+    background: var(--lp-dark-elevation-2);
+    border-color: var(--lp-on-dark-border);
+  }
+  .trip-card-v2:hover {
+    background: var(--lp-dark-elevation-2-hover);
+    border-color: var(--lp-on-dark-border-strong);
+  }
+  .trip-card-v2--expanded {
+    border-color: var(--lp-primary);
+    background: var(--lp-dark-elevation-2-hover);
+  }
+  .trip-card-v2-time-dep,
+  .trip-card-v2-time-arr {
+    color: var(--lp-white);
+  }
+  .trip-card-v2-route strong {
+    color: var(--lp-white);
+  }
+  .trip-card-v2-route small {
+    color: var(--lp-on-dark-60);
+  }
+  .trip-card-v2-price {
+    color: var(--lp-primary);
+  }
+  .trip-card-v2-seats {
+    color: var(--lp-on-dark-50);
+  }
+  .trip-card-v2-driver-name {
+    color: var(--lp-white);
+  }
+  .trip-card-v2-driver-rating {
+    color: var(--lp-primary);
+  }
+  .trip-card-v2-expanded {
+    background: var(--lp-dark-elevation-1);
+    border-top-color: var(--lp-on-dark-10);
+  }
+  .trip-card-v2-detail-item p:first-child {
+    color: var(--lp-on-dark-50);
+  }
+  .trip-card-v2-detail-item p:last-child {
+    color: var(--lp-white);
+  }
+  .trips-load-more-btn {
+    background: var(--lp-dark-elevation-2);
+    border-color: var(--lp-on-dark-soft);
+    color: var(--lp-on-dark-80);
+  }
+  .trips-load-more-btn:hover {
+    color: var(--lp-primary);
+    border-color: var(--lp-primary);
+  }
 }
 
 .hero-search-btn:disabled {
@@ -3563,7 +3850,7 @@ button {
 
 .td-full-msg {
   background: var(--lp-error-alpha-06);
-  border: 1px solid rgba(223, 8, 39, 0.2);
+  border: 1px solid var(--lp-error-border);
   color: var(--lp-error);
   border-radius: 8px;
   padding: 14px 16px;
@@ -3814,7 +4101,7 @@ button {
 .bc-ticket {
   background: var(--lp-white);
   border-radius: 40px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--lp-shadow-ticket);
   overflow: hidden;
   border: 1px solid var(--lp-line-soft);
 }

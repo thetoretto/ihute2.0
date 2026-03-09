@@ -70,9 +70,9 @@ export default function RoutesPage() {
     return rows;
   }, [trips, bookings]);
 
-  const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
+  const th = 'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+    <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
       <h3 className="text-2xl font-black text-dark mb-2">Routes</h3>
       <p className="text-muted text-sm mb-6">Distinct origin–destination pairs derived from trips.</p>
       <div className="w-full overflow-x-auto">

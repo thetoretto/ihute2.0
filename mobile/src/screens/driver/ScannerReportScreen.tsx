@@ -6,7 +6,7 @@ import { Screen } from '../../components';
 import { getScannerTicketReport } from '../../services/api';
 import type { ScannerTicketReportItem } from '../../services/api';
 import { colors, spacing, typography, radii } from '../../utils/theme';
-import { tightGap } from '../../utils/layout';
+import { driverContentHorizontal, tightGap } from '../../utils/layout';
 
 type Period = 'past' | 'today' | 'upcoming';
 
@@ -33,7 +33,7 @@ export default function ScannerReportScreen() {
   };
 
   return (
-    <Screen scroll={false} style={styles.container}>
+    <Screen scroll={false} style={[styles.container, { paddingHorizontal: 0 }]}>
       <View style={styles.reportHeader}>
         <Text style={styles.reportTitle}>Ticket report</Text>
         <Text style={styles.reportSubtitle}>Past, today & upcoming tickets for your shift</Text>
@@ -95,7 +95,7 @@ export default function ScannerReportScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   reportHeader: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: driverContentHorizontal,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   reportSubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
   segmentRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: driverContentHorizontal,
     paddingVertical: spacing.sm,
     gap: spacing.sm,
     borderBottomWidth: 1,
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   segmentText: { ...typography.bodySmall, color: colors.textSecondary },
   segmentTextActive: { color: colors.onPrimary, fontWeight: '600' },
   list: { flex: 1 },
-  listContent: { padding: spacing.md, paddingBottom: spacing.xl },
+  listContent: { padding: driverContentHorizontal, paddingBottom: spacing.xl },
   row: {
     padding: spacing.md,
     backgroundColor: colors.card,

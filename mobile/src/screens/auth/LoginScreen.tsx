@@ -75,6 +75,9 @@ export default function LoginScreen() {
         secureTextEntry
         error={error?.toLowerCase().includes('password') ? error : undefined}
       />
+      <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotWrap}>
+        <Text style={[styles.forgotText, { color: c.primary }]}>Forgot password?</Text>
+      </TouchableOpacity>
       {error && !error.toLowerCase().includes('email') && !error.toLowerCase().includes('password') ? (
         <Text style={[styles.formError, { color: c.error }]}>{error}</Text>
       ) : null}
@@ -131,6 +134,8 @@ const styles = StyleSheet.create({
   subtitle: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.xl },
   helper: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.md },
   formError: { ...typography.caption, color: colors.error, marginBottom: spacing.md },
+  forgotWrap: { alignSelf: 'flex-end', marginBottom: spacing.sm },
+  forgotText: { ...typography.caption, fontWeight: '600' },
   socialDivider: {
     ...typography.caption,
     color: colors.textMuted,

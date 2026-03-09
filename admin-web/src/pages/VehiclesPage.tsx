@@ -28,9 +28,9 @@ export default function VehiclesPage() {
     refresh();
   };
 
-  const th = 'pb-4 text-[10px] uppercase font-black text-muted tracking-widest text-left';
+  const th = 'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-soft">
+    <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
       <h3 className="text-2xl font-black text-dark mb-2">Vehicles</h3>
       <p className="text-muted text-sm mb-6">Approve or reject driver vehicles.</p>
       <div className="w-full overflow-x-auto">
@@ -55,7 +55,7 @@ export default function VehiclesPage() {
                 <td className="py-5 text-sm">{v.licensePlate}</td>
                 <td className="py-5 text-sm">{v.seats}</td>
                 <td className="py-5">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                  <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
                     v.approvalStatus === 'pending' ? 'bg-primary text-dark' : v.approvalStatus === 'approved' ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'
                   }`}>
                     {v.approvalStatus.toUpperCase()}

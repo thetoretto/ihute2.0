@@ -10,9 +10,10 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { spacing } from '../utils/theme';
 import { useThemeColors } from '../context/ThemeContext';
-import { useResponsiveLayout } from '../utils/responsive';
+import { layout } from '../utils/layout';
+
+const screenPadding = { paddingHorizontal: layout.screen.horizontal };
 
 interface ScreenProps {
   children: React.ReactNode;
@@ -30,20 +31,11 @@ export default function Screen({
   scrollProps,
 }: ScreenProps) {
   const colors = useThemeColors();
-  const { horizontalPadding, maxContentWidth } = useResponsiveLayout();
-  const fixedInnerStyle: StyleProp<ViewStyle> = [
-    styles.inner,
-    styles.innerFill,
-    { paddingHorizontal: horizontalPadding, maxWidth: maxContentWidth },
-    style,
-  ];
-  const scrollInnerStyle: StyleProp<ViewStyle> = [
-    styles.inner,
-    { paddingHorizontal: horizontalPadding, maxWidth: maxContentWidth },
-  ];
+  const fixedInnerStyle: StyleProp<ViewStyle> = [styles.inner, styles.innerFill, screenPadding, style];
+  const scrollInnerStyle: StyleProp<ViewStyle> = [styles.inner, screenPadding];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.appBackground }]} edges={['left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -90,7 +82,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 0,
-    paddingBottom: spacing.xl,
+    paddingBottom: layout.list.bottom.tabScreen,
   },
 });
 
