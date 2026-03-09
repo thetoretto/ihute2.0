@@ -30,15 +30,15 @@ const TAB_ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inacti
 export function UnifiedFloatingTabBar({ state, descriptors, navigation, centerRouteName = null }: UnifiedTabBarProps) {
   const insets = useSafeAreaInsets();
   const c = useThemeColors();
-  const activeColor = c.appAccent;
-  const inactiveColor = c.navInactiveIcon;
+  const activeColor = c.onPrimary;
+  const inactiveColor = c.onPrimary;
 
   return (
     <View
       style={[
         styles.container,
         {
-          backgroundColor: c.tabBarBlurBg,
+          backgroundColor: c.primary,
           borderTopColor: c.borderLight,
           paddingBottom: Math.max(insets.bottom, spacing.sm) + spacing.md,
           paddingTop: spacing.md,
@@ -76,8 +76,8 @@ export function UnifiedFloatingTabBar({ state, descriptors, navigation, centerRo
               style={styles.publishWrap}
               activeOpacity={0.85}
             >
-              <View style={[styles.publishButton, { backgroundColor: c.appPrimary, borderColor: c.surface }, cardShadowTeal]}>
-                <Ionicons name={iconName} size={26} color={c.onAppPrimary} />
+              <View style={[styles.publishButton, { backgroundColor: c.primary, borderColor: c.surface }, cardShadowTeal]}>
+                <Ionicons name={iconName} size={26} color={c.onPrimary} />
               </View>
               <Text style={[styles.label, { color }]}>{label}</Text>
             </TouchableOpacity>

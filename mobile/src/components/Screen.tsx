@@ -35,7 +35,7 @@ export default function Screen({
   const scrollInnerStyle: StyleProp<ViewStyle> = [styles.inner, screenPadding];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.appBackground }]} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.appBackground }]} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

@@ -127,6 +127,8 @@ export const colors = {
   appSuccessDark: CORE_DARK,
   /** Shadow for cards (design system). */
   cardShadowColor: CORE_DARK,
+  /** Landing / no-bar display headline – deep brand dark (spec: #054752). */
+  displayHeadlineColor: '#054752',
 
   // --- Role (passenger, driver, agency) ---
   passengerBrand: CORE_YELLOW,
@@ -188,6 +190,7 @@ export const colorsDark = {
   appSurfaceMuted: ELEVATION_2,
   appSuccessDark: CORE_DARK,
   cardShadowColor: CORE_DARK,
+  displayHeadlineColor: CORE_CREAM,
 
   // --- Text hierarchy ---
   text: CORE_CREAM,
@@ -346,4 +349,6 @@ export const typography = {
   totalPrice: { fontSize: 22, fontWeight: '800' as const, fontFamily: 'Poppins_700Bold' },
   timeDisplayLg: { fontSize: 48, fontWeight: '300' as const, fontFamily: 'Poppins_400Regular' },
   timeColon: { fontSize: 32, fontWeight: '300' as const, fontFamily: 'Poppins_400Regular' },
+  /** Landing screen no-bar headline: 30px, extrabold, tight leading. */
+  display: { fontSize: 30, fontWeight: '800' as const, fontFamily: 'Poppins_700Bold', lineHeight: 36 },
 } as const;

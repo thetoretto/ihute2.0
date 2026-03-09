@@ -5,6 +5,7 @@ export { default as RoleToggle } from './RoleToggle';
 export { default as Button } from './Button';
 export { default as Card } from './Card';
 export { default as ScreenHeader } from './ScreenHeader';
+export { default as LandingHeader } from './LandingHeader';
 export { default as BottomSheet } from './BottomSheet';
 export { default as Input } from './Input';
 export { default as EmptyState } from './EmptyState';

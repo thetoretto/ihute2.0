@@ -28,15 +28,10 @@ import {
   CarRefreshIndicator,
   ExpansionDetailsCard,
   ExpandActionButton,
+  LandingHeader,
 } from '../../components';
 import { buttonHeights, spacing, typography, radii, borderWidths, colors } from '../../utils/theme';
-import {
-  listBottomPaddingTab,
-  listScreenHeaderPaddingVertical,
-  listScreenHeaderPaddingHorizontal,
-  screenContentPadding,
-  tightGap,
-} from '../../utils/layout';
+import { listBottomPaddingTab, screenContentPadding, tightGap } from '../../utils/layout';
 import { sharedStyles } from '../../utils/sharedStyles';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { Booking } from '../../types';
@@ -224,10 +219,7 @@ export default function PassengerMyRidesScreen() {
         </View>
       ) : null}
 
-      <View style={[styles.header, { paddingHorizontal: listScreenHeaderPaddingHorizontal, paddingTop: listScreenHeaderPaddingVertical }]}>
-        <Text style={[styles.title, { color: c.text }]}>My Travels</Text>
-        <Text style={[styles.subtitle, { color: c.textMuted }]}>Tracking your city hops</Text>
-      </View>
+      <LandingHeader title="My Travels" subtitle="Tracking your city hops" />
 
       {/* Upcoming: one prominent card */}
       <View style={[styles.section, { paddingHorizontal: screenContentPadding }]}>
@@ -372,9 +364,6 @@ export default function PassengerMyRidesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: {},
-  header: { marginBottom: spacing.md },
-  title: { ...typography.h2, fontSize: 28, fontWeight: '800' },
-  subtitle: { ...typography.bodySmall, fontWeight: '500', marginTop: spacing.xxs },
   errorBanner: {
     marginBottom: spacing.md,
     padding: spacing.md,

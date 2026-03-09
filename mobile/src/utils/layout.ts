@@ -25,16 +25,16 @@ export const TOAST_BOTTOM = OFFSETS.TAB_BAR_HEIGHT + TOAST_BOTTOM_OFFSET;
 
 /**
  * Screen & Container Padding
+ * Single canonical horizontal inset (24px) for all roles so content aligns with LandingHeader.
  */
 export const layout = {
   screen: {
-    horizontal: spacing.sm,
-    searchHorizontal: spacing.md,
+    horizontal: spacing.lg,
+    searchHorizontal: spacing.lg,
   },
 
-  // Driver screens: use one canonical horizontal inset
   driver: {
-    contentHorizontal: spacing.md,
+    contentHorizontal: spacing.lg,
   },
   
   // Lists & Scrolling
@@ -64,6 +64,12 @@ export const layout = {
   header: {
     buttonSize: sizes.touchTarget.iconButton,
     iconSize: sizes.icon.medium,
+  },
+
+  // Landing (no-bar) header – asymmetric padding
+  landingHeader: {
+    paddingTop: 32,
+    paddingHorizontal: 24,
   },
 
   // Specialized UI
@@ -102,3 +108,5 @@ export const scrollStepBottomPadding = 120;
 export const listScreenHeaderPaddingVertical = layout.list.headerVertical;
 export const listScreenHeaderPaddingHorizontal = layout.list.headerHorizontal;
 export const driverContentHorizontal = layout.driver.contentHorizontal;
+export const landingHeaderPaddingTop = layout.landingHeader.paddingTop;
+export const landingHeaderPaddingHorizontal = layout.landingHeader.paddingHorizontal;

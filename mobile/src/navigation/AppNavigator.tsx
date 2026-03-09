@@ -4,12 +4,12 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { Animated, Image } from 'react-native';
+import { Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useThemeColors } from '../context/ThemeContext';
-import { spacing, typography, radii, sizes, buttonHeights } from '../utils/theme';
+import { spacing, typography, buttonHeights } from '../utils/theme';
 import { UnifiedFloatingTabBar } from './DriverTabBar';
 import { ToastProvider } from '../context/ToastContext';
 import { useResponsiveTheme } from '../utils/responsiveTheme';
@@ -23,10 +23,10 @@ const ONBOARDING_STORAGE_KEY = '@ihute_has_seen_onboarding';
 function useStackScreenOptions() {
   const c = useThemeColors();
   return {
-    headerStyle: { backgroundColor: c.appPrimary },
-    headerTintColor: c.onAppPrimary,
-    headerTitleStyle: { color: c.onAppPrimary, ...typography.h3 },
-    headerTitle: () => <LogoHeader />,
+    headerShown: false,
+    headerStyle: { backgroundColor: c.appBackground },
+    headerTintColor: c.text,
+    headerTitleStyle: { color: c.text, ...typography.h3 },
     headerShadowVisible: false,
     headerTitleAlign: 'center' as const,
     contentStyle: { backgroundColor: c.appBackground },
@@ -41,17 +41,16 @@ function useTabBarScreenOptionsBase() {
   const insets = useSafeAreaInsets();
   return {
     tabBarStyle: {
-      backgroundColor: c.tabBarBlurBg,
+      backgroundColor: c.primary,
       borderTopColor: c.borderLight,
       borderTopWidth: 1,
       paddingTop: spacing.sm,
       paddingBottom: Math.max(insets.bottom, spacing.sm),
     },
-    tabBarActiveTintColor: c.appAccent,
-    tabBarInactiveTintColor: c.navInactiveIcon,
-    headerStyle: { backgroundColor: c.appPrimary },
-    headerTintColor: c.onAppPrimary,
-    headerTitle: () => <LogoHeader />,
+    tabBarActiveTintColor: c.onPrimary,
+    tabBarInactiveTintColor: c.onPrimary,
+    headerStyle: { backgroundColor: c.appBackground },
+    headerTintColor: c.text,
     headerTitleAlign: 'center' as const,
     animation: 'fade' as const,
     sceneStyle: { backgroundColor: c.appBackground },
@@ -63,12 +62,12 @@ function useTabNavigatorScreenOptions(opts?: { tintColor?: string; headerTintCol
   const c = useThemeColors();
   const responsiveTheme = useResponsiveTheme();
   const base = useTabBarScreenOptionsBase();
-  const tint = opts?.tintColor ?? c.appAccent;
-  const headerTint = opts?.headerTintColor ?? c.onAppPrimary;
+  const tint = opts?.tintColor ?? c.onPrimary;
+  const headerTint = opts?.headerTintColor ?? c.text;
   return {
     ...base,
     tabBarActiveTintColor: tint,
-    tabBarInactiveTintColor: c.navInactiveIcon,
+    tabBarInactiveTintColor: c.onPrimary,
     headerTintColor: headerTint,
     tabBarStyle: {
       ...base.tabBarStyle,
@@ -79,14 +78,6 @@ function useTabNavigatorScreenOptions(opts?: { tintColor?: string; headerTintCol
     tabBarItemStyle: { borderRadius: responsiveTheme.radii.md, marginHorizontal: spacing.xs, minHeight: responsiveTheme.buttonHeights.medium },
   };
 }
-
-const LogoHeader = () => (
-  <Image
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    source={require('../../assets/logo.png')}
-    style={{ height: sizes.logo.height, width: sizes.logo.width, resizeMode: 'contain', borderRadius: radii.sm }}
-  />
-);
 
 // Auth
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -175,16 +166,12 @@ function PassengerHomeStack() {
   const screenOptions = useStackScreenOptions();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen
-        name="PassengerHome"
-        component={PassengerHomeScreen}
-        options={{ headerShown: true }}
-      />
+      <Stack.Screen name="PassengerHome" component={PassengerHomeScreen} />
       <Stack.Screen name="SearchResults" component={SearchResultsScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="InstantQueue" component={InstantQueueScreen} options={{ title: 'Drivers available now' }} />
-      <Stack.Screen name="RideDetail" component={RideDetailScreen} />
+      <Stack.Screen name="InstantQueue" component={InstantQueueScreen} options={{ headerShown: true, title: 'Drivers available now' }} />
+      <Stack.Screen name="RideDetail" component={RideDetailScreen} options={{ headerShown: true, title: 'Ride' }} />
       <Stack.Screen name="PassengerBooking" component={PassengerBookingScreen} options={{ headerShown: false, title: 'Book trip' }} />
-      <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ title: strings.nav.ticketDetails }} />
+      <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ headerShown: true, title: strings.nav.ticketDetails }} />
     </Stack.Navigator>
   );
 }
@@ -193,15 +180,11 @@ function DriverHomeStack() {
   const screenOptions = useStackScreenOptions();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen
-        name="DriverHome"
-        component={DriverHomeScreen}
-        options={{ headerShown: true }}
-      />
-      <Stack.Screen name="VehicleGarage" component={VehicleGarageScreen} />
-      <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ title: 'Publish ride' }} />
-      <Stack.Screen name="DriverNotifications" component={DriverNotificationsScreen} options={{ title: strings.nav.notifications }} />
-      <Stack.Screen name="DriverScanTicket" component={DriverScanTicketScreen} options={{ title: strings.nav.scanTicket }} />
+      <Stack.Screen name="DriverHome" component={DriverHomeScreen} />
+      <Stack.Screen name="VehicleGarage" component={VehicleGarageScreen} options={{ headerShown: true, title: strings.profile.myVehicles }} />
+      <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ headerShown: true, title: 'Publish ride' }} />
+      <Stack.Screen name="DriverNotifications" component={DriverNotificationsScreen} options={{ headerShown: true, title: strings.nav.notifications }} />
+      <Stack.Screen name="DriverScanTicket" component={DriverScanTicketScreen} options={{ headerShown: true, title: strings.nav.scanTicket }} />
     </Stack.Navigator>
   );
 }
@@ -210,7 +193,7 @@ function DriverPublishStack() {
   const screenOptions = useStackScreenOptions();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ title: 'Publish ride', headerShown: true }} />
+      <Stack.Screen name="PublishRide" component={PublishRideScreen} options={{ headerShown: false, title: 'Publish ride' }} />
     </Stack.Navigator>
   );
 }
@@ -228,7 +211,7 @@ function DriverActivityTabStack() {
       <Stack.Screen
         name="DriverScanTicket"
         component={DriverScanTicketScreen}
-        options={{ title: strings.nav.scanTicket }}
+        options={{ headerShown: true, title: strings.nav.scanTicket }}
       />
     </Stack.Navigator>
   );
@@ -239,12 +222,8 @@ function ScannerHomeStack() {
   const screenOptions = useStackScreenOptions();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen
-        name="DriverHome"
-        component={DriverHomeScreen}
-        options={{ headerShown: true }}
-      />
-      <Stack.Screen name="DriverScanTicket" component={DriverScanTicketScreen} options={{ title: strings.nav.scanTicket }} />
+      <Stack.Screen name="DriverHome" component={DriverHomeScreen} />
+      <Stack.Screen name="DriverScanTicket" component={DriverScanTicketScreen} options={{ headerShown: true, title: strings.nav.scanTicket }} />
     </Stack.Navigator>
   );
 }
@@ -274,7 +253,7 @@ function DriverActivityListStack() {
       <Stack.Screen
         name="DriverScanTicket"
         component={DriverScanTicketScreen}
-        options={{ title: strings.nav.scanTicket }}
+        options={{ headerShown: true, title: strings.nav.scanTicket }}
       />
     </Stack.Navigator>
   );
@@ -358,7 +337,7 @@ function DriverTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
   const c = useThemeColors();
   const screenOptions = {
-    ...useTabNavigatorScreenOptions({ tintColor: c.appAccent }),
+    ...useTabNavigatorScreenOptions(),
     sceneStyle: { backgroundColor: c.appBackground },
     headerShown: false,
   };
@@ -407,7 +386,7 @@ function DriverTabsNavigator() {
 function AgencyTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
   const c = useThemeColors();
-  const screenOptions = useTabNavigatorScreenOptions({ tintColor: c.appAccent, headerTintColor: c.onAppPrimary });
+  const screenOptions = useTabNavigatorScreenOptions();
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
   return (
     <Tabs.Navigator
@@ -445,7 +424,7 @@ function AgencyTabsNavigator() {
 function ScannerTabsNavigator() {
   const responsiveTheme = useResponsiveTheme();
   const c = useThemeColors();
-  const screenOptions = useTabNavigatorScreenOptions({ tintColor: c.appAccent, headerTintColor: c.onAppPrimary });
+  const screenOptions = useTabNavigatorScreenOptions();
   const tabBarIconSize = responsiveTheme.layout.isTablet ? 26 : 24;
   return (
     <Tabs.Navigator
@@ -533,14 +512,14 @@ function MainRoleNavigator() {
   );
 }
 
-/** Shared header options for RootStack modal screens so they match the rest of the app on mobile. */
+/** Shared header options for RootStack modal screens so they match the rest of the app on mobile (white top, dark content). */
 function useRootHeaderOptions() {
   const c = useThemeColors();
   return {
     headerShown: true as const,
-    headerStyle: { backgroundColor: c.appPrimary },
-    headerTintColor: c.onAppPrimary,
-    headerTitleStyle: { color: c.onAppPrimary, ...typography.h3 },
+    headerStyle: { backgroundColor: c.appBackground },
+    headerTintColor: c.text,
+    headerTitleStyle: { color: c.text, ...typography.h3 },
     headerShadowVisible: false,
     headerTitleAlign: 'center' as const,
   };

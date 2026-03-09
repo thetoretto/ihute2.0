@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
 import { useRootNavigation } from '../../context/RootNavigationContext';
 import { getDriverRatingSummary, getUserBookings, getUserVehicles } from '../../services/api';
-import { formatRatingValue, Screen } from '../../components';
+import { formatRatingValue, Screen, LandingHeader } from '../../components';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeContext, useThemeColors } from '../../context/ThemeContext';
 import { useDriverTheme } from '../../context/DriverThemeContext';
@@ -151,6 +151,7 @@ export default function ProfileScreen() {
         style={[styles.container, { backgroundColor: themeColors.appBackground }]}
         contentContainerStyle={[styles.content, { paddingTop: 0, paddingBottom: effectiveSpacing.xxl }]}
       >
+        <LandingHeader title="Account" />
         <View style={[styles.driverProfileHeader, { backgroundColor: themeColors.card, paddingTop: insets.top + effectiveSpacing.xl, paddingBottom: effectiveSpacing.lg }]}>
           <View style={styles.driverProfileAvatarWrap}>
             <TouchableOpacity style={[styles.driverProfileAvatar, { borderColor: themeColors.card }]} onPress={() => rootNavigate('EditProfile')}>
@@ -212,6 +213,7 @@ export default function ProfileScreen() {
         { paddingTop: 0, paddingBottom: effectiveSpacing.xxl },
       ]}
     >
+      <LandingHeader title="Account" />
       {/* Header block (mockup: white, rounded bottom, avatar, verified, rating, stats grid) */}
       <View style={[styles.profileHeader, { backgroundColor: themeColors.card, paddingTop: effectiveSpacing.xl + insets.top, paddingBottom: effectiveSpacing.lg }]}>
         <View style={styles.profileHeaderRow}>

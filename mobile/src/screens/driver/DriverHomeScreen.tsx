@@ -30,6 +30,7 @@ import {
   formatRatingValue,
   Button,
   HotpointPicker,
+  LandingHeader,
 } from '../../components';
 import {
   getDriverTripActivities,
@@ -235,7 +236,7 @@ export default function DriverHomeScreen() {
       }}
     >
       {isDriverMockup ? (
-        <View style={[styles.driverMockupWrapper, { paddingTop: (insets?.top ?? 0) + effectiveSpacing.lg }]}>
+        <View style={[styles.driverMockupWrapper, { paddingTop: 0 }]}>
           <View style={[styles.driverMockupHeader, { borderBottomColor: c.border }]}>
             <View style={styles.driverHeaderLeft}>
               <Text style={[styles.driverGreeting, { color: d.primary }]}>Hello, {getGreetingName(user?.displayName ?? user?.email ?? '')}!</Text>
@@ -362,28 +363,28 @@ export default function DriverHomeScreen() {
         </View>
       ) : (
         <>
-      {/* Header: greeting + avatar */}
+      <LandingHeader
+        title={isScanner ? 'Scanner' : currentRole === 'agency' ? 'Agency' : 'Hello, ' + getGreetingName(user?.displayName ?? user?.email ?? '') + '!'}
+        subtitle={
+          isScanner
+            ? 'Scan & activities'
+            : currentRole === 'agency'
+              ? 'Reports and overview'
+              : scheduledCount > 0
+                ? `You have ${scheduledCount} ride${scheduledCount === 1 ? '' : 's'} scheduled today`
+                : 'Trips and activities'
+        }
+      />
+      {/* Avatar row (and scanner logout) below landing header */}
       <View style={[styles.headerRow, { marginBottom: effectiveSpacing.md }]}>
         <View style={styles.headerTextWrap}>
-          <Text style={[styles.greeting, effectiveTypography.h2, { color: c.text }]}>
-            {isScanner ? 'Scanner' : currentRole === 'agency' ? 'Agency' : 'Hello, ' + getGreetingName(user?.displayName ?? user?.email ?? '') + '!'}
-          </Text>
-          <Text style={[styles.subtitle, effectiveTypography.bodySmall, { color: c.textSecondary }]}>
-            {isScanner
-              ? 'Scan & activities'
-              : currentRole === 'agency'
-                ? 'Reports and overview'
-                : scheduledCount > 0
-                  ? `You have ${scheduledCount} ride${scheduledCount === 1 ? '' : 's'} scheduled today`
-                  : 'Trips and activities'}
-          </Text>
           {!isScanner && (ratingSummary?.count ?? 0) > 0 ? (
             <Text style={[styles.ratingText, { color: currentRole === 'agency' ? c.agency : c.passengerDark }]}>
               Rating {formatRatingValue(ratingSummary?.average, '0.0')} ({ratingSummary?.count ?? 0})
             </Text>
           ) : null}
         </View>
-          <View style={styles.avatarWrap}>
+        <View style={styles.avatarWrap}>
           {user?.photoURL ? (
             <Image source={{ uri: user.photoURL }} style={[styles.avatar, { borderColor: currentRole === 'agency' ? c.agency : c.passengerDark }]} />
           ) : (

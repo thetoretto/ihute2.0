@@ -16,11 +16,11 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
-import { RoleToggle, Screen, CarRefreshIndicator } from '../../components';
+import { RoleToggle, Screen, CarRefreshIndicator, LandingHeader } from '../../components';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { spacing, typography, radii, sizes, colors } from '../../utils/theme';
-import { listBottomPaddingTab, screenContentPadding } from '../../utils/layout';
+import { listBottomPaddingTab, screenContentPadding, landingHeaderPaddingHorizontal } from '../../utils/layout';
 import { strings } from '../../constants/strings';
 import { searchTrips, getUserBookings, getHotpoints, type SearchTripsSortBy } from '../../services/api';
 import { selectorStyles } from '../../utils/selectorStyles';
@@ -178,9 +178,8 @@ export default function PassengerHomeScreen() {
         />
       }
     >
-      <View style={[styles.searchBlock, { paddingHorizontal: screenContentPadding }]}>
-        <Text style={[styles.pickTitle, { color: c.appPrimary }]}>Pick your ride.</Text>
-
+      <LandingHeader title="Your pick of rides at low prices" />
+      <View style={[styles.searchBlock, { paddingHorizontal: landingHeaderPaddingHorizontal }]}>
         {/* From / To card */}
         <View style={[styles.inputCard, { backgroundColor: c.card, borderColor: c.borderLight }]}>
           <TouchableOpacity
@@ -269,7 +268,7 @@ export default function PassengerHomeScreen() {
         </View>
       </View>
 
-      <View style={[styles.shieldBannerWrap, { paddingHorizontal: screenContentPadding }]}>
+      <View style={[styles.shieldBannerWrap, { paddingHorizontal: landingHeaderPaddingHorizontal }]}>
         <View style={[styles.shieldBanner, { backgroundColor: (c.appAccent ?? c.primary) + '14', borderColor: (c.appAccent ?? c.primary) + '20' }]}>
           <Ionicons name="shield-checkmark" size={24} color={c.appAccent ?? c.primary} />
           <Text style={[styles.shieldBannerText, { color: c.appPrimary }]}>
@@ -547,13 +546,6 @@ const styles = StyleSheet.create({
   roleToggleWrap: { marginBottom: spacing.sm },
   searchScrollContent: { paddingTop: spacing.lg },
   searchBlock: { paddingTop: spacing.md },
-  pickTitle: {
-    ...typography.h1,
-    fontSize: 32,
-    fontWeight: '800',
-    marginBottom: spacing.xl,
-    lineHeight: 38,
-  },
   inputCard: {
     borderRadius: radii.xl + 4,
     borderWidth: 1,
