@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { createVehicle } from '../../services/api';
 import { spacing, typography } from '../../utils/theme';
-import { driverContentHorizontal } from '../../utils/layout';
+import { landingHeaderPaddingHorizontal } from '../../utils/layout';
 
 export default function AddVehicleScreen() {
   const navigation = useNavigation<any>();
@@ -59,7 +59,7 @@ export default function AddVehicleScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: driverContentHorizontal, paddingVertical: spacing.lg },
+  content: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingVertical: spacing.lg },
   title: { ...typography.h2, marginBottom: spacing.lg },
   err: { ...typography.caption, marginBottom: spacing.sm },
 });

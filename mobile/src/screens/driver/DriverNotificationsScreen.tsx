@@ -6,7 +6,7 @@ import { Screen } from '../../components';
 import { getDriverNotifications, markDriverNotificationsRead } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, typography, radii, sizes, cardShadow } from '../../utils/theme';
-import { cardRadius, driverContentHorizontal, listBottomPaddingDefault } from '../../utils/layout';
+import { cardRadius, landingHeaderPaddingHorizontal, listBottomPaddingDefault } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { DriverNotification } from '../../services/api';
 
@@ -103,7 +103,7 @@ export default function DriverNotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: spacing.lg, paddingBottom: listBottomPaddingDefault, paddingHorizontal: driverContentHorizontal },
+  content: { paddingTop: spacing.lg, paddingBottom: listBottomPaddingDefault, paddingHorizontal: landingHeaderPaddingHorizontal },
   title: { ...typography.h2 },
   subtitle: { ...typography.bodySmall, marginTop: spacing.xs, marginBottom: spacing.lg },
   emptyCard: {

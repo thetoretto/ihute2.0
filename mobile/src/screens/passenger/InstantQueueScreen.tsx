@@ -12,8 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen, HotpointPicker } from '../../components';
 import { getInstantQueue, getHotpoints } from '../../services/api';
 import { useThemeColors } from '../../context/ThemeContext';
-import { colors, spacing, typography, radii, borderWidths, sizes } from '../../utils/theme';
-import { listBottomPaddingTab, tightGap } from '../../utils/layout';
+import { spacing, typography, radii, borderWidths, sizes } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal, listBottomPaddingTab, listScreenHeaderPaddingVertical, tightGap } from '../../utils/layout';
 import type { DriverInstantQueueEntry, Hotpoint } from '../../types';
 
 function formatRwf(value: number) {
@@ -143,11 +143,11 @@ export default function InstantQueueScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flexGrow: 1 },
+  content: { flexGrow: 1, paddingTop: listScreenHeaderPaddingVertical },
   filterSection: {
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    padding: spacing.md,
+    marginHorizontal: landingHeaderPaddingHorizontal,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
     borderRadius: radii.md,
     borderWidth: 1,
   },
@@ -155,22 +155,22 @@ const styles = StyleSheet.create({
   pickerRow: { marginBottom: spacing.sm, paddingBottom: spacing.sm, borderBottomWidth: 1 },
   pickerLabel: { ...typography.caption, marginBottom: spacing.xs },
   pickerTrigger: { borderBottomWidth: 1, paddingVertical: spacing.sm },
-  sectionTitle: { ...typography.h3, marginHorizontal: spacing.md, marginBottom: spacing.sm },
-  listContent: { paddingHorizontal: spacing.md, paddingBottom: spacing.lg },
+  sectionTitle: { ...typography.h3, marginHorizontal: landingHeaderPaddingHorizontal, marginTop: spacing.md, marginBottom: spacing.md },
+  listContent: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.lg, paddingBottom: listBottomPaddingTab },
   entryCard: {
-    padding: spacing.md,
+    padding: spacing.lg,
     borderRadius: radii.md,
     borderWidth: 1,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
-  entryRoute: { marginBottom: spacing.sm },
+  entryRoute: { marginBottom: spacing.md },
   entryRouteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   entryDot: { width: sizes.routeDot, height: sizes.routeDot, borderRadius: sizes.routeDot / 2 },
   entryDotDest: { width: sizes.routeDot, height: sizes.routeDot, borderRadius: sizes.routeDot / 2 },
   entryLine: { width: borderWidths.medium, height: sizes.timelineDotLg, marginLeft: spacing.xs, marginVertical: tightGap },
   entryPlace: { ...typography.body, flex: 1 },
   entryMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  entryDriver: { ...typography.caption },
-  entrySeats: { ...typography.caption },
-  empty: { ...typography.body, textAlign: 'center', marginHorizontal: spacing.lg, marginTop: spacing.lg },
+  entryDriver: { ...typography.bodySmall, fontWeight: '600' },
+  entrySeats: { ...typography.bodySmall },
+  empty: { ...typography.body, textAlign: 'center', marginHorizontal: landingHeaderPaddingHorizontal, marginTop: spacing.xl },
 });

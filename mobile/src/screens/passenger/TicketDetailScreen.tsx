@@ -6,6 +6,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { Button, Screen } from '../../components';
 import { getBookingTicket, shareTicketPdf } from '../../services/api';
 import { spacing, typography, radii } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal, listScreenHeaderPaddingVertical } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { BookingTicket } from '../../types';
 
@@ -139,7 +140,8 @@ export default function TicketDetailScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingTop: spacing.lg,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
+    paddingTop: listScreenHeaderPaddingVertical,
     paddingBottom: spacing.xl,
   },
   center: {
@@ -154,48 +156,48 @@ const styles = StyleSheet.create({
   ticketCard: {
     borderRadius: radii.md,
     borderWidth: 1,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    gap: spacing.sm,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    gap: spacing.md,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   title: {
     ...typography.h3,
   },
   ticketNo: {
-    ...typography.captionBold,
+    ...typography.bodyBold,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   label: {
-    ...typography.caption,
+    ...typography.bodySmall,
     flex: 1,
   },
   value: {
-    ...typography.bodySmall,
+    ...typography.body,
     fontWeight: '600',
   },
   amount: {
-    ...typography.body,
+    ...typography.bodyBold,
     fontWeight: '700',
   },
   qrWrap: {
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
     borderWidth: 1,
     borderRadius: radii.md,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   qrHelp: {
-    ...typography.caption,
+    ...typography.bodySmall,
     textAlign: 'center',
   },
 });

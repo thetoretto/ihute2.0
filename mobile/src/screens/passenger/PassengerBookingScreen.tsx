@@ -16,7 +16,7 @@ import { getTrip, getTripsStore, bookTrip } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { spacing, typography, radii, buttonHeights, cardShadowStrong, sizes, borderWidths } from '../../utils/theme';
-import { screenContentPadding, tightGap, scrollStepBottomPadding } from '../../utils/layout';
+import { landingHeaderPaddingHorizontal, listScreenHeaderPaddingVertical, tightGap, scrollStepBottomPadding } from '../../utils/layout';
 import { formatRwf } from '../../../../shared/src';
 import type { Trip, PaymentMethod } from '../../types';
 
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: screenContentPadding,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
     paddingVertical: spacing.md,
     minHeight: 56,
     borderBottomWidth: 1,
@@ -500,11 +500,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerBtnInvisible: { opacity: 0 },
-  headerTitle: { ...typography.bodySmall, fontWeight: '800', flex: 1, textAlign: 'center' },
+  headerTitle: { ...typography.body, fontWeight: '800', flex: 1, textAlign: 'center' },
   headerSpacer: { width: sizes.touchTarget.iconButton },
   stepperWrap: {
     paddingVertical: spacing.md,
-    paddingHorizontal: screenContentPadding,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
     borderBottomWidth: 1,
   },
   stepperRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
@@ -530,9 +530,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     paddingHorizontal: 0,
   },
-  stepperLabel: { ...typography.caption10, flex: 1, textAlign: 'center' },
+  stepperLabel: { ...typography.bodySmall, flex: 1, textAlign: 'center' },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: screenContentPadding, paddingTop: spacing.md, paddingBottom: scrollStepBottomPadding },
+  scrollContent: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: listScreenHeaderPaddingVertical, paddingBottom: scrollStepBottomPadding },
   stepContent: { paddingBottom: spacing.xl },
 
   fullCarRow: {

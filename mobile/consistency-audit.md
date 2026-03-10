@@ -50,6 +50,6 @@
 
 ## Phase 2–4 implementation summary
 
-- **Phase 2:** layout.ts updated so `layout.screen.horizontal` and `layout.driver.contentHorizontal` both use `spacing.lg` (24px). All screens using `screenContentPadding` or `driverContentHorizontal` now share the same horizontal inset.
-- **Phase 3:** ProfileScreen user-details block redesigned: unified padding via `landingHeaderPaddingHorizontal`, avatar sizes from `sizes.avatar.xl`, typography from theme (h2, caption, overline), negative margin removed; shadow color applied dynamically.
-- **Phase 4:** NotificationsScreen and WalletScreen use `landingHeaderPaddingHorizontal` for content padding. Remaining static `colors.*` in StyleSheets (e.g. DriverHomeScreen, PublishRideScreen) can be migrated to `useThemeColors()` in a later pass.
+- **Phase 2:** layout.ts: `layout.screen.horizontal`, `layout.driver.contentHorizontal`, and `layout.list.headerHorizontal` all use `spacing.lg` (24px)—single source for horizontal inset. No duplicate rules; one common look.
+- **Phase 3:** ProfileScreen user-details block already redesigned (unified padding, sizes.avatar.xl, typography tokens, no negative margin).
+- **Phase 4:** (1) Removed hardcoded typography: PassengerMyRidesScreen, DriverHomeScreen, PublishRideScreen, DriverMyRidesScreen now use `typography.*` (timeLg, overline, captionBold, totalPrice, bodyBold18, caption9, bodySmall, etc.) instead of inline fontSize/fontWeight. (2) DriverHomeScreen driver block: colors applied via inline `c`/`d` from useThemeColors/useDriverTheme so text uses theme. (3) NotificationsScreen and WalletScreen use `landingHeaderPaddingHorizontal`. Remaining static `colors.*` in some StyleSheets (e.g. hero card, modal) can be migrated in a later pass.

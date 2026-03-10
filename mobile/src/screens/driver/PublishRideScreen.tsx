@@ -19,7 +19,7 @@ import { useThemeColors } from '../../context/ThemeContext';
 import { useDriverTheme } from '../../context/DriverThemeContext';
 import { useToast } from '../../context/ToastContext';
 import { selectorStyles } from '../../utils/selectorStyles';
-import { driverContentHorizontal, tightGap } from '../../utils/layout';
+import { landingHeaderPaddingHorizontal, tightGap } from '../../utils/layout';
 import { formatRwf } from '../../../../shared/src';
 import type { Hotpoint, Vehicle, PaymentMethod } from '../../types';
 
@@ -499,11 +499,11 @@ export default function PublishRideScreen() {
         <View style={styles.stepContent}>
           <Text style={styles.label}>Travel date</Text>
           <TouchableOpacity style={selectorStyles.trigger} onPress={() => setShowDatePicker(true)} activeOpacity={0.8}>
-            <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+            <Ionicons name="calendar-outline" size={20} color={c.textSecondary} />
             <Text style={[scheduledDate ? selectorStyles.triggerText : selectorStyles.triggerPlaceholder]}>
               {scheduledDate || 'Select date'}
             </Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
           </TouchableOpacity>
           <DateTimePicker
             visible={showDatePicker}
@@ -518,11 +518,11 @@ export default function PublishRideScreen() {
 
           <Text style={[styles.label, styles.scheduleLabel]}>Departure time</Text>
           <TouchableOpacity style={selectorStyles.trigger} onPress={() => setShowTimePicker(true)} activeOpacity={0.8}>
-            <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
+            <Ionicons name="time-outline" size={20} color={c.textSecondary} />
             <Text style={[scheduledTime ? selectorStyles.triggerText : selectorStyles.triggerPlaceholder]}>
               {scheduledTime || 'Select time'}
             </Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
           </TouchableOpacity>
           <DateTimePicker
             visible={showTimePicker}
@@ -570,7 +570,7 @@ export default function PublishRideScreen() {
             onPress={() => setShowRepetitionEndPicker(true)}
             activeOpacity={0.8}
           >
-            <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
+            <Ionicons name="time-outline" size={20} color={c.textSecondary} />
             <Text
               style={[
                 repetitionEndTime ? selectorStyles.triggerText : selectorStyles.triggerPlaceholder,
@@ -578,7 +578,7 @@ export default function PublishRideScreen() {
             >
               {repetitionEndTime || 'e.g. 18:00'}
             </Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
           </TouchableOpacity>
           <DateTimePicker
             visible={showRepetitionEndPicker}
@@ -740,63 +740,63 @@ export default function PublishRideScreen() {
           <View style={styles.reviewCard}>
             <Text style={styles.reviewTitle}>Trip details before posting</Text>
             <View style={styles.reviewRow}>
-              <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+              <Ionicons name="calendar-outline" size={16} color={d.primary} />
               <Text style={styles.reviewText}>Scheduled</Text>
             </View>
             <View style={styles.reviewRow}>
-              <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+              <Ionicons name="calendar-outline" size={16} color={d.primary} />
               <Text style={styles.reviewText}>{scheduledDate || 'No date selected'}</Text>
             </View>
             <View style={styles.reviewRow}>
-              <Ionicons name="time-outline" size={16} color={colors.primary} />
+              <Ionicons name="time-outline" size={16} color={d.primary} />
               <Text style={styles.reviewText}>{scheduledTime || 'No time selected'}</Text>
             </View>
             {isAgency && repetitionInterval > 0 ? (
               <View style={styles.reviewRow}>
-                <Ionicons name="repeat-outline" size={16} color={colors.primary} />
+                <Ionicons name="repeat-outline" size={16} color={d.primary} />
                 <Text style={styles.reviewText}>
                   Every {repetitionInterval} min{repetitionEndTime ? ` until ${repetitionEndTime}` : ''}
                 </Text>
               </View>
             ) : null}
             <View style={styles.reviewRow}>
-              <Ionicons name="navigate-outline" size={16} color={colors.primary} />
+              <Ionicons name="navigate-outline" size={16} color={d.primary} />
               <Text style={styles.reviewText}>
                 {departure?.name} → {destination?.name}
               </Text>
             </View>
             <View style={styles.reviewRow}>
-              <Ionicons name="car-sport-outline" size={16} color={colors.primary} />
+              <Ionicons name="car-sport-outline" size={16} color={d.primary} />
               <Text style={styles.reviewText}>{vehicle?.make} {vehicle?.model}</Text>
             </View>
             <View style={styles.reviewRow}>
-              <Ionicons name="people-outline" size={16} color={colors.primary} />
+              <Ionicons name="people-outline" size={16} color={d.primary} />
               <Text style={styles.reviewText}>{seats} seats</Text>
             </View>
             <View style={styles.reviewRow}>
-              <Ionicons name="cash-outline" size={16} color={colors.primary} />
+              <Ionicons name="cash-outline" size={16} color={d.primary} />
               <Text style={styles.reviewText}>{formatRwf(price)}/seat</Text>
             </View>
             {durationDisplay ? (
               <View style={styles.reviewRow}>
-                <Ionicons name="time-outline" size={16} color={colors.primary} />
+                <Ionicons name="time-outline" size={16} color={d.primary} />
                 <Text style={styles.reviewText}>{durationDisplay}</Text>
               </View>
             ) : null}
             {driverNote ? (
               <View style={styles.reviewRow}>
-                <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.primary} />
+                <Ionicons name="chatbubble-ellipses-outline" size={16} color={d.primary} />
                 <Text style={styles.reviewText} numberOfLines={2}>{driverNote}</Text>
               </View>
             ) : null}
             {amenities.length > 0 ? (
               <View style={styles.reviewRow}>
-                <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
+                <Ionicons name="sparkles-outline" size={16} color={d.primary} />
                 <Text style={styles.reviewText}>{AMENITIES.filter((a) => amenities.includes(a.id)).map((a) => a.label).join(', ')}</Text>
               </View>
             ) : null}
             <View style={styles.reviewRow}>
-              <Ionicons name="card-outline" size={16} color={colors.primary} />
+              <Ionicons name="card-outline" size={16} color={d.primary} />
               <Text style={styles.reviewText}>
                 {paymentMethods.map((m) => m.replace('_', ' ')).join(' • ')}
               </Text>
@@ -817,7 +817,7 @@ export default function PublishRideScreen() {
           ]}
           onPress={nextStep}
         >
-          <Ionicons name="navigate" size={20} color={colors.onAccent} />
+          <Ionicons name="navigate" size={20} color={d.onPrimary} />
           <Text style={styles.publishBtnText}>
             {currentStep === 'Review' ? 'Publish Trip' : 'Continue'}
           </Text>
@@ -832,15 +832,15 @@ export default function PublishRideScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
-  quickPublishContent: { paddingHorizontal: driverContentHorizontal, paddingBottom: spacing.xxl },
+  quickPublishContent: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingBottom: spacing.xxl },
   quickPublishHeader: { marginBottom: spacing.lg },
-  quickPublishTitle: { ...typography.h1, fontSize: 28, fontWeight: '800', marginBottom: spacing.xs },
-  quickPublishSubtitle: { fontSize: 14 },
+  quickPublishTitle: { ...typography.h1, fontWeight: '800', marginBottom: spacing.xs },
+  quickPublishSubtitle: { ...typography.bodySmall },
   quickPublishToggle: { flexDirection: 'row', borderRadius: radii.cardLarge, padding: spacing.xs, marginBottom: spacing.lg, borderWidth: 1 },
   quickPublishToggleBtn: { flex: 1, paddingVertical: spacing.sm + spacing.xs, borderRadius: radii.lg, alignItems: 'center' },
-  quickPublishToggleText: { fontSize: 12, fontWeight: '800' },
+  quickPublishToggleText: { ...typography.captionBold },
   quickPublishField: { marginBottom: spacing.lg, flex: 1 },
-  quickPublishLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginLeft: spacing.xs, marginBottom: spacing.xs },
+  quickPublishLabel: { ...typography.overline, marginLeft: spacing.xs, marginBottom: spacing.xs },
   quickPublishRouteCard: { borderRadius: radii.cardLarge, padding: spacing.sm, borderWidth: 1 },
   quickPublishRouteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderBottomWidth: 1 },
   quickPublishRouteDot: { width: sizes.routeDot, height: sizes.routeDot, borderRadius: radii.xs, borderWidth: 2 },
@@ -848,17 +848,17 @@ const styles = StyleSheet.create({
   quickPublishRouteInput: { flex: 1, paddingVertical: 0, borderBottomWidth: 0, backgroundColor: colors.buttonSecondaryBg, minHeight: spacing.lg },
   quickPublishRow: { flexDirection: 'row', gap: spacing.md },
   quickPublishInputCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radii.cardLarge, padding: spacing.md, borderWidth: 1 },
-  quickPublishInputPrefix: { fontSize: 12, fontWeight: '800' },
+  quickPublishInputPrefix: { ...typography.captionBold },
   quickPublishInput: { flex: 1, ...typography.body, fontWeight: '800', paddingVertical: 0 },
   quickPublishSeatBtns: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   quickPublishInfo: { flexDirection: 'row', gap: spacing.md, padding: spacing.lg, borderRadius: radii.cardLarge, borderWidth: 1, marginBottom: spacing.lg },
   quickPublishInfoIcon: { width: sizes.touchTarget.iconButton, height: sizes.touchTarget.iconButton, borderRadius: radii.lg, alignItems: 'center', justifyContent: 'center' },
-  quickPublishInfoText: { flex: 1, fontSize: 12 },
+  quickPublishInfoText: { flex: 1, ...typography.caption },
   quickPublishInfoBold: { fontWeight: '800' },
   quickPublishCta: { paddingVertical: spacing.lg, borderRadius: radii.cardLarge, alignItems: 'center', marginBottom: spacing.sm },
-  quickPublishCtaText: { fontSize: 18, fontWeight: '800' },
+  quickPublishCtaText: { ...typography.bodyBold18 },
   quickPublishScheduleLink: { alignItems: 'center', paddingVertical: spacing.sm },
-  quickPublishScheduleLinkText: { fontSize: 14, fontWeight: '700' },
+  quickPublishScheduleLinkText: { ...typography.bodySmall, fontWeight: '700' },
   introWrap: { paddingVertical: spacing.md },
   introTitle: { ...typography.h2, marginBottom: spacing.xs },
   introSub: { ...typography.bodySmall, marginBottom: spacing.lg },

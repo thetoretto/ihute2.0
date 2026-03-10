@@ -30,8 +30,8 @@ import {
   ExpandActionButton,
   LandingHeader,
 } from '../../components';
-import { buttonHeights, spacing, typography, radii, borderWidths, colors } from '../../utils/theme';
-import { listBottomPaddingTab, screenContentPadding, tightGap } from '../../utils/layout';
+import { buttonHeights, spacing, typography, radii, borderWidths, sizes } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal, listBottomPaddingTab, listScreenHeaderPaddingVertical, tightGap } from '../../utils/layout';
 import { sharedStyles } from '../../utils/sharedStyles';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { Booking } from '../../types';
@@ -222,11 +222,11 @@ export default function PassengerMyRidesScreen() {
       <LandingHeader title="My Travels" subtitle="Tracking your city hops" />
 
       {/* Upcoming: one prominent card */}
-      <View style={[styles.section, { paddingHorizontal: screenContentPadding }]}>
+      <View style={[styles.section, { paddingHorizontal: landingHeaderPaddingHorizontal }]}>
         <Text style={[styles.sectionOverline, { color: c.textMuted }]}>Upcoming</Text>
         {firstUpcoming ? (
           <TouchableOpacity
-            style={[styles.upcomingCard, { backgroundColor: c.primary }]}
+            style={[styles.upcomingCard, { backgroundColor: c.primary, shadowColor: c.cardShadowColor }]}
             onPress={() => navigation.navigate('TicketDetail', { bookingId: firstUpcoming.id })}
             activeOpacity={0.9}
           >
@@ -262,7 +262,7 @@ export default function PassengerMyRidesScreen() {
       </View>
 
       {/* Past Week */}
-      <View style={[styles.section, { paddingHorizontal: screenContentPadding }]}>
+      <View style={[styles.section, { paddingHorizontal: landingHeaderPaddingHorizontal }]}>
         <Text style={[styles.sectionOverline, { color: c.textMuted }]}>Past Week</Text>
         {completed.length === 0 ? (
           <View style={[styles.pastEmpty, { borderColor: c.borderLight }]}>
@@ -363,7 +363,7 @@ export default function PassengerMyRidesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: {},
+  scrollContent: { paddingTop: listScreenHeaderPaddingVertical },
   errorBanner: {
     marginBottom: spacing.md,
     padding: spacing.md,
@@ -374,18 +374,15 @@ const styles = StyleSheet.create({
   errorText: { ...typography.body },
   section: { marginBottom: spacing.xl },
   sectionOverline: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    ...typography.bodySmall,
+    fontWeight: '800',
     letterSpacing: 2,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
     paddingLeft: spacing.sm,
   },
   upcomingCard: {
     borderRadius: radii.xlMobile,
     padding: spacing.lg,
-    shadowColor: colors.cardShadowColor,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
@@ -403,21 +400,18 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   confirmedBadgeText: {
-    ...typography.caption,
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    ...typography.overline,
     letterSpacing: 1,
   },
-  upcomingTime: { ...typography.caption, fontWeight: '700', opacity: 0.9 },
+  upcomingTime: { ...typography.bodySmall, fontWeight: '700', opacity: 0.9 },
   upcomingRouteRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   routeBlock: { flex: 1, alignItems: 'center' },
-  routeCode: { ...typography.h2, fontSize: 24, fontWeight: '800' },
-  routeCity: { ...typography.caption, fontSize: 10, textTransform: 'uppercase', opacity: 0.7, marginTop: tightGap },
+  routeCode: { ...typography.timeLg },
+  routeCity: { ...typography.bodySmall, opacity: 0.7, marginTop: tightGap },
   routeDots: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -433,8 +427,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  upcomingEmptyText: { ...typography.bodySmall },
-  pastList: { gap: spacing.sm },
+  upcomingEmptyText: { ...typography.body },
+  pastList: { gap: spacing.md },
   pastCardWrap: {
     borderRadius: radii.xl,
     borderWidth: 1,
@@ -443,53 +437,53 @@ const styles = StyleSheet.create({
   pastCardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.lg,
   },
-  pastExpanded: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
+  pastExpanded: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
   pastIconWrap: {
-    width: 40,
-    height: 40,
+    width: sizes.avatar.md,
+    height: sizes.avatar.md,
     borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
   pastContent: { flex: 1, minWidth: 0 },
-  pastRoute: { ...typography.bodySmall, fontWeight: '700' },
-  pastMeta: { ...typography.caption, marginTop: tightGap },
-  pastPrice: { ...typography.body, fontWeight: '800' },
+  pastRoute: { ...typography.body, fontWeight: '700' },
+  pastMeta: { ...typography.bodySmall, marginTop: tightGap },
+  pastPrice: { ...typography.bodyBold, fontWeight: '800' },
   actionRow: {
     ...sharedStyles.listRow,
     flexWrap: 'wrap',
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: buttonHeights.small,
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderRadius: radii.md,
     borderWidth: borderWidths.thin,
   },
-  actionText: { ...typography.captionBold },
+  actionText: { ...typography.bodySmall, fontWeight: '700' },
   ratingCard: {
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     borderWidth: borderWidths.thin,
     borderRadius: radii.md,
-    padding: spacing.sm,
+    padding: spacing.md,
   },
-  ratingTitle: { ...typography.captionBold, marginBottom: spacing.xs },
+  ratingTitle: { ...typography.bodySmall, fontWeight: '700', marginBottom: spacing.sm },
   ratingRow: { flexDirection: 'row', gap: spacing.sm },
-  starBtn: { padding: spacing.xs },
-  ratingLocked: { ...typography.captionBold, marginTop: spacing.xs },
+  starBtn: { padding: spacing.sm },
+  ratingLocked: { ...typography.bodySmall, marginTop: spacing.sm },
   pastEmpty: {
     borderWidth: 2,
     borderStyle: 'dashed',
     borderRadius: radii.lg,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pastEmptyText: { ...typography.bodySmall },
+  pastEmptyText: { ...typography.body },
 });

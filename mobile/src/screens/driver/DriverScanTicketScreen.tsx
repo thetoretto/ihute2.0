@@ -6,9 +6,9 @@ import { useAuth } from '../../context/AuthContext';
 import { Screen } from '../../components';
 import { validateTicketQr } from '../../services/api';
 import { incrementScannerTicketCount } from '../../services/api';
-import { buttonHeights, colors, spacing, typography, radii, cardShadow } from '../../utils/theme';
+import { buttonHeights, spacing, typography, radii, cardShadow } from '../../utils/theme';
 import { useThemeColors } from '../../context/ThemeContext';
-import { driverContentHorizontal } from '../../utils/layout';
+import { landingHeaderPaddingHorizontal } from '../../utils/layout';
 import type { TicketQrValidationResult } from '../../types';
 
 const PANEL_RADIUS = radii.panel;
@@ -56,7 +56,7 @@ export default function DriverScanTicketScreen() {
         <Text style={[styles.muted, { color: c.textSecondary }]}>
           Allow camera permission to scan passenger QR tickets.
         </Text>
-        <TouchableOpacity style={[styles.permissionBtn, { backgroundColor: c.primary }]} onPress={() => void requestPermission()}>
+        <TouchableOpacity style={[styles.permissionBtn, { backgroundColor: c.primary, borderColor: c.primaryButtonBorder }]} onPress={() => void requestPermission()}>
           <Text style={[styles.permissionBtnText, { color: c.onPrimary }]}>Grant permission</Text>
         </TouchableOpacity>
       </Screen>
@@ -66,7 +66,7 @@ export default function DriverScanTicketScreen() {
   return (
     <Screen style={[styles.container, { paddingHorizontal: 0 }]}>
       <View style={styles.page}>
-      <View style={[styles.cameraWrap, { borderColor: c.border }, cardShadow]}>
+      <View style={[styles.cameraWrap, { borderColor: c.border, backgroundColor: c.surface }, cardShadow]}>
         <CameraView
           style={styles.camera}
           facing="back"
@@ -83,8 +83,13 @@ export default function DriverScanTicketScreen() {
         {isValidating ? <Text style={[styles.muted, { color: c.textSecondary }]}>Validating ticket...</Text> : null}
 
         {result ? (
-          <View style={[styles.resultCard, result.valid ? styles.validCard : styles.invalidCard]}>
-            <Text style={[styles.resultTitle, result.valid ? styles.validText : styles.invalidText]}>
+          <View
+            style={[
+              styles.resultCard,
+              result.valid ? { borderColor: c.success, backgroundColor: c.successTint } : { borderColor: c.error, backgroundColor: c.surfaceElevated },
+            ]}
+          >
+            <Text style={[styles.resultTitle, result.valid ? { color: c.success } : { color: c.error }]}>
               {result.valid ? 'Ticket valid' : 'Ticket invalid'}
             </Text>
             {result.ticket ? (
@@ -106,7 +111,7 @@ export default function DriverScanTicketScreen() {
           </View>
         ) : null}
 
-        <TouchableOpacity style={[styles.scanAgainBtn, { backgroundColor: c.primary }]} onPress={onScanAgain}>
+        <TouchableOpacity style={[styles.scanAgainBtn, { backgroundColor: c.primary, borderColor: c.primaryButtonBorder }]} onPress={onScanAgain}>
           <Ionicons name="refresh-outline" size={15} color={c.onPrimary} />
           <Text style={[styles.scanAgainText, { color: c.onPrimary }]}>Scan again</Text>
         </TouchableOpacity>
@@ -118,7 +123,7 @@ export default function DriverScanTicketScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  page: { flex: 1, paddingHorizontal: driverContentHorizontal },
+  page: { flex: 1, paddingHorizontal: landingHeaderPaddingHorizontal },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -128,26 +133,21 @@ const styles = StyleSheet.create({
   },
   muted: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
     textAlign: 'center',
   },
   permissionTitle: {
     ...typography.h3,
-    color: colors.text,
   },
   permissionBtn: {
     marginTop: spacing.md,
     minHeight: buttonHeights.small,
     borderRadius: radii.button,
     borderWidth: 1,
-    borderColor: colors.primaryButtonBorder,
-    backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
     justifyContent: 'center',
   },
   permissionBtnText: {
     ...typography.bodySmall,
-    color: colors.onPrimary,
     fontWeight: '700',
   },
   cameraWrap: {
@@ -155,7 +155,6 @@ const styles = StyleSheet.create({
     borderRadius: PANEL_RADIUS,
     overflow: 'hidden',
     borderWidth: 1,
-    backgroundColor: colors.surface,
   },
   camera: {
     width: '100%',
@@ -177,27 +176,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: spacing.xs,
   },
-  validCard: {
-    borderColor: colors.success,
-    backgroundColor: colors.successTint,
-  },
-  invalidCard: {
-    borderColor: colors.error,
-    backgroundColor: colors.surfaceElevated,
-  },
   resultTitle: {
     ...typography.body,
     fontWeight: '700',
   },
-  validText: { color: colors.success },
-  invalidText: { color: colors.error },
   resultLine: {
     ...typography.caption,
-    color: colors.text,
   },
   resultMeta: {
     ...typography.caption,
-    color: colors.textSecondary,
     marginTop: spacing.xs,
   },
   scanAgainBtn: {
@@ -208,14 +195,11 @@ const styles = StyleSheet.create({
     minHeight: buttonHeights.small,
     gap: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.primaryButtonBorder,
     borderRadius: radii.button,
     paddingHorizontal: spacing.md,
-    backgroundColor: colors.primary,
   },
   scanAgainText: {
     ...typography.caption,
-    color: colors.onPrimary,
     fontWeight: '700',
   },
 });

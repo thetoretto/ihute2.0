@@ -48,7 +48,7 @@ import { useThemeColors } from '../../context/ThemeContext';
 import { useDriverTheme } from '../../context/DriverThemeContext';
 import { useToast } from '../../context/ToastContext';
 import { colors, spacing, typography, radii, sizes, cardShadow, borderWidths } from '../../utils/theme';
-import { cardRadius, driverContentHorizontal, layout, listBottomPaddingTab, sectionTitleStyle, tightGap } from '../../utils/layout';
+import { cardRadius, landingHeaderPaddingHorizontal, layout, listBottomPaddingTab, sectionTitleStyle, tightGap } from '../../utils/layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { DriverTripActivity, Hotpoint } from '../../types';
 import type { DriverDriveModeStatus } from '../../services/api';
@@ -241,7 +241,7 @@ export default function DriverHomeScreen() {
             <View style={styles.driverHeaderLeft}>
               <Text style={[styles.driverGreeting, { color: d.primary }]}>Hello, {getGreetingName(user?.displayName ?? user?.email ?? '')}!</Text>
               <View style={styles.driverHeaderBadges}>
-                <View style={styles.driverTierPill}><Text style={styles.driverTierPillText}>Gold Pro</Text></View>
+                <View style={styles.driverTierPill}><Text style={[styles.driverTierPillText, { color: c.warning }]}>Gold Pro</Text></View>
                 <Text style={[styles.driverRatingBadge, { color: c.textSecondary }]}>{formatRatingValue(ratingSummary?.average ?? 0, '0.00')} ★ Rating</Text>
               </View>
             </View>
@@ -308,19 +308,19 @@ export default function DriverHomeScreen() {
             {nextRide ? (
               <View style={[styles.driverActiveTripCard, { backgroundColor: d.primary }, cardShadow]}>
                 <View style={styles.driverActiveTripTop}>
-                  <View style={[styles.driverInProgressPill, { backgroundColor: d.instaGreen }]}><Text style={styles.driverInProgressPillText}>In Progress</Text></View>
-                  <View style={styles.driverLiveIndicator}><View style={styles.driverLiveDot} /><Text style={styles.driverLiveLabel}>Live</Text></View>
+                  <View style={[styles.driverInProgressPill, { backgroundColor: d.instaGreen }]}><Text style={[styles.driverInProgressPillText, { color: d.onPrimary }]}>In Progress</Text></View>
+                  <View style={styles.driverLiveIndicator}><View style={styles.driverLiveDot} /><Text style={[styles.driverLiveLabel, { color: d.onAppPrimaryMuted }]}>Live</Text></View>
                 </View>
                 <View style={styles.driverRouteRow}>
-                  <View><Text style={styles.driverRouteCode}>{nextRide.trip.departureHotpoint?.name?.slice(0, 3).toUpperCase() ?? 'KGL'}</Text><Text style={styles.driverRouteCity}>{nextRide.trip.departureHotpoint?.name ?? 'Kigali'}</Text></View>
+                  <View><Text style={[styles.driverRouteCode, { color: d.onAppPrimary }]}>{nextRide.trip.departureHotpoint?.name?.slice(0, 3).toUpperCase() ?? 'KGL'}</Text><Text style={[styles.driverRouteCity, { color: d.onAppPrimaryMuted }]}>{nextRide.trip.departureHotpoint?.name ?? 'Kigali'}</Text></View>
                   <View style={styles.driverRouteLine}><View style={styles.driverRouteLineInner} /><Ionicons name="flash" size={20} color={d.instaGreen} /><View style={styles.driverRouteLineInner} /></View>
-                  <View style={{ alignItems: 'flex-end' }}><Text style={styles.driverRouteCode}>{nextRide.trip.destinationHotpoint?.name?.slice(0, 3).toUpperCase() ?? 'MUS'}</Text><Text style={styles.driverRouteCity}>{nextRide.trip.destinationHotpoint?.name ?? 'Destination'}</Text></View>
+                  <View style={{ alignItems: 'flex-end' }}><Text style={[styles.driverRouteCode, { color: d.onAppPrimary }]}>{nextRide.trip.destinationHotpoint?.name?.slice(0, 3).toUpperCase() ?? 'MUS'}</Text><Text style={[styles.driverRouteCity, { color: d.onAppPrimaryMuted }]}>{nextRide.trip.destinationHotpoint?.name ?? 'Destination'}</Text></View>
                 </View>
                 <View style={styles.driverPassengerRow}>
-                  <View style={styles.driverPassengerLeft}><View style={[styles.driverPassengerAvatar, { borderColor: d.instaGreen }]} /><View><Text style={styles.driverPassengerLabel}>Passenger</Text><Text style={styles.driverPassengerName}>{nextRide.bookingsCount} Booked</Text></View></View>
-                  <View><Text style={styles.driverPassengerLabel}>Occupancy</Text><Text style={styles.driverPassengerName}>{nextRide.bookedSeats ?? 0}/{nextRide.trip.seatsAvailable ?? 4} Booked</Text></View>
+                  <View style={styles.driverPassengerLeft}><View style={[styles.driverPassengerAvatar, { borderColor: d.instaGreen }]} /><View><Text style={[styles.driverPassengerLabel, { color: d.onAppPrimaryMuted }]}>Passenger</Text><Text style={[styles.driverPassengerName, { color: d.onAppPrimary }]}>{nextRide.bookingsCount} Booked</Text></View></View>
+                  <View><Text style={[styles.driverPassengerLabel, { color: d.onAppPrimaryMuted }]}>Occupancy</Text><Text style={[styles.driverPassengerName, { color: d.onAppPrimary }]}>{nextRide.bookedSeats ?? 0}/{nextRide.trip.seatsAvailable ?? 4} Booked</Text></View>
                 </View>
-                <TouchableOpacity style={[styles.driverViewRideBtn, { backgroundColor: c.surfaceOverlay }]} onPress={() => rootNavigate('DriverActivityListStack')}><Text style={styles.driverViewRideBtnText}>View ride</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.driverViewRideBtn, { backgroundColor: c.surfaceOverlay }]} onPress={() => rootNavigate('DriverActivityListStack')}><Text style={[styles.driverViewRideBtnText, { color: c.text }]}>View ride</Text></TouchableOpacity>
               </View>
             ) : (
               <View style={[styles.driverActiveTripCard, styles.driverActiveTripCardEmpty, { backgroundColor: d.card, borderColor: c.border }]}>
@@ -964,23 +964,23 @@ const styles = StyleSheet.create({
   // Driver mockup
   driverMockupWrapper: { flex: 1 },
   driverMockupScroll: { flex: 1 },
-  driverMockupScrollContent: { paddingHorizontal: driverContentHorizontal, paddingTop: spacing.md },
+  driverMockupScrollContent: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.md },
   driverMockupHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: driverContentHorizontal,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
     paddingVertical: spacing.md,
     paddingTop: spacing.md,
     backgroundColor: colors.card,
     borderBottomWidth: 1,
   },
   driverHeaderLeft: {},
-  driverGreeting: { ...typography.h2, fontSize: 24, fontWeight: '800' },
+  driverGreeting: { ...typography.timeLg },
   driverHeaderBadges: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
   driverTierPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs, backgroundColor: colors.warningTint, borderRadius: radii.xxs },
-  driverTierPillText: { fontSize: 9, fontWeight: '800', color: colors.warning, textTransform: 'uppercase' },
-  driverRatingBadge: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  driverTierPillText: { ...typography.caption9, textTransform: 'uppercase' },
+  driverRatingBadge: { ...typography.overline, letterSpacing: 1 },
   driverHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   driverIconBtn: { width: sizes.touchTarget.min, height: sizes.touchTarget.min, borderRadius: radii.lg, backgroundColor: colors.ghostBg, borderWidth: 1, borderColor: colors.borderLight, alignItems: 'center', justifyContent: 'center' },
   driverNotificationDot: { position: 'absolute', top: spacing.smMd, right: spacing.smMd, width: sizes.timelineDot, height: sizes.timelineDot, borderRadius: radii.xxs, backgroundColor: colors.error, borderWidth: 2, borderColor: colors.card },
@@ -999,10 +999,10 @@ const styles = StyleSheet.create({
   },
   driverWalletLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   driverWalletIcon: { width: sizes.touchTarget.iconButton, height: sizes.touchTarget.iconButton, borderRadius: radii.xl, alignItems: 'center', justifyContent: 'center' },
-  driverWalletLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  driverWalletAmount: { ...typography.bodyBold18, fontSize: 18 },
+  driverWalletLabel: { ...typography.overline, letterSpacing: 0.5 },
+  driverWalletAmount: { ...typography.bodyBold18 },
   driverWithdrawBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.button },
-  driverWithdrawBtnText: { fontSize: 10, fontWeight: '800', color: colors.onAppPrimary },
+  driverWithdrawBtnText: { ...typography.overline },
   driverInstantModeCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1015,7 +1015,7 @@ const styles = StyleSheet.create({
   driverInstantModeLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   driverStatusDot: { width: sizes.timelineDotLg, height: sizes.timelineDotLg, borderRadius: radii.xs },
   driverInstantModeTitle: { ...typography.bodySmall, fontWeight: '800' },
-  driverInstantModeSub: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
+  driverInstantModeSub: { ...typography.overline, letterSpacing: 0.3 },
   driverLiveBlock: {
     marginBottom: spacing.md,
     padding: spacing.lg,
@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
   },
   driverLiveIconWrap: { width: sizes.avatar.lg, height: sizes.avatar.lg, borderRadius: radii.cardLarge, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   driverLiveTitle: { ...typography.bodySmall, fontWeight: '800', marginBottom: spacing.xs },
-  driverLiveSub: { fontSize: 12, fontWeight: '700' },
+  driverLiveSub: { ...typography.captionBold },
   driverSection: { marginBottom: spacing.lg },
   driverSectionTitle: { ...typography.bodyBold18, marginBottom: spacing.md },
   driverActiveTripCard: {
@@ -1036,22 +1036,22 @@ const styles = StyleSheet.create({
   driverActiveTripCardEmpty: { borderWidth: 1, alignItems: 'center', paddingVertical: spacing.xl },
   driverActiveTripTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg },
   driverInProgressPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radii.full },
-  driverInProgressPillText: { fontSize: 10, fontWeight: '700', color: colors.onAppPrimary, textTransform: 'uppercase', letterSpacing: 1 },
+  driverInProgressPillText: { ...typography.overline, letterSpacing: 1 },
   driverLiveIndicator: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   driverLiveDot: { width: sizes.timelineDot, height: sizes.timelineDot, borderRadius: radii.xxs, backgroundColor: colors.error },
-  driverLiveLabel: { fontSize: 12, fontWeight: '700', color: colors.onAppPrimaryMuted },
+  driverLiveLabel: { ...typography.captionBold },
   driverRouteRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
   driverRouteLine: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.sm },
   driverRouteLineInner: { flex: 1, height: 1, backgroundColor: colors.onAppPrimarySoft },
-  driverRouteCode: { fontSize: 22, fontWeight: '800', color: colors.onAppPrimary },
-  driverRouteCity: { fontSize: 10, fontWeight: '700', color: colors.onAppPrimaryMuted, textTransform: 'uppercase' },
+  driverRouteCode: { ...typography.totalPrice },
+  driverRouteCity: { ...typography.overline },
   driverPassengerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceOverlay, borderRadius: radii.lg, padding: spacing.md },
   driverPassengerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   driverPassengerAvatar: { width: sizes.touchTarget.iconButton, height: sizes.touchTarget.iconButton, borderRadius: radii.xl, borderWidth: 2 },
-  driverPassengerLabel: { fontSize: 10, fontWeight: '700', color: colors.onAppPrimaryMuted, textTransform: 'uppercase' },
-  driverPassengerName: { fontSize: 12, fontWeight: '800', color: colors.onAppPrimary },
+  driverPassengerLabel: { ...typography.overline },
+  driverPassengerName: { ...typography.captionBold },
   driverViewRideBtn: { marginTop: spacing.md, paddingVertical: spacing.sm + spacing.xs, paddingHorizontal: spacing.lg, borderRadius: radii.button, alignSelf: 'stretch', alignItems: 'center' },
-  driverViewRideBtnText: { fontSize: 12, fontWeight: '800', color: colors.onAppPrimary },
+  driverViewRideBtnText: { ...typography.captionBold },
   driverNoActiveTrip: { ...typography.bodySmall, marginBottom: spacing.md },
   driverPendingCard: {
     flexDirection: 'row',
@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
   driverPendingAvatar: { width: sizes.avatar.lg, height: sizes.avatar.lg, borderRadius: radii.lg },
   driverPendingBody: { flex: 1 },
   driverPendingName: { ...typography.bodySmall, fontWeight: '700' },
-  driverPendingMeta: { fontSize: 10, color: colors.textSecondary },
+  driverPendingMeta: { ...typography.overline },
   driverPendingActions: { flexDirection: 'row', gap: spacing.sm },
   driverApproveBtn: { padding: spacing.sm, backgroundColor: colors.successTint, borderRadius: radii.button },
   driverRejectBtn: { padding: spacing.sm, backgroundColor: colors.errorTint, borderRadius: radii.button },

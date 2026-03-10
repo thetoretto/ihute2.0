@@ -29,7 +29,7 @@ import { useThemeColors } from '../../context/ThemeContext';
 import { useDriverTheme } from '../../context/DriverThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { strings } from '../../constants/strings';
-import { driverContentHorizontal, listBottomPaddingTab } from '../../utils/layout';
+import { landingHeaderPaddingHorizontal, listBottomPaddingTab } from '../../utils/layout';
 import type { DriverTripActivity } from '../../types';
 
 const TABS = [
@@ -278,12 +278,12 @@ const styles = StyleSheet.create({
   tabsScroll: {
     flexDirection: 'row',
     gap: spacing.sm,
-    paddingHorizontal: driverContentHorizontal,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
     paddingBottom: spacing.sm,
     alignItems: 'center',
   },
   tabPill: {
-    paddingHorizontal: driverContentHorizontal,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
     paddingVertical: spacing.sm,
     borderRadius: radii.full,
     borderWidth: borderWidths.thin,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     ...typography.overline,
     letterSpacing: 1.2,
     marginBottom: spacing.sm,
-    marginHorizontal: driverContentHorizontal,
+    marginHorizontal: landingHeaderPaddingHorizontal,
   },
   card: {
     flexDirection: 'row',
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   cardTimeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
   cardTime: { ...typography.caption10, fontWeight: '600' },
   chevron: { marginLeft: spacing.xs },
-  listContent: { paddingHorizontal: driverContentHorizontal, paddingTop: spacing.md },
+  listContent: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.md },
   errorBanner: {
     marginBottom: spacing.md,
     padding: spacing.md,
@@ -330,13 +330,13 @@ const styles = StyleSheet.create({
   },
   errorText: { ...typography.body },
   activitiesHeader: {
-    paddingHorizontal: driverContentHorizontal,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
     paddingBottom: spacing.lg,
     borderBottomWidth: 1,
   },
   activitiesHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg },
-  activitiesTitle: { ...typography.h1, fontSize: 28, fontWeight: '800', marginBottom: spacing.xs },
-  activitiesSubtitle: { fontSize: 14 },
+  activitiesTitle: { ...typography.h1, fontWeight: '800', marginBottom: spacing.xs },
+  activitiesSubtitle: { ...typography.bodySmall },
   activitiesHeaderIcon: { width: sizes.touchTarget.iconButton, height: sizes.touchTarget.iconButton, borderRadius: radii.smMedium, alignItems: 'center', justifyContent: 'center' },
   activitiesStatsRow: { flexDirection: 'row', gap: spacing.sm },
   activitiesStatCard: {
@@ -345,11 +345,11 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
   },
-  activitiesStatLabel: { fontSize: 8, fontWeight: '800', textTransform: 'uppercase', marginBottom: spacing.xxs },
-  activitiesStatValue: { fontSize: 14, fontWeight: '800' },
-  tabsRow: { flexDirection: 'row', paddingHorizontal: driverContentHorizontal, gap: spacing.lg, paddingTop: spacing.lg, marginBottom: spacing.sm, borderBottomWidth: 1 },
+  activitiesStatLabel: { ...typography.caption9, textTransform: 'uppercase', marginBottom: spacing.xxs },
+  activitiesStatValue: { ...typography.bodySmall, fontWeight: '800' },
+  tabsRow: { flexDirection: 'row', paddingHorizontal: landingHeaderPaddingHorizontal, gap: spacing.lg, paddingTop: spacing.lg, marginBottom: spacing.sm, borderBottomWidth: 1 },
   tabUnderline: { paddingBottom: spacing.sm },
-  tabUnderlineText: { fontSize: 14, fontWeight: '800' },
+  tabUnderlineText: { ...typography.bodySmall, fontWeight: '800' },
   activityCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -369,9 +369,9 @@ const styles = StyleSheet.create({
   activityCardBody: { flex: 1, minWidth: 0 },
   activityCardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.sm },
   activityCardTitle: { ...typography.bodySmall, fontWeight: '800' },
-  activityCardAmount: { fontSize: 12, fontWeight: '800' },
+  activityCardAmount: { ...typography.captionBold },
   activityCardMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: spacing.xs },
-  activityCardMetaText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', flex: 1 },
+  activityCardMetaText: { ...typography.overline, flex: 1 },
   activityCardPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs, borderRadius: radii.xs },
-  activityCardPillText: { fontSize: 8, fontWeight: '800' },
+  activityCardPillText: { ...typography.caption9 },
 });

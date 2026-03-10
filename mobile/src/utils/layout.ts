@@ -37,10 +37,10 @@ export const layout = {
     contentHorizontal: spacing.lg,
   },
   
-  // Lists & Scrolling
+  // Lists & Scrolling (same horizontal inset as screen for common look)
   list: {
     headerVertical: spacing.lg,
-    headerHorizontal: spacing.md, // Keeping in sync with screen.horizontal
+    headerHorizontal: spacing.lg,
     contentTop: spacing.sm,
     gapTight: spacing.xxs,
     

@@ -8,7 +8,7 @@ import { getTripsStore, getTrip } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { spacing, typography, radii, buttonHeights, sizes, borderWidths } from '../../utils/theme';
-import { screenContentPadding, timelineDotSizeLg, contentBottomPaddingWithFooter } from '../../utils/layout';
+import { landingHeaderPaddingHorizontal, listScreenHeaderPaddingVertical, timelineDotSizeLg, contentBottomPaddingWithFooter } from '../../utils/layout';
 import { sharedStyles } from '../../utils/sharedStyles';
 import { formatRwf } from '../../../../shared/src';
 import { openWhatsAppDispute } from '../../utils/whatsapp';
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: screenContentPadding,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
     paddingVertical: spacing.md,
     minHeight: sizes.avatar.xl,
     borderBottomWidth: borderWidths.thin,
@@ -227,9 +227,9 @@ const styles = StyleSheet.create({
     minHeight: sizes.touchTarget.min,
     justifyContent: 'center',
   },
-  headerTitle: { ...typography.bodySmall, fontWeight: '800' },
+  headerTitle: { ...typography.body, fontWeight: '800' },
   scroll: { flex: 1 },
-  content: { padding: screenContentPadding },
+  content: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: listScreenHeaderPaddingVertical, paddingBottom: spacing.xl },
   typeBadgeWrap: {
     ...sharedStyles.chip,
     alignSelf: 'flex-start',

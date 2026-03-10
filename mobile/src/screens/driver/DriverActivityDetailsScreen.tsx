@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { getDriverActivitySummary } from '../../services/api';
 import { spacing, radii, typography } from '../../utils/theme';
-import { driverContentHorizontal } from '../../utils/layout';
+import { landingHeaderPaddingHorizontal } from '../../utils/layout';
 
 interface Summary {
   doneCount: number;
@@ -92,7 +92,7 @@ export default function DriverActivityDetailsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl, paddingHorizontal: driverContentHorizontal },
+  content: { paddingTop: spacing.lg, paddingBottom: spacing.xl, paddingHorizontal: landingHeaderPaddingHorizontal },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.sm },
   title: { ...typography.h2, marginBottom: spacing.xs },
   subtitle: { ...typography.bodySmall, marginBottom: spacing.lg },

@@ -19,8 +19,8 @@ import { useRole } from '../../context/RoleContext';
 import { RoleToggle, Screen, CarRefreshIndicator, LandingHeader } from '../../components';
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeColors } from '../../context/ThemeContext';
-import { spacing, typography, radii, sizes, colors } from '../../utils/theme';
-import { listBottomPaddingTab, screenContentPadding, landingHeaderPaddingHorizontal } from '../../utils/layout';
+import { spacing, typography, radii, sizes, buttonHeights } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal, listBottomPaddingTab, listScreenHeaderPaddingVertical } from '../../utils/layout';
 import { strings } from '../../constants/strings';
 import { searchTrips, getUserBookings, getHotpoints, type SearchTripsSortBy } from '../../services/api';
 import { selectorStyles } from '../../utils/selectorStyles';
@@ -194,7 +194,7 @@ export default function PassengerHomeScreen() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.swapBtn} onPress={swapLocations}>
+          <TouchableOpacity style={[styles.swapBtn, { backgroundColor: c.surface, borderColor: c.buttonSecondaryBg ?? c.border }]} onPress={swapLocations}>
             <Ionicons name="swap-vertical" size={22} color={c.appAccent ?? c.primary} />
           </TouchableOpacity>
 
@@ -426,7 +426,7 @@ export default function PassengerHomeScreen() {
   return (
     <Screen style={[styles.container, { backgroundColor: c.appBackground }]}>
       {user?.roles?.length && user.roles.length > 1 ? (
-        <View style={[styles.roleToggleWrap, { paddingHorizontal: screenContentPadding }]}>
+        <View style={[styles.roleToggleWrap, { paddingHorizontal: landingHeaderPaddingHorizontal }]}>
           <RoleToggle
             currentRole={currentRole}
             onSwitch={switchRole}
@@ -544,18 +544,18 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   flex1: { flex: 1 },
   roleToggleWrap: { marginBottom: spacing.sm },
-  searchScrollContent: { paddingTop: spacing.lg },
-  searchBlock: { paddingTop: spacing.md },
+  searchScrollContent: { paddingTop: listScreenHeaderPaddingVertical },
+  searchBlock: { paddingTop: spacing.lg },
   inputCard: {
     borderRadius: radii.xl + 4,
     borderWidth: 1,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.md,
     gap: spacing.md,
   },
@@ -573,9 +573,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.xxs,
   },
   inputLabel: {
-    ...typography.body,
-    fontSize: 18,
-    fontWeight: '700',
+    ...typography.bodyBold18,
     flex: 1,
   },
   swapBtn: {
@@ -585,9 +583,7 @@ const styles = StyleSheet.create({
     width: sizes.touchTarget.iconButton,
     height: sizes.touchTarget.iconButton,
     borderRadius: radii.xl,
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.buttonSecondaryBg,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
@@ -598,11 +594,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 56,
+    minHeight: buttonHeights.large,
   },
   searchBtnText: {
     ...typography.h3,
-    fontSize: 20,
     fontWeight: '800',
   },
   pulseSection: { marginTop: spacing.xl },
@@ -614,7 +609,6 @@ const styles = StyleSheet.create({
   },
   pulseSectionTitle: {
     ...typography.bodySmall,
-    fontSize: 14,
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1.2,
@@ -626,7 +620,7 @@ const styles = StyleSheet.create({
   },
   pulseCard: {
     flex: 1,
-    padding: spacing.md,
+    padding: spacing.lg,
     borderRadius: radii.xl,
     borderWidth: 1,
   },
@@ -637,27 +631,21 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxs,
   },
   pulseCardTag: {
-    ...typography.caption,
-    fontSize: 10,
+    ...typography.overline,
     fontWeight: '800',
-    textTransform: 'uppercase',
   },
   pulseCardValue: {
-    ...typography.h2,
-    fontSize: 18,
-    fontWeight: '800',
+    ...typography.bodyBold18,
   },
   pulseCardLabel: {
-    ...typography.caption,
-    fontSize: 9,
+    ...typography.overline,
     fontWeight: '700',
-    textTransform: 'uppercase',
     marginTop: spacing.xxs,
   },
   pulsePeopleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.lg,
     borderRadius: radii.xl,
     borderWidth: 1,
     gap: spacing.md,
@@ -676,8 +664,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pulsePeopleText: {
-    ...typography.caption,
-    fontSize: 11,
+    ...typography.bodySmall,
     fontWeight: '700',
     flex: 1,
   },
@@ -693,13 +680,12 @@ const styles = StyleSheet.create({
   },
   shieldBannerText: {
     ...typography.bodySmall,
-    fontSize: 13,
     fontWeight: '700',
     flex: 1,
   },
   resultsHeader: {
-    paddingHorizontal: screenContentPadding,
-    paddingTop: spacing.md,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
+    paddingTop: listScreenHeaderPaddingVertical,
     paddingBottom: spacing.lg,
     borderBottomWidth: 1,
   },
@@ -721,7 +707,7 @@ const styles = StyleSheet.create({
   resultsFromToCard: {
     flex: 1,
     borderRadius: radii.md,
-    padding: spacing.sm,
+    padding: spacing.md,
     borderWidth: 1,
   },
   resultsFromToRow: {
@@ -741,38 +727,36 @@ const styles = StyleSheet.create({
   },
   resultsFromToLabel: {
     ...typography.bodySmall,
-    fontSize: 14,
     fontWeight: '800',
     flex: 1,
   },
   filterBtn: {
-    width: 48,
+    width: sizes.touchTarget.iconButton,
     borderRadius: radii.md,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   resultsListContent: {
-    padding: spacing.md,
-    paddingTop: spacing.sm,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   resultsListHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    marginBottom: spacing.sm,
+    paddingHorizontal: 0,
+    marginBottom: spacing.lg,
   },
   resultsCount: {
-    ...typography.caption,
-    fontSize: 12,
+    ...typography.bodySmall,
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   resultsSortLabel: {
-    ...typography.caption,
-    fontSize: 12,
+    ...typography.bodySmall,
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -780,7 +764,7 @@ const styles = StyleSheet.create({
   tripCard: {
     borderRadius: radii.xl + 4,
     padding: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
     borderWidth: 1,
   },
   tripCardTop: {
@@ -804,39 +788,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   timelineDot: {
     width: spacing.md,
     height: spacing.md,
     borderRadius: radii.sm,
     borderWidth: 2,
-    backgroundColor: colors.surface,
   },
   timelineDotArrival: {},
-  tripTime: {
-    ...typography.h2,
-    fontSize: 20,
-    fontWeight: '800',
-    lineHeight: 24,
-  },
+  tripTime: typography.time,
   tripPlace: {
-    ...typography.caption,
-    fontSize: 12,
+    ...typography.bodySmall,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
   tripPriceBlock: { alignItems: 'flex-end' },
-  tripPrice: {
-    ...typography.h2,
-    fontSize: 28,
-    fontWeight: '800',
-  },
+  tripPrice: typography.totalPrice,
   tripInstant: {
-    ...typography.caption,
-    fontSize: 10,
+    ...typography.overline,
     fontWeight: '700',
-    textTransform: 'uppercase',
   },
   tripDivider: {
     height: 1,
@@ -868,25 +839,16 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     padding: spacing.xxs,
     borderWidth: 2,
-    borderColor: colors.surface,
   },
-  tripDriverName: {
-    ...typography.body,
-    fontWeight: '800',
-  },
+  tripDriverName: typography.driverNameLg,
   tripDriverRating: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xxs,
   },
-  tripDriverRatingText: {
-    ...typography.caption,
-    fontSize: 12,
-    fontWeight: '800',
-  },
+  tripDriverRatingText: typography.captionBold,
   tripDriverReviews: {
-    ...typography.caption,
-    fontSize: 10,
+    ...typography.bodySmall,
     fontWeight: '700',
   },
   tripChevronWrap: {
@@ -899,7 +861,7 @@ const styles = StyleSheet.create({
   emptyResults: {
     paddingVertical: spacing.xxl + spacing.xl,
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
   },
   emptyResultsIcon: {
     width: 80,
@@ -911,9 +873,8 @@ const styles = StyleSheet.create({
   },
   emptyResultsTitle: {
     ...typography.h2,
-    fontSize: 20,
     fontWeight: '800',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   emptyResultsSubtitle: {
     ...typography.bodySmall,
@@ -940,7 +901,6 @@ const styles = StyleSheet.create({
   },
   sortSheetTitle: {
     ...typography.h2,
-    fontSize: 20,
     fontWeight: '800',
   },
   sortSheetClose: {

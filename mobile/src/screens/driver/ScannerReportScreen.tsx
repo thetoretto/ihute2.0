@@ -5,12 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components';
 import { getScannerTicketReport } from '../../services/api';
 import type { ScannerTicketReportItem } from '../../services/api';
-import { colors, spacing, typography, radii } from '../../utils/theme';
-import { driverContentHorizontal, tightGap } from '../../utils/layout';
+import { spacing, typography, radii } from '../../utils/theme';
+import { useThemeColors } from '../../context/ThemeContext';
+import { landingHeaderPaddingHorizontal, tightGap } from '../../utils/layout';
 
 type Period = 'past' | 'today' | 'upcoming';
 
 export default function ScannerReportScreen() {
+  const c = useThemeColors();
   const [period, setPeriod] = useState<Period>('today');
   const [items, setItems] = useState<ScannerTicketReportItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -34,18 +36,22 @@ export default function ScannerReportScreen() {
 
   return (
     <Screen scroll={false} style={[styles.container, { paddingHorizontal: 0 }]}>
-      <View style={styles.reportHeader}>
-        <Text style={styles.reportTitle}>Ticket report</Text>
-        <Text style={styles.reportSubtitle}>Past, today & upcoming tickets for your shift</Text>
+      <View style={[styles.reportHeader, { borderBottomColor: c.border, backgroundColor: c.surface }]}>
+        <Text style={[styles.reportTitle, { color: c.text }]}>Ticket report</Text>
+        <Text style={[styles.reportSubtitle, { color: c.textSecondary }]}>Past, today & upcoming tickets for your shift</Text>
       </View>
-      <View style={styles.segmentRow}>
+      <View style={[styles.segmentRow, { borderBottomColor: c.border, backgroundColor: c.surface }]}>
         {(['past', 'today', 'upcoming'] as const).map((p) => (
           <TouchableOpacity
             key={p}
-            style={[styles.segmentBtn, period === p && styles.segmentBtnActive]}
+            style={[
+              styles.segmentBtn,
+              { backgroundColor: c.surface, borderColor: c.border },
+              period === p && { borderColor: c.primaryButtonBorder, backgroundColor: c.primary },
+            ]}
             onPress={() => setPeriod(p)}
           >
-            <Text style={[styles.segmentText, period === p && styles.segmentTextActive]}>
+            <Text style={[styles.segmentText, { color: c.textSecondary }, period === p && { color: c.onPrimary, fontWeight: '600' }]}>
               {p === 'past' ? 'Past' : p === 'today' ? 'Today' : 'Upcoming'}
             </Text>
           </TouchableOpacity>
@@ -60,28 +66,35 @@ export default function ScannerReportScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
+            colors={[c.primary]}
+            tintColor={c.primary}
           />
         }
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
-            <Ionicons name="ticket-outline" size={40} color={colors.textMuted} />
-            <Text style={styles.emptyText}>No tickets for this period.</Text>
+            <Ionicons name="ticket-outline" size={40} color={c.textMuted} />
+            <Text style={[styles.emptyText, { color: c.textSecondary }]}>No tickets for this period.</Text>
           </View>
         }
         renderItem={({ item }) => (
-          <View style={styles.row}>
+          <View style={[styles.row, { backgroundColor: c.card, borderColor: c.border }]}>
             <View style={styles.rowMain}>
-              <Text style={styles.route}>{item.route}</Text>
-              <Text style={styles.passenger}>{item.passengerName}</Text>
-              <Text style={styles.time}>{item.departureTime}</Text>
+              <Text style={[styles.route, { color: c.text }]}>{item.route}</Text>
+              <Text style={[styles.passenger, { color: c.textSecondary }]}>{item.passengerName}</Text>
+              <Text style={[styles.time, { color: c.textMuted }]}>{item.departureTime}</Text>
             </View>
-            <View style={[styles.statusBadge, item.status === 'scanned' && styles.statusScanned, item.status === 'cancelled' && styles.statusCancelled]}>
-              <Text style={styles.statusText}>{item.status}</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: c.primaryTint },
+                item.status === 'scanned' && { backgroundColor: c.successTint },
+                item.status === 'cancelled' && { backgroundColor: c.errorTint },
+              ]}
+            >
+              <Text style={[styles.statusText, { color: c.text }]}>{item.status}</Text>
             </View>
             {item.scannedAt ? (
-              <Text style={styles.scannedAt}>
+              <Text style={[styles.scannedAt, { color: c.textMuted }]}>
                 Scanned {new Date(item.scannedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </Text>
             ) : null}
@@ -95,66 +108,50 @@ export default function ScannerReportScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   reportHeader: {
-    paddingHorizontal: driverContentHorizontal,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
   },
-  reportTitle: { ...typography.h3, color: colors.text },
-  reportSubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
+  reportTitle: { ...typography.h3 },
+  reportSubtitle: { ...typography.caption, marginTop: spacing.xs },
   segmentRow: {
     flexDirection: 'row',
-    paddingHorizontal: driverContentHorizontal,
+    paddingHorizontal: landingHeaderPaddingHorizontal,
     paddingVertical: spacing.sm,
     gap: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
   },
   segmentBtn: {
     flex: 1,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radii.button,
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
     alignItems: 'center',
   },
-  segmentBtnActive: {
-    borderColor: colors.primaryButtonBorder,
-    backgroundColor: colors.primary,
-  },
-  segmentText: { ...typography.bodySmall, color: colors.textSecondary },
-  segmentTextActive: { color: colors.onPrimary, fontWeight: '600' },
+  segmentText: { ...typography.bodySmall },
   list: { flex: 1 },
-  listContent: { padding: driverContentHorizontal, paddingBottom: spacing.xl },
+  listContent: { padding: landingHeaderPaddingHorizontal, paddingBottom: spacing.xl },
   row: {
     padding: spacing.md,
-    backgroundColor: colors.card,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
     marginBottom: spacing.sm,
   },
   rowMain: {},
-  route: { ...typography.body, color: colors.text, fontWeight: '600' },
-  passenger: { ...typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs },
-  time: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
+  route: { ...typography.body, fontWeight: '600' },
+  passenger: { ...typography.bodySmall, marginTop: spacing.xs },
+  time: { ...typography.caption, marginTop: spacing.xs },
   statusBadge: {
     alignSelf: 'flex-start',
     marginTop: spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: tightGap,
     borderRadius: radii.sm,
-    backgroundColor: colors.primaryTint,
   },
-  statusScanned: { backgroundColor: colors.successTint },
-  statusCancelled: { backgroundColor: colors.errorTint },
-  statusText: { ...typography.caption, color: colors.text, fontWeight: '600', textTransform: 'capitalize' },
-  scannedAt: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
+  statusText: { ...typography.caption, fontWeight: '600', textTransform: 'capitalize' },
+  scannedAt: { ...typography.caption, marginTop: spacing.xs },
   emptyWrap: { alignItems: 'center', paddingVertical: spacing.xxl },
-  emptyText: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
+  emptyText: { ...typography.body, marginTop: spacing.sm },
 });

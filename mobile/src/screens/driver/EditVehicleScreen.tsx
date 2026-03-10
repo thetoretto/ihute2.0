@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { getVehicle, updateVehicle, getUserVehicles } from '../../services/api';
 import { spacing, typography } from '../../utils/theme';
-import { driverContentHorizontal } from '../../utils/layout';
+import { landingHeaderPaddingHorizontal } from '../../utils/layout';
 import type { Vehicle } from '../../types';
 
 type Params = { EditVehicle: { vehicleId: string } };
@@ -100,7 +100,7 @@ export default function EditVehicleScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: driverContentHorizontal, paddingVertical: spacing.lg },
+  content: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingVertical: spacing.lg },
   title: { ...typography.h2, marginBottom: spacing.lg },
   err: { ...typography.caption, marginBottom: spacing.sm },
 });

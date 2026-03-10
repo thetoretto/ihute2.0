@@ -7,7 +7,7 @@ import { useRootNavigation } from '../../context/RootNavigationContext';
 import { getUserVehicles } from '../../services/api';
 import { Button, EmptyState, Screen } from '../../components';
 import { buttonHeights, spacing, typography, radii, sizes, cardShadow } from '../../utils/theme';
-import { cardRadius, driverContentHorizontal, listBottomPaddingDefault } from '../../utils/layout';
+import { cardRadius, landingHeaderPaddingHorizontal, listBottomPaddingDefault } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { Vehicle } from '../../types';
 
@@ -109,5 +109,5 @@ const styles = StyleSheet.create({
   },
   actionText: { ...typography.caption, fontWeight: '600' },
   actionDangerText: { ...typography.caption, fontWeight: '600' },
-  listContent: { paddingBottom: listBottomPaddingDefault, paddingHorizontal: driverContentHorizontal },
+  listContent: { paddingBottom: listBottomPaddingDefault, paddingHorizontal: landingHeaderPaddingHorizontal },
 });

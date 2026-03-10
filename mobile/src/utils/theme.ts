@@ -6,11 +6,11 @@
  *   #F8F3EF (cream) – backgrounds, on-dark text
  *   #DF0827 (red) – accent, error, critical, agency role
  *   #94A9BC (muted) – secondary text, borders, info
- *   #E6DBEB (lavender) – borders, subtle surfaces
+ *   #E2E6EB (neutral light) – borders, subtle surfaces (no purple)
  *   #FEE46B (yellow) – primary CTA, success, warning, star rating
  *
  * Light: Surfaces = cream + white; text = dark + muted; primary/CTA = yellow; critical = red.
- * Dark: Elevation from dark; body text = cream; borders = lavender rgba.
+ * Dark: Elevation from dark; body text = cream; borders = cream rgba.
  */
 
 // --- Core palette (single source of truth) ---
@@ -18,7 +18,8 @@ const CORE_DARK = '#171C22';
 const CORE_CREAM = '#F8F3EF';
 const CORE_RED = '#DF0827';
 const CORE_MUTED = '#94A9BC';
-const CORE_LAVENDER = '#E6DBEB';
+/** Neutral light gray for borders and subtle surfaces (replaces former lavender). */
+const CORE_NEUTRAL_LIGHT = '#E2E6EB';
 const CORE_YELLOW = '#FEE46B';
 
 /** Primary pressed state (derived from CORE_YELLOW). */
@@ -36,7 +37,7 @@ export const corePalette = {
   cream: CORE_CREAM,
   red: CORE_RED,
   muted: CORE_MUTED,
-  lavender: CORE_LAVENDER,
+  neutralLight: CORE_NEUTRAL_LIGHT,
   yellow: CORE_YELLOW,
 } as const;
 
@@ -75,11 +76,11 @@ export const colors = {
   errorTint: 'rgba(223,8,39,0.12)',
 
   // --- Borders ---
-  border: CORE_LAVENDER,
-  borderLight: CORE_LAVENDER,
-  ghostBorder: CORE_LAVENDER,
-  soft: CORE_LAVENDER,
-  cardBorder: CORE_LAVENDER,
+  border: CORE_NEUTRAL_LIGHT,
+  borderLight: CORE_NEUTRAL_LIGHT,
+  ghostBorder: CORE_NEUTRAL_LIGHT,
+  soft: CORE_NEUTRAL_LIGHT,
+  cardBorder: CORE_NEUTRAL_LIGHT,
 
   // --- Dark surfaces & on-dark ---
   dark: CORE_DARK,
@@ -121,8 +122,8 @@ export const colors = {
   onAppPrimarySoft: 'rgba(255,255,255,0.2)',
   /** Button overlay on dark (e.g. "View ride"). */
   surfaceOverlay: 'rgba(0,0,0,0.2)',
-  /** Light surface for stat cards – from palette lavender. */
-  appSurfaceMuted: CORE_LAVENDER,
+  /** Light surface for stat cards – neutral. */
+  appSurfaceMuted: CORE_NEUTRAL_LIGHT,
   /** Text on success/live blocks – from palette dark. */
   appSuccessDark: CORE_DARK,
   /** Shadow for cards (design system). */
@@ -195,7 +196,7 @@ export const colorsDark = {
   // --- Text hierarchy ---
   text: CORE_CREAM,
   textSecondary: CORE_MUTED,
-  textMuted: CORE_LAVENDER,
+  textMuted: CORE_MUTED,
   onPrimary: CORE_DARK,
   ghostText: CORE_MUTED,
 
