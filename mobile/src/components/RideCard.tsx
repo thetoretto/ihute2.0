@@ -2,22 +2,50 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../context/ThemeContext';
-import { spacing, radii, typography, sizes, borderWidths } from '../utils/theme';
-import { panelRadius } from '../utils/layout';
+import { useRoleTheme } from '../context/RoleThemeContext';
+import { spacing, radii, typography, sizes, borderWidths, getStatusColorKey, getStatusTintKey } from '../utils/theme';
+import { panelRadius, cardRadiusLarge } from '../utils/layout';
 import { sharedStyles } from '../utils/sharedStyles';
 import { formatRwf } from '../../../shared/src';
 import RatingDisplay from './RatingDisplay';
 import type { Trip } from '../types';
 
+/** Map trip status to spec labels: Seat Booked, Car Full, Canceled, Completed. */
+export function getTripStatusLabel(status: Trip['status'], hasBookings?: boolean): string {
+  switch (status) {
+    case 'full':
+      return 'Car Full';
+    case 'cancelled':
+      return 'Canceled';
+    case 'completed':
+      return 'Completed';
+    case 'active':
+      return hasBookings ? 'Seat Booked' : 'Active';
+    default:
+      return status ?? 'Active';
+  }
+}
+
 interface RideCardProps {
   trip: Trip;
   onPress: () => void;
   variant?: 'default' | 'compact' | 'blablacar' | 'searchResults' | 'dashboard';
+  /** Override role-based accent; if not set, uses current role from RoleThemeContext. */
+  userType?: 'passenger' | 'driver' | 'agency';
+  /** When true, active trip shows "Seat Booked" and uses pending status color. */
+  hasBookings?: boolean;
 }
 
-export default function RideCard({ trip, onPress, variant = 'default' }: RideCardProps) {
+export default function RideCard({ trip, onPress, variant = 'default', userType: userTypeProp, hasBookings }: RideCardProps) {
   const c = useThemeColors();
+  const roleTheme = useRoleTheme();
   const isFull = trip.status === 'full';
+  const statusLabel = getTripStatusLabel(trip.status, hasBookings);
+  const statusKey = getStatusColorKey(trip.status, { hasBookings });
+  const statusBg = c[getStatusTintKey(statusKey)] as string;
+  const statusColor = c[statusKey] as string;
+  const accent = roleTheme.primary;
+  const accentSecondary = roleTheme.accent;
   const scale = React.useRef(new Animated.Value(1)).current;
   const compact = variant === 'compact';
   const blablacar = variant === 'blablacar';
@@ -43,10 +71,18 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
   };
 
   const durationStr = trip.durationMinutes
-    ? `${Math.floor(trip.durationMinutes / 60)}h${trip.durationMinutes % 60}`
+    ? (() => {
+        const h = Math.floor(trip.durationMinutes / 60);
+        const m = trip.durationMinutes % 60;
+        if (h === 0) return `${m} min`;
+        if (m === 0) return `${h}h`;
+        return `${h}h ${m}`;
+      })()
     : '—';
 
   if (searchResults) {
+    const verified = trip.driver.rating != null && trip.driver.rating >= 4.8;
+    const vehicleLabel = trip.vehicle ? `${trip.vehicle.make} ${trip.vehicle.model}` : '—';
     return (
       <Animated.View style={[styles.searchResultsWrapper, { transform: [{ scale }] }]}>
         <TouchableOpacity
@@ -61,61 +97,96 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
           onPressIn={animatePressIn}
           onPressOut={animatePressOut}
         >
+          {/* Header: Driver & Price (template row 1) */}
           <View style={styles.searchResultsTop}>
-            <View style={styles.searchResultsLeft}>
-              <View style={styles.searchResultsTimeline}>
-                <Text style={[styles.searchResultsTime, { color: c.text }]} numberOfLines={1}>
-                  {trip.departureTime.slice(0, 5)}
-                </Text>
-                <View style={[styles.searchResultsLineWrap, { borderColor: c.border }]}>
-                  <View style={[styles.searchResultsDot, styles.searchResultsDotTop, { backgroundColor: c.primary, borderColor: c.card }]} />
-                  <View style={[styles.searchResultsDot, styles.searchResultsDotBottom, { backgroundColor: c.primary, borderColor: c.card }]} />
-                </View>
-                <Text style={[styles.searchResultsTime, { color: c.text }]} numberOfLines={1}>
-                  {trip.arrivalTime?.slice(0, 5) || '—'}
-                </Text>
-              </View>
-              <View style={styles.searchResultsPlaces}>
-                <Text style={[styles.searchResultsPlace, { color: c.text }]} numberOfLines={1}>
-                  {trip.departureHotpoint.name}
-                </Text>
-                <Text style={[styles.searchResultsPlace, { color: c.text }]} numberOfLines={1}>
-                  {trip.destinationHotpoint.name}
-                </Text>
-              </View>
-            </View>
-            <Text style={[styles.searchResultsPrice, { color: c.primary }]}>{formatRwf(trip.pricePerSeat)}</Text>
-          </View>
-          <View style={styles.searchResultsChipRow}>
-            <View style={[styles.searchResultsTypeChip, { backgroundColor: trip.type === 'insta' ? c.primaryTint : c.surface }]}>
-              {trip.type === 'insta' ? (
-                <Ionicons name="flash" size={sizes.icon.small} color={c.primary} style={styles.searchResultsTypeChipIcon} />
-              ) : null}
-              <Text style={[styles.searchResultsTypeChipText, { color: trip.type === 'insta' ? c.primary : c.textSecondary }]}>
-                {trip.type === 'insta' ? 'Instant' : trip.departureDate ? new Date(trip.departureDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Scheduled'}
-              </Text>
-            </View>
-          </View>
-          <View style={[styles.searchResultsDriverRow, { borderTopColor: c.borderLight }]}>
             <View style={styles.searchResultsDriverLeft}>
-              {trip.driver.avatarUri ? (
-                <Image source={{ uri: trip.driver.avatarUri }} style={styles.searchResultsAvatar} />
-              ) : (
-                <View style={[styles.searchResultsAvatar, styles.searchResultsAvatarPlc, { backgroundColor: c.surface }]}>
-                  <Ionicons name="person" size={sizes.icon.medium} color={c.textMuted} />
-                </View>
-              )}
-              <Text style={[styles.searchResultsDriverName, { color: c.text }]} numberOfLines={1}>
-                {trip.driver.name}
-              </Text>
-              {trip.driver.rating != null && (
-                <View style={[styles.searchResultsRatingWrap, { backgroundColor: c.primaryTint }]}>
-                  <Ionicons name="star" size={sizes.icon.small} color={c.primary} />
-                  <Text style={[styles.searchResultsRating, { color: c.text }]}>{trip.driver.rating}</Text>
+              <View style={styles.searchResultsAvatarWrap}>
+                {trip.driver.avatarUri ? (
+                  <Image source={{ uri: trip.driver.avatarUri }} style={styles.searchResultsAvatarTemplate} />
+                ) : (
+                  <View style={[styles.searchResultsAvatarTemplate, styles.searchResultsAvatarPlc, { backgroundColor: c.surface }]}>
+                    <Ionicons name="person" size={sizes.icon.medium} color={c.textMuted} />
+                  </View>
+                )}
+                {verified && (
+                  <View style={[styles.searchResultsVerifiedBadge, { backgroundColor: c.statusCompleted }]}>
+                    <Ionicons name="shield-checkmark" size={10} color={c.onAccent ?? '#FFF'} />
+                  </View>
+                )}
+              </View>
+              <View style={styles.searchResultsDriverInfo}>
+                <Text style={[styles.searchResultsDriverName, { color: c.text }]} numberOfLines={1}>
+                  {trip.driver.name}
+                </Text>
+                {trip.driver.rating != null && (
+                  <View style={[styles.searchResultsRatingPill, { backgroundColor: c.surface }]}>
+                    <Ionicons name="star" size={9} color={accent} style={styles.searchResultsStarIcon} />
+                    <Text style={[styles.searchResultsRating, { color: c.textMuted }]}>{trip.driver.rating}</Text>
+                    <Text style={[styles.searchResultsRatingSep, { color: c.border }]}> | </Text>
+                    <Text style={[styles.searchResultsRating, { color: c.textMuted }]}>—</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            <View style={styles.searchResultsPriceBlock}>
+              <Text style={[styles.searchResultsPriceMain, { color: accent }]}>{formatRwf(trip.pricePerSeat)}</Text>
+              {trip.type === 'insta' && (
+                <View style={styles.searchResultsInstantRow}>
+                  <Ionicons name="flash" size={9} color={accent} />
+                  <Text style={[styles.searchResultsInstantText, { color: accent }]}>Instant</Text>
                 </View>
               )}
             </View>
-            <Text style={[styles.searchResultsSeatsLeft, { color: c.textMuted }]}>
+          </View>
+
+          {/* Timeline: dep → arr + duration + car (template row 2) */}
+          <View style={styles.searchResultsTimelineRow}>
+            <View style={styles.searchResultsTimelineCol}>
+              <View style={[styles.searchResultsDotSmall, { borderColor: accent, backgroundColor: c.card }]} />
+              <View style={[styles.searchResultsLine, { backgroundColor: accent }]} />
+              <View style={[styles.searchResultsDotSmall, styles.searchResultsDotBottom, { borderColor: c.borderLight, backgroundColor: c.card }]} />
+            </View>
+            <View style={styles.searchResultsTimelineContent}>
+              <View style={styles.searchResultsTimelineItem}>
+                <View>
+                  <Text style={[styles.searchResultsTimeBold, { color: c.text }]}>{trip.departureTime.slice(0, 5)}</Text>
+                  <Text style={[styles.searchResultsPlaceSub, { color: c.textMuted }]} numberOfLines={1}>{trip.departureHotpoint.name}</Text>
+                </View>
+                <View style={[styles.searchResultsDurationPill, { backgroundColor: c.surface }]}>
+                  <Ionicons name="time-outline" size={9} color={c.textMuted} />
+                  <Text style={[styles.searchResultsDurationText, { color: c.textMuted }]}>{durationStr}</Text>
+                </View>
+              </View>
+              <View style={styles.searchResultsTimelineItem}>
+                <View>
+                  <Text style={[styles.searchResultsTimeBold, { color: c.text }]}>{trip.arrivalTime?.slice(0, 5) || '—'}</Text>
+                  <Text style={[styles.searchResultsPlaceSub, { color: c.textMuted }]} numberOfLines={1}>{trip.destinationHotpoint.name}</Text>
+                </View>
+                <View style={styles.searchResultsCarRow}>
+                  <Ionicons name="car-outline" size={10} color={c.textMuted} />
+                  <Text style={[styles.searchResultsCarText, { color: c.textMuted }]} numberOfLines={1}>{vehicleLabel}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Footer: amenities + seats (template row 3) */}
+          <View style={[styles.searchResultsFooter, { borderTopColor: c.borderLight }]}>
+            <View style={styles.searchResultsAmenitiesRow}>
+              {trip.type === 'insta' && (
+                <View style={[styles.searchResultsAmenityPill, { backgroundColor: c.surface }]}>
+                  <Text style={[styles.searchResultsAmenityText, { color: c.textMuted }]}>Instant</Text>
+                </View>
+              )}
+              <View style={[styles.searchResultsAmenityPill, { backgroundColor: c.surface }]}>
+                <Ionicons name="snow-outline" size={9} color={c.textMuted} style={styles.searchResultsAmenityIcon} />
+                <Text style={[styles.searchResultsAmenityText, { color: c.textMuted }]}>AC</Text>
+              </View>
+              <View style={[styles.searchResultsAmenityPill, { backgroundColor: c.surface }]}>
+                <Text style={[styles.searchResultsAmenityText, { color: c.textMuted }]} numberOfLines={1}>{vehicleLabel}</Text>
+              </View>
+            </View>
+            <Text style={[styles.searchResultsSeatsRight, { color: accent }]}>
               {trip.seatsAvailable} seat{trip.seatsAvailable !== 1 ? 's' : ''} left
             </Text>
           </View>
@@ -158,7 +229,10 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
             </View>
           </View>
           <View style={styles.dashboardRight}>
-            <Text style={[styles.dashboardPrice, { color: c.primary }]}>{formatRwf(trip.pricePerSeat)}</Text>
+            <View style={[styles.statusPill, { backgroundColor: statusBg }]}>
+              <Text style={[styles.statusPillText, { color: statusColor }]}>{statusLabel}</Text>
+            </View>
+            <Text style={[styles.dashboardPrice, { color: accent }]}>{formatRwf(trip.pricePerSeat)}</Text>
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -196,11 +270,14 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
             </View>
           </View>
           <View style={styles.blablacarRight}>
+            <View style={[styles.statusPill, { backgroundColor: statusBg }]}>
+              <Text style={[styles.statusPillText, { color: statusColor }]}>{statusLabel}</Text>
+            </View>
             {isFull ? (
               <Text style={[styles.blablacarFull, { color: c.error }]}>Full</Text>
             ) : (
               <>
-                <Text style={[styles.blablacarPrice, { color: c.passengerBrand }]}>{formatRwf(trip.pricePerSeat)}</Text>
+                <Text style={[styles.blablacarPrice, { color: accent }]}>{formatRwf(trip.pricePerSeat)}</Text>
                 <Text style={[styles.blablacarPerSeat, { color: c.textMuted }]}>per seat</Text>
               </>
             )}
@@ -248,10 +325,13 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
             </Text>
           </View>
           <View style={styles.priceBadge}>
+            <View style={[styles.statusPillSmall, { backgroundColor: statusBg }]}>
+              <Text style={[styles.statusPillTextSmall, { color: statusColor }]}>{statusLabel}</Text>
+            </View>
             {isFull ? (
               <Text style={[styles.fullBadge, compact && styles.fullBadgeCompact, { color: c.error }]}>Full</Text>
             ) : (
-              <Text style={[styles.price, compact && styles.priceCompact, { color: c.success }]}>
+              <Text style={[styles.price, compact && styles.priceCompact, { color: accent }]}>
                 {formatRwf(trip.pricePerSeat)}
               </Text>
             )}
@@ -271,7 +351,7 @@ export default function RideCard({ trip, onPress, variant = 'default' }: RideCar
             )}
             {trip.driver.statusBadge && (
               <View style={[styles.verifiedBadge, compact && styles.verifiedBadgeCompact, { backgroundColor: c.card }]}>
-                <Ionicons name="checkmark-circle" size={compact ? sizes.icon.small : sizes.icon.mid} color={c.primary} />
+                <Ionicons name="checkmark-circle" size={compact ? sizes.icon.small : sizes.icon.mid} color={accent} />
               </View>
             )}
           </View>
@@ -305,19 +385,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.md,
-    borderRadius: panelRadius,
-    marginBottom: spacing.sm,
+    padding: spacing.lg,
+    borderRadius: cardRadiusLarge,
+    marginBottom: spacing.md,
   },
   cardDashboard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.md,
-    borderRadius: radii.xlMobile,
+    padding: spacing.lg,
+    borderRadius: cardRadiusLarge,
     marginBottom: spacing.md,
     borderWidth: borderWidths.thin,
   },
+  statusPill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    marginBottom: spacing.xs,
+    alignSelf: 'flex-end',
+  },
+  statusPillText: { ...typography.caption, fontWeight: '700' },
+  statusPillSmall: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radii.xs,
+    marginBottom: spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  statusPillTextSmall: { ...typography.caption10, fontWeight: '700' },
   dashboardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -364,15 +460,18 @@ const styles = StyleSheet.create({
   blablacarPrice: typography.priceLg,
   blablacarPerSeat: { ...typography.overline, marginTop: 0 },
   blablacarFull: { ...typography.caption, fontWeight: '600' },
-  searchResultsWrapper: {
-    alignSelf: 'stretch',
-  },
+  searchResultsWrapper: { alignSelf: 'stretch' },
   cardSearchResults: {
     padding: spacing.md,
-    borderRadius: radii.lg,
-    marginBottom: spacing.md,
+    borderRadius: cardRadiusLarge,
+    marginBottom: spacing.smMd,
     borderWidth: borderWidths.thin,
     alignSelf: 'stretch',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 2,
   },
   searchResultsTop: {
     flexDirection: 'row',
@@ -380,69 +479,119 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: spacing.md,
   },
-  searchResultsLeft: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    flex: 1,
-    minWidth: 0,
-  },
-  searchResultsTimeline: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.xs,
-  },
-  searchResultsTime: { ...typography.bodySmall, fontWeight: '700' },
-  searchResultsLineWrap: {
-    ...sharedStyles.timelineLine,
-    minHeight: spacing.md,
-  },
-  searchResultsDot: {
-    ...sharedStyles.timelineDot,
-    left: -5,
-  },
-  searchResultsDotTop: { top: -spacing.xs },
-  searchResultsDotBottom: { bottom: -spacing.xs },
-  searchResultsPlaces: {
-    flex: 1,
-    justifyContent: 'space-between',
-    paddingVertical: spacing.xs,
-    minWidth: 0,
-  },
-  searchResultsPlace: { ...typography.bodySmall, fontWeight: '600' },
-  searchResultsPrice: typography.priceLg,
-  searchResultsChipRow: { flexDirection: 'row', marginBottom: spacing.xs },
-  searchResultsTypeChip: {
-    ...sharedStyles.chip,
-    alignSelf: 'flex-start',
-  },
-  searchResultsTypeChipIcon: sharedStyles.chipIconMargin,
-  searchResultsTypeChipText: typography.overline,
-  searchResultsDriverRow: {
-    ...sharedStyles.listRowBetween,
-    paddingTop: spacing.md,
-    borderTopWidth: borderWidths.thin,
-  },
   searchResultsDriverLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.smMd,
     flex: 1,
     minWidth: 0,
   },
-  searchResultsAvatar: sharedStyles.avatarSm,
+  searchResultsAvatarWrap: { position: 'relative' },
+  searchResultsAvatarTemplate: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.md,
+  },
   searchResultsAvatarPlc: sharedStyles.avatarPlaceholder,
-  searchResultsDriverName: typography.captionBold,
-  searchResultsRatingWrap: {
+  searchResultsVerifiedBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchResultsDriverInfo: { flex: 1, minWidth: 0 },
+  searchResultsDriverName: { ...typography.bodySmall, fontWeight: '700', marginBottom: spacing.xs },
+  searchResultsRatingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.xs,
+    gap: 2,
+  },
+  searchResultsStarIcon: { marginRight: 1 },
+  searchResultsRating: { ...typography.caption, fontSize: 10, fontWeight: '700' },
+  searchResultsRatingSep: { ...typography.caption, fontSize: 10, fontWeight: '700' },
+  searchResultsPriceBlock: { alignItems: 'flex-end' },
+  searchResultsPriceMain: { ...typography.h3, fontSize: 20, fontWeight: '800' },
+  searchResultsInstantRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 2,
+  },
+  searchResultsInstantText: { ...typography.overline, fontSize: 8, fontWeight: '800' },
+  searchResultsTimelineRow: {
+    flexDirection: 'row',
+    gap: spacing.smMd,
+    marginBottom: spacing.md,
+  },
+  searchResultsTimelineCol: {
+    alignItems: 'center',
+    paddingVertical: 2,
+  },
+  searchResultsDotSmall: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 2,
+  },
+  searchResultsLine: {
+    width: 2,
+    flex: 1,
+    minHeight: spacing.sm,
+    marginVertical: 2,
+  },
+  searchResultsDotBottom: {},
+  searchResultsTimelineContent: { flex: 1, minWidth: 0, justifyContent: 'space-between' },
+  searchResultsTimelineItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
+  },
+  searchResultsTimelineItemLast: { marginBottom: 0 },
+  searchResultsTimeBold: { ...typography.bodySmall, fontWeight: '800', marginBottom: 2 },
+  searchResultsPlaceSub: { ...typography.caption, fontSize: 11, fontWeight: '500' },
+  searchResultsDurationPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  searchResultsDurationText: { ...typography.overline, fontSize: 9, fontWeight: '700' },
+  searchResultsCarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  searchResultsCarText: { ...typography.overline, fontSize: 9, fontWeight: '700' },
+  searchResultsFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: spacing.smMd,
+    borderTopWidth: borderWidths.thin,
+  },
+  searchResultsAmenitiesRow: { flexDirection: 'row', gap: spacing.sm, flex: 1, flexWrap: 'wrap' },
+  searchResultsAmenityPill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.sm,
+    paddingVertical: 2,
+    borderRadius: radii.xs,
     gap: spacing.xs,
   },
-  searchResultsRating: typography.caption10,
-  searchResultsSeatsLeft: typography.overline,
+  searchResultsAmenityIcon: { marginRight: 0 },
+  searchResultsAmenityText: { ...typography.overline, fontSize: 9, fontWeight: '700' },
+  searchResultsSeatsRight: { ...typography.overline, fontSize: 10, fontWeight: '800' },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',

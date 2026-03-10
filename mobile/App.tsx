@@ -12,6 +12,7 @@ import {
 } from '@expo-google-fonts/poppins';
 import { AuthProvider } from './src/context/AuthContext';
 import { RoleProvider } from './src/context/RoleContext';
+import { RoleThemeProvider } from './src/context/RoleThemeContext';
 import { ResponsiveThemeProvider } from './src/context/ResponsiveThemeContext';
 import { ThemeProvider } from './src/context/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -51,11 +52,13 @@ export default function App() {
         <RoleProvider>
           <ResponsiveThemeProvider>
             <ThemeProvider>
-              <StatusBarTheme />
-            <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-              <OfflineBanner />
-              <AppNavigator />
-            </View>
+              <RoleThemeProvider>
+                <StatusBarTheme />
+                <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+                  <OfflineBanner />
+                  <AppNavigator />
+                </View>
+              </RoleThemeProvider>
             </ThemeProvider>
           </ResponsiveThemeProvider>
         </RoleProvider>

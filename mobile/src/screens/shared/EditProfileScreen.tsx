@@ -9,23 +9,41 @@ import {
   ActivityIndicator,
   Platform,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-import { Button, Screen, Input } from '../../components';
 import { useThemeColors } from '../../context/ThemeContext';
-import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
-import { spacing, typography, radii } from '../../utils/theme';
+import { cardShadowStrong, spacing, typography, radii, sizes, borderWidths } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal } from '../../utils/layout';
 import { strings } from '../../constants/strings';
+
+function GlassCard({ children, style, onPress }: { children: React.ReactNode; style?: any; onPress?: () => void }) {
+  const themeColors = useThemeColors();
+  const Container = onPress ? TouchableOpacity : View;
+  return (
+    <Container
+      style={[
+        styles.glassCard,
+        { backgroundColor: themeColors.card, borderColor: themeColors.borderLight },
+        style,
+      ]}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
+      {children}
+    </Container>
+  );
+}
 
 export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { user, updateProfile } = useAuth();
   const themeColors = useThemeColors();
-  const responsive = useResponsiveThemeContext();
-  const effectiveSpacing = responsive?.spacing ?? spacing;
 
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -101,148 +119,229 @@ export default function EditProfileScreen() {
     }
   };
 
-  const accent = themeColors.primary;
-
   return (
-    <Screen
-      scroll
-      style={[styles.container, { backgroundColor: themeColors.appBackground }]}
-      contentContainerStyle={[styles.content, { paddingBottom: effectiveSpacing.xxl }]}
-      scrollProps={{ keyboardShouldPersistTaps: 'handled' }}
-    >
-      {/* Avatar + Change photo (mockup style) */}
-      <View style={[styles.avatarSection, { marginBottom: effectiveSpacing.lg }]}>
+    <View style={[styles.container, { paddingTop: insets.top + spacing.sm, backgroundColor: themeColors.appBackground }]}>
+      <View style={styles.header}>
         <TouchableOpacity
-          onPress={handleChangePhoto}
-          style={[styles.avatarTouch, styles.avatarRing, { borderColor: accent }]}
-          activeOpacity={0.85}
+          onPress={() => navigation.goBack()}
+          style={[styles.backButton, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}
         >
-          {avatarUri ? (
-            <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-          ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: themeColors.surface }]}>
-              <Ionicons name="person" size={48} color={themeColors.textMuted} />
+          <FontAwesome name="chevron-left" size={14} color={themeColors.textMuted} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: themeColors.text }]}>Edit Profile</Text>
+        <View style={{ width: sizes.touchTarget.iconButton }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.avatarSection}>
+          <TouchableOpacity onPress={handleChangePhoto} style={styles.avatarWrapper}>
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={[styles.avatarImage, { borderColor: themeColors.card }]} />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: themeColors.ghostBg, borderColor: themeColors.card }]}>
+                <FontAwesome name="user" size={40} color={themeColors.textMuted} />
+              </View>
+            )}
+            <View style={[styles.editIconBadge, { backgroundColor: themeColors.primary, borderColor: themeColors.card }]}>
+              <FontAwesome name="camera" size={12} color={themeColors.text} />
             </View>
+          </TouchableOpacity>
+          <Text style={[styles.changePhotoText, { color: themeColors.primary }]}>Tap to change photo</Text>
+        </View>
+
+        <GlassCard style={styles.formCard}>
+          <View style={styles.fieldWrap}>
+            <Text style={[styles.label, { color: themeColors.textMuted }]}>FULL NAME</Text>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="Your name"
+              autoCapitalize="words"
+              editable={!loading}
+              style={[styles.input, { backgroundColor: themeColors.surface, borderColor: themeColors.borderLight, color: themeColors.text }]}
+              placeholderTextColor={themeColors.textMuted}
+            />
+          </View>
+
+          <View style={styles.fieldWrap}>
+            <Text style={[styles.label, { color: themeColors.textMuted }]}>{strings.auth.email.toUpperCase()}</Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="email@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!loading}
+              style={[styles.input, { backgroundColor: themeColors.surface, borderColor: themeColors.borderLight, color: themeColors.text }]}
+              placeholderTextColor={themeColors.textMuted}
+            />
+          </View>
+
+          <View style={styles.fieldWrap}>
+            <Text style={[styles.label, { color: themeColors.textMuted }]}>PHONE NUMBER</Text>
+            <TextInput
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="Phone number"
+              keyboardType="phone-pad"
+              editable={!loading}
+              style={[styles.input, { backgroundColor: themeColors.surface, borderColor: themeColors.borderLight, color: themeColors.text }]}
+              placeholderTextColor={themeColors.textMuted}
+            />
+          </View>
+
+          <View style={styles.fieldWrap}>
+            <Text style={[styles.label, { color: themeColors.textMuted }]}>{strings.profile.miniBio.toUpperCase()}</Text>
+            <TextInput
+              value={bio}
+              onChangeText={setBio}
+              placeholder="A short bio..."
+              placeholderTextColor={themeColors.textMuted}
+              multiline
+              numberOfLines={4}
+              editable={!loading}
+              style={[styles.input, styles.bioInput, { backgroundColor: themeColors.surface, borderColor: themeColors.borderLight, color: themeColors.text }]}
+            />
+          </View>
+        </GlassCard>
+
+        {error ? (
+          <Text style={[styles.errorText, { color: themeColors.error }]}>{error}</Text>
+        ) : null}
+
+        <TouchableOpacity
+          style={[
+            styles.saveButton,
+            cardShadowStrong,
+            { shadowColor: themeColors.cardShadowColor, backgroundColor: themeColors.dark },
+            loading && styles.saveButtonDisabled,
+          ]}
+          onPress={handleSave}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color={themeColors.onAppPrimary} size="small" />
+          ) : (
+            <Text style={[styles.saveButtonText, { color: themeColors.onAppPrimary }]}>{strings.profile.saveChanges.toUpperCase()}</Text>
           )}
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleChangePhoto} style={styles.changePhotoBtn}>
-          <Text style={[styles.changePhotoText, { color: accent }]}>{strings.profile.changePhoto}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Full Name */}
-      <View style={styles.fieldWrap}>
-        <Text style={[styles.labelOverline, { color: themeColors.textMuted }]}>Full Name</Text>
-        <Input
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name"
-          autoCapitalize="words"
-          editable={!loading}
-          style={[styles.inputRounded, { backgroundColor: themeColors.ghostBg, borderColor: themeColors.borderLight, color: themeColors.text }]}
-        />
-      </View>
-
-      {/* Email */}
-      <View style={styles.fieldWrap}>
-        <Text style={[styles.labelOverline, { color: themeColors.textMuted }]}>{strings.auth.email}</Text>
-        <Input
-          value={email}
-          onChangeText={setEmail}
-          placeholder="email@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          editable={!loading}
-          style={[styles.inputRounded, { backgroundColor: themeColors.ghostBg, borderColor: themeColors.borderLight, color: themeColors.text }]}
-        />
-      </View>
-
-      {/* Phone */}
-      <View style={styles.fieldWrap}>
-        <Text style={[styles.labelOverline, { color: themeColors.textMuted }]}>Phone Number</Text>
-        <Input
-          value={phone}
-          onChangeText={setPhone}
-          placeholder="Phone number"
-          keyboardType="phone-pad"
-          editable={!loading}
-          style={[styles.inputRounded, { backgroundColor: themeColors.ghostBg, borderColor: themeColors.borderLight, color: themeColors.text }]}
-        />
-      </View>
-
-      {/* Mini Bio (mockup; optional, not persisted in current API) */}
-      <View style={styles.fieldWrap}>
-        <Text style={[styles.labelOverline, { color: themeColors.textMuted }]}>{strings.profile.miniBio}</Text>
-        <TextInput
-          value={bio}
-          onChangeText={setBio}
-          placeholder="A short bio..."
-          placeholderTextColor={themeColors.textMuted}
-          multiline
-          numberOfLines={4}
-          editable={!loading}
-          style={[
-            styles.bioInput,
-            {
-              backgroundColor: themeColors.ghostBg,
-              borderColor: themeColors.borderLight,
-              color: themeColors.text,
-            },
-          ]}
-        />
-      </View>
-
-      {error ? (
-        <Text style={[styles.error, { color: themeColors.error }]}>{error}</Text>
-      ) : null}
-
-      <Button
-        title={loading ? strings.profile.saving : strings.profile.saveChanges}
-        onPress={handleSave}
-        disabled={loading}
-        style={[styles.saveBtn, { borderRadius: radii.lg }]}
-      />
-      {loading ? (
-        <ActivityIndicator size="small" color={themeColors.primary} style={styles.loader} />
-      ) : null}
-    </Screen>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
-  avatarSection: { alignItems: 'center' },
-  avatarTouch: {
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: landingHeaderPaddingHorizontal,
+    paddingVertical: spacing.md,
+  },
+  backButton: {
+    width: sizes.touchTarget.iconButton,
+    height: sizes.touchTarget.iconButton,
+    borderRadius: radii.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: borderWidths.thin,
+  },
+  headerTitle: {
+    ...typography.body,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  content: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xlLg,
+  },
+  glassCard: {
+    borderRadius: radii.xl,
+    borderWidth: borderWidths.thin,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: spacing.smMd,
+  },
+  avatarImage: {
     width: 100,
     height: 100,
-    borderRadius: radii.xl,
-    overflow: 'hidden',
+    borderRadius: spacing.xlLg,
     borderWidth: 3,
   },
-  avatarRing: {},
-  avatarImage: { width: '100%', height: '100%' },
   avatarPlaceholder: {
-    width: '100%',
-    height: '100%',
+    width: 100,
+    height: 100,
+    borderRadius: spacing.xlLg,
+    borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  changePhotoBtn: { marginTop: spacing.sm },
-  changePhotoText: { ...typography.bodySmall, fontWeight: '700' },
-  fieldWrap: { marginBottom: spacing.lg },
-  labelOverline: { ...typography.overline, marginBottom: spacing.xs, paddingHorizontal: spacing.xs },
-  inputRounded: { borderRadius: radii.lg, minHeight: 52 },
-  bioInput: {
-    ...typography.body,
+  editIconBadge: {
+    position: 'absolute',
+    bottom: -spacing.xs,
+    right: -spacing.xs,
+    width: sizes.avatar.sm,
+    height: sizes.avatar.sm,
+    borderRadius: radii.smMedium,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: borderWidths.medium,
+  },
+  changePhotoText: {
+    ...typography.captionBold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  formCard: {
+    marginBottom: spacing.lg,
+  },
+  fieldWrap: {
+    marginBottom: spacing.lg,
+  },
+  label: {
+    ...typography.overline,
+    marginBottom: spacing.sm,
+    letterSpacing: 0.5,
+  },
+  input: {
     borderRadius: radii.lg,
-    borderWidth: 1,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: 14,
+    ...typography.bodySmall,
+    fontWeight: '600',
+    borderWidth: borderWidths.thin,
+  },
+  bioInput: {
     minHeight: 100,
     textAlignVertical: 'top',
   },
-  error: { ...typography.bodySmall, marginTop: spacing.sm, marginBottom: spacing.xs },
-  saveBtn: { marginTop: spacing.lg },
-  loader: { marginTop: spacing.sm },
+  errorText: {
+    ...typography.caption,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  saveButton: {
+    paddingVertical: 18,
+    borderRadius: radii.lg,
+    alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    opacity: 0.7,
+  },
+  saveButtonText: {
+    ...typography.captionBold,
+    letterSpacing: 2,
+  },
 });

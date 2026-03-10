@@ -18,6 +18,8 @@ const screenPadding = { paddingHorizontal: layout.screen.horizontal };
 interface ScreenProps {
   children: React.ReactNode;
   scroll?: boolean;
+  /** When false, content is edge-to-edge; horizontal padding must be applied by the screen. Default true. */
+  contentInset?: boolean;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: ScrollViewProps['contentContainerStyle'];
   scrollProps?: Omit<ScrollViewProps, 'style' | 'contentContainerStyle'>;
@@ -26,13 +28,20 @@ interface ScreenProps {
 export default function Screen({
   children,
   scroll = false,
+  contentInset = true,
   style,
   contentContainerStyle,
   scrollProps,
 }: ScreenProps) {
   const colors = useThemeColors();
-  const fixedInnerStyle: StyleProp<ViewStyle> = [styles.inner, styles.innerFill, screenPadding, style];
-  const scrollInnerStyle: StyleProp<ViewStyle> = [styles.inner, screenPadding];
+  const fixedInnerStyle: StyleProp<ViewStyle> = [
+    styles.inner,
+    styles.innerFill,
+    styles.contentStart,
+    ...(contentInset ? [screenPadding] : []),
+    style,
+  ];
+  const scrollInnerStyle: StyleProp<ViewStyle> = [styles.inner, ...(contentInset ? [screenPadding] : [])];
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.appBackground }]} edges={['top', 'left', 'right', 'bottom']}>
@@ -80,8 +89,12 @@ const styles = StyleSheet.create({
   innerFill: {
     flex: 1,
   },
+  contentStart: {
+    paddingTop: layout.screen.contentStartPaddingTop,
+  },
   scrollContent: {
     flexGrow: 0,
+    paddingTop: layout.screen.contentStartPaddingTop,
     paddingBottom: layout.list.bottom.tabScreen,
   },
 });

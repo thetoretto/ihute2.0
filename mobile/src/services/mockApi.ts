@@ -210,7 +210,25 @@ export async function getUser(userId?: string): Promise<User | null> {
 export async function getUserBookings(userId: string): Promise<Booking[]> {
   const bookings = getBookingsStore();
   const userBookings = bookings.filter((b) => b.passenger.id === userId);
-  return delay([...userBookings]);
+  const scannedByBookingId = new Map<string, string>();
+  try {
+    const [past, today, upcoming] = await Promise.all([
+      getScannerTicketReport('past'),
+      getScannerTicketReport('today'),
+      getScannerTicketReport('upcoming'),
+    ]);
+    [...past, ...today, ...upcoming].forEach((item) => {
+      if (item.status === 'scanned' && item.scannedAt) scannedByBookingId.set(item.bookingId, item.scannedAt);
+    });
+  } catch {
+    // ignore
+  }
+  return delay(
+    userBookings.map((b) => ({
+      ...b,
+      scannedAt: scannedByBookingId.get(b.id),
+    }))
+  );
 }
 
 export async function cancelBooking(bookingId: string, passengerId: string): Promise<Booking> {
@@ -399,7 +417,7 @@ export async function getDriverTripActivities(userId: string): Promise<DriverTri
 export async function updateDriverTripStatus(params: {
   tripId: string;
   driverId: string;
-  status: 'active' | 'completed';
+  status: 'active' | 'completed' | 'cancelled';
 }): Promise<Trip> {
   const trips = getTripsStore();
   const trip = trips.find((item) => item.id === params.tripId);
@@ -408,6 +426,13 @@ export async function updateDriverTripStatus(params: {
   }
   if (trip.driver.id !== params.driverId) {
     throw new Error('Only the trip driver can update this trip.');
+  }
+  if (params.status === 'cancelled') {
+    const bookings = getBookingsStore().filter((b) => (b.trip?.id || b.trip) === trip.id && b.status !== 'cancelled');
+    if (bookings.length > 0) throw new Error('Cannot cancel a trip with active bookings.');
+    const depDate = trip.departureDate || new Date().toISOString().slice(0, 10);
+    const depMs = new Date(depDate + 'T' + (trip.departureTime || '00:00')).getTime();
+    if (Date.now() > depMs - 60 * 60 * 1000) throw new Error('Cancellations restricted within 1 hour of departure.');
   }
   const updatedTrip: Trip = {
     ...trip,
@@ -526,6 +551,19 @@ export async function getDriverActivityLog(userId: string): Promise<ActivityLogE
       subtitle: tripRoute,
       metadata: { passengerName: booking.passenger.name, seats: booking.seats, route: tripRoute },
     });
+    if (booking.paymentStatus === 'paid' || booking.paymentMethod === 'cash') {
+      entries.push({
+        id: `log-payment-${booking.id}`,
+        kind: 'payment_confirmed',
+        timestamp: booking.createdAt,
+        tripId: booking.trip.id,
+        bookingId: booking.id,
+        trip: booking.trip,
+        title: 'Payment confirmed',
+        subtitle: tripRoute,
+        metadata: { passengerName: booking.passenger.name, seats: booking.seats, route: tripRoute },
+      });
+    }
     if (booking.status === 'cancelled') {
       entries.push({
         id: `log-booking-cancelled-${booking.id}`,

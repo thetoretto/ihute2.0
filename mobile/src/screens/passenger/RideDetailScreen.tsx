@@ -43,7 +43,7 @@ export default function RideDetailScreen() {
 
   if (!trip) {
     return (
-      <Screen style={styles.center}>
+      <Screen contentInset={false} style={styles.center}>
         <Text style={[styles.error, { color: c.error }]}>Trip not found</Text>
       </Screen>
     );
@@ -81,7 +81,7 @@ export default function RideDetailScreen() {
   return (
     <View style={[styles.container, { backgroundColor: c.card }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.borderLight, paddingTop: insets.top }]}>
+      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.borderLight, paddingTop: insets.top + spacing.sm }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn} hitSlop={spacing.sm} accessibilityLabel="Go back">
           <View style={[sharedStyles.headerIconBtn, { backgroundColor: c.background || c.ghostBg }]}>
             <Ionicons name="chevron-back" size={sizes.icon.medium} color={c.text} />

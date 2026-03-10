@@ -131,6 +131,7 @@ app.put('/api/users/:id/notification-prefs', (req, res) => {
   res.json(store.notificationPrefsByUserId[req.params.id]);
 });
 
+// PawaPay integration (when implemented): (1) The withdrawal number/reference for mobile money MUST be the driver's registered phone number (user.phone from DB), as required by PawaPay – do not use client-supplied phone from withdrawal methods for the payout destination. (2) Every payout must include a stable transaction_id (e.g. UUID) for idempotency. (3) Add POST /api/webhooks/pawapay for COMPLETED/FAILED callbacks and update driver activity log (ActivityLogEntryKind: withdrawal_completed, withdrawal_failed).
 app.get('/api/users/:id/withdrawal-methods', (req, res) => {
   res.json(store.withdrawalMethodsByUserId[req.params.id] || {});
 });
@@ -297,6 +298,19 @@ app.put('/api/driver/drive-mode', (req, res) => {
   if (!toHotpoint) return res.status(400).json({ error: 'To hotpoint not found' });
   const vehicleId = body.vehicleId || null;
   if (vehicleId && !store.findVehicle(vehicleId)) return res.status(400).json({ error: 'Vehicle not found' });
+  const driverScheduledTrips = store.tripsStore.filter(
+    (t) => (t.driver?.id || t.driver) === driverId && t.type === 'scheduled' && (t.status === 'active' || t.status === 'full')
+  );
+  const now = Date.now();
+  const twoHoursMs = 2 * 60 * 60 * 1000;
+  const hasCollision = driverScheduledTrips.some((t) => {
+    const depDate = t.departureDate || new Date().toISOString().slice(0, 10);
+    const depMs = new Date(depDate + 'T' + (t.departureTime || '00:00')).getTime();
+    return Math.abs(depMs - now) <= twoHoursMs;
+  });
+  if (hasCollision) {
+    return res.status(400).json({ error: 'You cannot have an Instant Ride and a Scheduled trip active at the same time (within 2 hours).' });
+  }
   const updatedAt = new Date().toISOString();
   const existing = store.driverDriveModeStore.findIndex((e) => e.driverId === driverId);
   const entry = {
@@ -373,6 +387,19 @@ app.put('/api/trips/:id/status', (req, res) => {
   const { status } = req.body || {};
   const trip = store.findTrip(req.params.id);
   if (!trip) return res.status(404).json({ error: 'Trip not found' });
+  if (status === 'cancelled') {
+    const tripBookings = store.bookingsStore.filter((b) => (b.trip?.id || b.trip) === trip.id && b.status !== 'cancelled');
+    if (tripBookings.length > 0) {
+      return res.status(400).json({ error: 'Cannot cancel a trip with active bookings.' });
+    }
+    const depDate = trip.departureDate || new Date().toISOString().slice(0, 10);
+    const [h, m] = (trip.departureTime || '00:00').split(':').map(Number);
+    const depMs = new Date(depDate + 'T' + (trip.departureTime || '00:00')).getTime();
+    const oneHourBeforeDep = depMs - 60 * 60 * 1000;
+    if (Date.now() > oneHourBeforeDep) {
+      return res.status(400).json({ error: 'Cancellations restricted within 1 hour of departure.' });
+    }
+  }
   trip.status = status;
   res.json(store.resolveTrip(trip));
 });
@@ -459,7 +486,11 @@ app.post('/api/trips/bulk', (req, res) => {
 app.get('/api/bookings', (req, res) => {
   const userId = req.query.userId;
   const list = userId ? store.bookingsStore.filter((b) => (b.passenger?.id || b.passenger) === userId) : store.bookingsStore;
-  res.json(list.map(store.resolveBooking));
+  res.json(list.map((b) => {
+    const resolved = store.resolveBooking(b);
+    const scannedAt = store.scannedAtByBookingId[b.id] || undefined;
+    return { ...resolved, scannedAt };
+  }));
 });
 
 app.post('/api/bookings', (req, res) => {
@@ -630,6 +661,7 @@ app.post('/api/tickets/validate', (req, res) => {
     return res.json({ valid: false, reason: 'Ticket data mismatch', scannedAt, bookingId });
   }
   store.scannedBookingIds.add(bookingId);
+  store.scannedAtByBookingId[bookingId] = scannedAt;
   const ticketRes = {
     bookingId: booking.id,
     ticketId: hydratedTicketId,
@@ -687,6 +719,134 @@ app.get('/api/driver/activity-summary', (req, res) => {
     income += tripBookings.reduce((s, b) => s + b.seats * (trip.pricePerSeat || 0), 0);
   });
   res.json({ doneCount, activeCount, bookingsCount, remainingSeats, income });
+});
+
+// ---------- Driver activity log (event feed for Profile > Activities) ----------
+app.get('/api/driver/activity-log', (req, res) => {
+  const userId = req.query.userId;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+  const user = store.findUser(userId);
+  const driverId = user?.agencySubRole === 'agency_scanner' && user?.agencyId ? user.agencyId : userId;
+  const trips = store.tripsStore.filter((t) => (t.driver?.id || t.driver) === driverId);
+  const tripIds = new Set(trips.map((t) => t.id));
+  const driverBookings = store.bookingsStore.filter((b) => tripIds.has(b.trip?.id || b.trip));
+  const route = (t) => `${(t?.departureHotpoint || {}).name || ''} → ${(t?.destinationHotpoint || {}).name || ''}`;
+  const entries = [];
+
+  for (const trip of trips) {
+    const depDate = trip.departureDate || new Date().toISOString().slice(0, 10);
+    const depTime = trip.departureTime || '00:00';
+    const tripTs = new Date(`${depDate}T${depTime}:00`).toISOString();
+    const tripRoute = route(trip);
+
+    entries.push({
+      id: `log-trip-${trip.id}`,
+      kind: 'trip_created',
+      timestamp: tripTs,
+      tripId: trip.id,
+      trip: store.resolveTrip(trip),
+      title: 'Trip created',
+      subtitle: tripRoute,
+      metadata: { route: tripRoute },
+    });
+    if (trip.status === 'completed') {
+      entries.push({
+        id: `log-completed-${trip.id}`,
+        kind: 'trip_completed',
+        timestamp: tripTs,
+        tripId: trip.id,
+        trip: store.resolveTrip(trip),
+        title: 'Trip completed',
+        subtitle: tripRoute,
+        metadata: { route: tripRoute },
+      });
+    }
+    if (trip.status === 'cancelled') {
+      entries.push({
+        id: `log-cancelled-${trip.id}`,
+        kind: 'trip_cancelled',
+        timestamp: tripTs,
+        tripId: trip.id,
+        trip: store.resolveTrip(trip),
+        title: 'Trip cancelled',
+        subtitle: tripRoute,
+        metadata: { route: tripRoute },
+      });
+    }
+    if (trip.status === 'full') {
+      entries.push({
+        id: `log-full-${trip.id}`,
+        kind: 'car_full',
+        timestamp: tripTs,
+        tripId: trip.id,
+        trip: store.resolveTrip(trip),
+        title: 'Car full',
+        subtitle: tripRoute,
+        metadata: { route: tripRoute },
+      });
+    }
+  }
+
+  for (const booking of driverBookings) {
+    const trip = store.findTrip(booking.trip?.id || booking.trip);
+    const tripRoute = trip ? route(trip) : '—';
+    const passengerName = (booking.passenger || {}).name || 'Passenger';
+
+    entries.push({
+      id: `log-booking-${booking.id}`,
+      kind: 'booking_created',
+      timestamp: booking.createdAt,
+      tripId: trip?.id,
+      bookingId: booking.id,
+      trip: trip ? store.resolveTrip(trip) : undefined,
+      title: `${booking.seats} seat${booking.seats !== 1 ? 's' : ''} booked`,
+      subtitle: tripRoute,
+      metadata: { passengerName, seats: booking.seats, route: tripRoute },
+    });
+    if (booking.paymentStatus === 'paid' || booking.paymentMethod === 'cash') {
+      entries.push({
+        id: `log-payment-${booking.id}`,
+        kind: 'payment_confirmed',
+        timestamp: booking.createdAt,
+        tripId: trip?.id,
+        bookingId: booking.id,
+        trip: trip ? store.resolveTrip(trip) : undefined,
+        title: 'Payment confirmed',
+        subtitle: tripRoute,
+        metadata: { passengerName, seats: booking.seats, route: tripRoute },
+      });
+    }
+    if (booking.status === 'cancelled') {
+      entries.push({
+        id: `log-booking-cancelled-${booking.id}`,
+        kind: 'booking_cancelled',
+        timestamp: booking.createdAt,
+        tripId: trip?.id,
+        bookingId: booking.id,
+        trip: trip ? store.resolveTrip(trip) : undefined,
+        title: 'Booking cancelled',
+        subtitle: tripRoute,
+        metadata: { passengerName, seats: booking.seats, route: tripRoute },
+      });
+    }
+    if (store.scannedBookingIds.has(booking.id)) {
+      const scannedAt = store.scannedAtByBookingId[booking.id] || booking.createdAt;
+      entries.push({
+        id: `log-scanned-${booking.id}`,
+        kind: 'ticket_scanned',
+        timestamp: scannedAt,
+        tripId: trip?.id,
+        bookingId: booking.id,
+        trip: trip ? store.resolveTrip(trip) : undefined,
+        title: 'Ticket scanned',
+        subtitle: tripRoute,
+        metadata: { passengerName, seats: booking.seats, route: tripRoute },
+      });
+    }
+  }
+
+  entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  res.json(entries);
 });
 
 // ---------- Ratings ----------
@@ -907,6 +1067,28 @@ app.patch('/api/mock-store', (req, res) => {
   if (patch.profileCompleteByUserId) Object.assign(store.profileCompleteByUserId, patch.profileCompleteByUserId);
   res.json({ ok: true });
 });
+
+// ---------- Automated trip completion (cron every 5 min) ----------
+function runTripCompletionJob() {
+  const now = Date.now();
+  store.tripsStore.forEach((trip) => {
+    if (trip.status !== 'active' && trip.status !== 'full') return;
+    const tripBookings = store.bookingsStore.filter((b) => (b.trip?.id || b.trip) === trip.id && b.status !== 'cancelled');
+    const totalBooked = tripBookings.reduce((s, b) => s + b.seats, 0);
+    const totalScanned = tripBookings.filter((b) => store.scannedBookingIds.has(b.id)).length;
+    const allTicketsScanned = totalBooked > 0 && tripBookings.every((b) => store.scannedBookingIds.has(b.id));
+    const depDate = trip.departureDate || new Date().toISOString().slice(0, 10);
+    const [h, m] = (trip.departureTime || '00:00').split(':').map(Number);
+    const depMs = new Date(depDate + 'T' + (trip.departureTime || '00:00')).getTime();
+    const durationMins = trip.durationMinutes || 0;
+    const estimatedArrivalMs = depMs + durationMins * 60 * 1000;
+    if (allTicketsScanned && now >= estimatedArrivalMs) {
+      trip.status = 'completed';
+    }
+  });
+}
+setInterval(runTripCompletionJob, 5 * 60 * 1000);
+runTripCompletionJob();
 
 // ---------- Health ----------
 app.get('/api/health', (req, res) => res.json({ ok: true }));

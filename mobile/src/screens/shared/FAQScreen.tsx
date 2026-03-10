@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Screen } from '../../components';
 import { useThemeColors } from '../../context/ThemeContext';
-import { spacing, typography, radii } from '../../utils/theme';
+import { spacing, typography, radii, cardShadow } from '../../utils/theme';
 
 const items = [
   { q: 'How do I book a trip?', a: 'Tap Find trips, choose a ride, select seats and confirm with your payment method.' },
@@ -17,7 +17,7 @@ export default function FAQScreen() {
     <Screen scroll style={[styles.container, { backgroundColor: c.appBackground }]} contentContainerStyle={styles.content}>
       <Text style={[styles.title, { color: c.text }]}>FAQ</Text>
       {items.map((item, i) => (
-        <View key={i} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View key={i} style={[styles.card, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
           <Text style={[styles.question, { color: c.text }]}>{item.q}</Text>
           <Text style={[styles.answer, { color: c.textSecondary }]}>{item.a}</Text>
         </View>

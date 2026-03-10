@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
 import { useRootNavigation } from '../../context/RootNavigationContext';
-import { getDriverTripActivities } from '../../services/api';
+import { getDriverTripActivities, cancelDriverTrip } from '../../services/api';
 import {
   EmptyState,
   Screen,
@@ -24,12 +24,14 @@ import {
   CarRefreshIndicator,
 } from '../../components';
 import { useTabbedList } from '../../hooks/useTabbedList';
-import { spacing, typography, radii, sizes, borderWidths } from '../../utils/theme';
+import { spacing, typography, radii, sizes, borderWidths, cardShadow } from '../../utils/theme';
 import { useThemeColors } from '../../context/ThemeContext';
 import { useDriverTheme } from '../../context/DriverThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { strings } from '../../constants/strings';
 import { landingHeaderPaddingHorizontal, listBottomPaddingTab } from '../../utils/layout';
+import { getTripStatusLabel } from '../../components/RideCard';
+import { getStatusColorKey, getStatusTintKey } from '../../utils/theme';
 import type { DriverTripActivity } from '../../types';
 
 const TABS = [
@@ -56,9 +58,10 @@ export default function DriverMyRidesScreen() {
   const navigation = useNavigation<any>();
   const { rootNavigate } = useRootNavigation();
   const { user } = useAuth();
-  const { agencySubRole } = useRole();
+  const { currentRole, agencySubRole } = useRole();
   const c = useThemeColors();
   const isScanner = user?.agencySubRole === 'agency_scanner' || agencySubRole === 'agency_scanner';
+  const isAgency = currentRole === 'agency';
   const [refreshState, setRefreshState] = useState<'idle' | 'refreshing' | 'done'>('idle');
   const [isIncomeVisible, setIsIncomeVisible] = useState(false);
 
@@ -77,8 +80,8 @@ export default function DriverMyRidesScreen() {
     fetchData: fetchActivities,
     filterByTab: (a, t) => {
       const tripTime = a.trip.departureTime ? new Date(a.trip.departureDate || new Date()).getTime() : 0;
-      if (t === 'recent') return a.trip.status === 'completed' || (a.trip.status === 'active' && tripTime >= oneWeekAgo);
-      if (t === 'scheduled') return a.trip.status === 'active';
+      if (t === 'recent') return a.trip.status === 'completed' || (a.trip.status === 'active' && tripTime >= oneWeekAgo) || (a.trip.status === 'cancelled' && tripTime >= oneWeekAgo);
+      if (t === 'scheduled') return a.trip.status === 'active' || a.trip.status === 'full';
       if (t === 'monthly') return tripTime >= startOfMonth;
       return true;
     },
@@ -137,8 +140,42 @@ export default function DriverMyRidesScreen() {
     return 'PAID';
   };
 
+  const getStatusLabel = (item: DriverTripActivity) =>
+    getTripStatusLabel(item.trip.status, item.bookedSeats > 0);
+
+  const canCancelTrip = (item: DriverTripActivity): boolean => {
+    if (item.trip.status !== 'active' && item.trip.status !== 'full') return false;
+    if ((item.bookedSeats ?? 0) > 0) return false;
+    const depDate = (item.trip as { departureDate?: string }).departureDate || new Date().toISOString().slice(0, 10);
+    const depMs = new Date(depDate + 'T' + (item.trip.departureTime || '00:00')).getTime();
+    return depMs - Date.now() >= 60 * 60 * 1000;
+  };
+
+  const handleCancelTrip = (item: DriverTripActivity) => {
+    if (!user?.id) return;
+    Alert.alert(
+      'Cancel trip',
+      'Are you sure you want to cancel this trip?',
+      [
+        { text: 'Keep trip', style: 'cancel' },
+        {
+          text: 'Cancel trip',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await cancelDriverTrip(item.trip.id, user.id);
+              void refresh();
+            } catch (e) {
+              Alert.alert('Error', e instanceof Error ? e.message : 'Could not cancel trip');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
-    <Screen style={[styles.container, { backgroundColor: c.appBackground }, { paddingHorizontal: 0 }]}>
+    <Screen contentInset={false} style={[styles.container, { backgroundColor: c.appBackground }]}>
       {loadError ? (
         <View style={[styles.errorBanner, { backgroundColor: c.surfaceElevated, borderColor: c.error }]}>
           <Text style={[styles.errorText, { color: c.error }]}>{loadError}</Text>
@@ -146,42 +183,42 @@ export default function DriverMyRidesScreen() {
         </View>
       ) : null}
 
-      {/* Activities header (mockup) */}
-      <View style={[styles.activitiesHeader, { paddingTop: insets.top + spacing.lg, backgroundColor: d.card, borderBottomColor: c.border }]}>
+      {/* My Rides header */}
+      <View style={[styles.activitiesHeader, { paddingTop: insets.top + spacing.sm, backgroundColor: c.appBackground, borderBottomColor: c.borderLight }]}>
         <View style={styles.activitiesHeaderRow}>
           <View>
-            <Text style={[styles.activitiesTitle, { color: d.primary }]}>Activities</Text>
-            <Text style={[styles.activitiesSubtitle, { color: c.textSecondary }]}>History and insights</Text>
+            <Text style={[styles.activitiesTitle, { color: c.text }]}>{strings.nav.myRides}</Text>
+            <Text style={[styles.activitiesSubtitle, { color: c.textMuted }]}>History and insights</Text>
           </View>
-          <View style={[styles.activitiesHeaderIcon, { backgroundColor: c.ghostBg }]}>
-            <Ionicons name="bar-chart-outline" size={20} color={c.textMuted} />
+          <View style={[styles.activitiesHeaderIcon, { backgroundColor: c.card, borderWidth: 1, borderColor: c.borderLight }]}>
+            <Ionicons name="bar-chart-outline" size={20} color={c.primary} />
           </View>
         </View>
         <View style={styles.activitiesStatsRow}>
-          <View style={[styles.activitiesStatCard, { backgroundColor: c.appSurfaceMuted, borderColor: c.border }]}>
-            <Text style={[styles.activitiesStatLabel, { color: c.textSecondary }]}>This Week</Text>
-            <Text style={[styles.activitiesStatValue, { color: d.primary }]}>{weekActivities.length} Trips</Text>
+          <View style={[styles.activitiesStatCard, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
+            <Text style={[styles.activitiesStatLabel, { color: c.textMuted }]}>This Week</Text>
+            <Text style={[styles.activitiesStatValue, { color: c.text }]}>{weekActivities.length} Trips</Text>
           </View>
-          <View style={[styles.activitiesStatCard, { backgroundColor: c.appSurfaceMuted, borderColor: c.border }]}>
-            <Text style={[styles.activitiesStatLabel, { color: c.textSecondary }]}>Earnings</Text>
-            <Text style={[styles.activitiesStatValue, { color: d.instaGreen }]}>RWF {(weekEarnings / 1000).toFixed(0)}k</Text>
+          <View style={[styles.activitiesStatCard, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
+            <Text style={[styles.activitiesStatLabel, { color: c.textMuted }]}>Earnings</Text>
+            <Text style={[styles.activitiesStatValue, { color: c.statusCompleted }]}>RWF {(weekEarnings / 1000).toFixed(0)}k</Text>
           </View>
-          <View style={[styles.activitiesStatCard, { backgroundColor: c.appSurfaceMuted, borderColor: c.border }]}>
-            <Text style={[styles.activitiesStatLabel, { color: c.textSecondary }]}>Points</Text>
-            <Text style={[styles.activitiesStatValue, { color: c.warning }]}>{pointsPlaceholder}</Text>
+          <View style={[styles.activitiesStatCard, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
+            <Text style={[styles.activitiesStatLabel, { color: c.textMuted }]}>Points</Text>
+            <Text style={[styles.activitiesStatValue, { color: c.text }]}>{pointsPlaceholder}</Text>
           </View>
         </View>
       </View>
 
       {/* Tabs: Recent | Scheduled | Monthly */}
-      <View style={[styles.tabsRow, { borderBottomColor: c.border }]}>
+      <View style={[styles.tabsRow, { borderBottomColor: c.borderLight }]}>
         {TABS.map((t) => (
           <TouchableOpacity
             key={t.key}
             onPress={() => setTab(t.key)}
-            style={[styles.tabUnderline, tab === t.key && { borderBottomColor: d.primary, borderBottomWidth: 2 }]}
+            style={[styles.tabUnderline, tab === t.key && { borderBottomColor: c.primary, borderBottomWidth: 2 }]}
           >
-            <Text style={[styles.tabUnderlineText, { color: tab === t.key ? d.primary : c.textMuted }]}>{t.label}</Text>
+            <Text style={[styles.tabUnderlineText, { color: tab === t.key ? c.primary : c.textMuted }]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -211,51 +248,58 @@ export default function DriverMyRidesScreen() {
           renderItem={({ item }) => {
             const status = getActivityStatus(item);
             const isVoid = status === 'VOID';
+            const statusKey = getStatusColorKey(item.trip.status, { hasBookings: (item.bookedSeats ?? 0) > 0 });
+            const pillBg = c[getStatusTintKey(statusKey)] as string;
+            const pillColor = c[statusKey] as string;
+            const showCancel = tab === 'scheduled' && canCancelTrip(item);
             return (
               <TouchableOpacity
-                style={[styles.activityCard, { backgroundColor: d.card, borderColor: c.border }, isVoid && { opacity: 0.7 }]}
+                style={[styles.activityCard, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow, isVoid && { opacity: 0.85 }]}
                 onPress={() => onCardPress(item)}
                 activeOpacity={0.7}
               >
                 <View style={[
                   styles.activityCardIcon,
-                  { backgroundColor: status === 'EARNED' ? d.instaGreenTint : status === 'PAID' ? d.accentTint : c.ghostBg },
+                  { backgroundColor: status === 'EARNED' ? c.statusCompletedTint : status === 'PAID' ? c.statusPendingTint : c.ghostBg },
                 ]}>
                   <Ionicons
                     name={status === 'VOID' ? 'close' : status === 'EARNED' ? 'checkmark' : 'time'}
                     size={24}
-                    color={status === 'EARNED' ? d.instaGreen : status === 'PAID' ? d.accent : c.textMuted}
+                    color={status === 'EARNED' ? c.statusCompleted : status === 'PAID' ? c.statusPending : c.textMuted}
                   />
                 </View>
                 <View style={styles.activityCardBody}>
                   <View style={styles.activityCardRow}>
-                    <Text style={[styles.activityCardTitle, { color: d.primary }]} numberOfLines={1}>
+                    <Text style={[styles.activityCardTitle, { color: c.text }]} numberOfLines={1}>
                       {item.trip.departureHotpoint?.name ?? '—'} → {item.trip.destinationHotpoint?.name ?? '—'}
                     </Text>
-                    <Text style={[styles.activityCardAmount, { color: isVoid ? c.error : d.primary }]}>
+                    <Text style={[styles.activityCardAmount, { color: isVoid ? c.statusCanceled : c.text }]}>
                       RWF {isIncomeVisible ? Number(item.collectedAmount ?? 0).toLocaleString('en-RW', { maximumFractionDigits: 0 }) : '••••••'}
                     </Text>
                   </View>
                   <View style={styles.activityCardMeta}>
                     <Text style={[styles.activityCardMetaText, { color: c.textSecondary }]}>
                       {item.bookedSeats ?? 0} Passengers • {formatTimeAgo(item.trip.departureTime)}
+                      {isAgency && (() => {
+                        const total = (item.bookedSeats ?? 0) + (item.remainingSeats ?? 0);
+                        const pct = total > 0 ? Math.round(((item.bookedSeats ?? 0) / total) * 100) : 0;
+                        return pct > 0 ? ` • ${pct}% full` : '';
+                      })()}
                     </Text>
-                    <View style={[
-                      styles.activityCardPill,
-                      status === 'EARNED' && { backgroundColor: d.instaGreenTint },
-                      status === 'PAID' && { backgroundColor: d.accentTint },
-                      status === 'VOID' && { backgroundColor: c.ghostBg },
-                    ]}>
-                      <Text style={[
-                        styles.activityCardPillText,
-                        status === 'EARNED' && { color: d.instaGreen },
-                        status === 'PAID' && { color: d.accent },
-                        status === 'VOID' && { color: c.textMuted },
-                      ]}>
-                        {status}
+                    <View style={[styles.activityCardPill, { backgroundColor: pillBg }]}>
+                      <Text style={[styles.activityCardPillText, { color: pillColor }]}>
+                        {getStatusLabel(item)}
                       </Text>
                     </View>
                   </View>
+                  {showCancel ? (
+                    <TouchableOpacity
+                      style={[styles.cancelBtn, { borderColor: c.error }]}
+                      onPress={() => handleCancelTrip(item)}
+                    >
+                      <Text style={[styles.cancelBtnText, { color: c.error }]}>Cancel trip</Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
               </TouchableOpacity>
             );
@@ -374,4 +418,6 @@ const styles = StyleSheet.create({
   activityCardMetaText: { ...typography.overline, flex: 1 },
   activityCardPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs, borderRadius: radii.xs },
   activityCardPillText: { ...typography.caption9 },
+  cancelBtn: { marginTop: spacing.sm, alignSelf: 'flex-start', paddingVertical: spacing.xs, paddingHorizontal: spacing.sm, borderRadius: radii.xs, borderWidth: 1 },
+  cancelBtnText: { ...typography.captionBold },
 });

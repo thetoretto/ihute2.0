@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components';
 import { getScannerTicketReport } from '../../services/api';
 import type { ScannerTicketReportItem } from '../../services/api';
-import { spacing, typography, radii } from '../../utils/theme';
+import { spacing, typography, radii, cardShadow } from '../../utils/theme';
 import { useThemeColors } from '../../context/ThemeContext';
 import { landingHeaderPaddingHorizontal, tightGap } from '../../utils/layout';
 
@@ -35,7 +35,7 @@ export default function ScannerReportScreen() {
   };
 
   return (
-    <Screen scroll={false} style={[styles.container, { paddingHorizontal: 0 }]}>
+    <Screen contentInset={false} scroll={false} style={[styles.container]}>
       <View style={[styles.reportHeader, { borderBottomColor: c.border, backgroundColor: c.surface }]}>
         <Text style={[styles.reportTitle, { color: c.text }]}>Ticket report</Text>
         <Text style={[styles.reportSubtitle, { color: c.textSecondary }]}>Past, today & upcoming tickets for your shift</Text>
@@ -77,7 +77,7 @@ export default function ScannerReportScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <View style={[styles.row, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.row, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
             <View style={styles.rowMain}>
               <Text style={[styles.route, { color: c.text }]}>{item.route}</Text>
               <Text style={[styles.passenger, { color: c.textSecondary }]}>{item.passengerName}</Text>

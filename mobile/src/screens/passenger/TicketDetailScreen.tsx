@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { Button, Screen } from '../../components';
 import { getBookingTicket, shareTicketPdf } from '../../services/api';
-import { spacing, typography, radii } from '../../utils/theme';
-import { landingHeaderPaddingHorizontal, listScreenHeaderPaddingVertical } from '../../utils/layout';
+import { spacing, typography, radii, cardShadow } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal, screenContentStartPaddingTop } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import type { BookingTicket } from '../../types';
 
@@ -56,7 +56,7 @@ export default function TicketDetailScreen() {
 
   if (loading) {
     return (
-      <Screen style={[styles.center, { backgroundColor: c.appBackground }]}>
+      <Screen contentInset={false} style={[styles.center, { backgroundColor: c.appBackground }]}>
         <Text style={[styles.muted, { color: c.textSecondary }]}>Loading ticket...</Text>
       </Screen>
     );
@@ -64,7 +64,7 @@ export default function TicketDetailScreen() {
 
   if (!ticket) {
     return (
-      <Screen style={[styles.center, { backgroundColor: c.appBackground }]}>
+      <Screen contentInset={false} style={[styles.center, { backgroundColor: c.appBackground }]}>
         <Text style={[styles.muted, { color: c.textSecondary }]}>{error ?? 'Ticket unavailable.'}</Text>
         <Button title="Retry" onPress={() => void loadTicket()} style={styles.retryBtn} />
       </Screen>
@@ -72,8 +72,8 @@ export default function TicketDetailScreen() {
   }
 
   return (
-    <Screen scroll contentContainerStyle={styles.content}>
-      <View style={[styles.ticketCard, { backgroundColor: c.card, borderColor: c.border }]}>
+    <Screen contentInset={false} scroll contentContainerStyle={styles.content}>
+      <View style={[styles.ticketCard, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
         <View style={styles.header}>
           <Ionicons name="ticket-outline" size={18} color={c.primary} />
           <Text style={[styles.title, { color: c.text }]}>Passenger Ticket</Text>
@@ -141,7 +141,7 @@ export default function TicketDetailScreen() {
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: landingHeaderPaddingHorizontal,
-    paddingTop: listScreenHeaderPaddingVertical,
+    paddingTop: screenContentStartPaddingTop,
     paddingBottom: spacing.xl,
   },
   center: {

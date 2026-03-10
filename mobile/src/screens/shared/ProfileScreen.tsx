@@ -1,66 +1,35 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, ScrollView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useRole } from '../../context/RoleContext';
 import { useRootNavigation } from '../../context/RootNavigationContext';
 import { getDriverRatingSummary, getUserBookings, getUserVehicles } from '../../services/api';
-import { formatRatingValue, Screen, LandingHeader } from '../../components';
-import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
-import { useThemeContext, useThemeColors } from '../../context/ThemeContext';
-import { useDriverTheme } from '../../context/DriverThemeContext';
-import { spacing, typography, radii, sizes } from '../../utils/theme';
-import { landingHeaderPaddingHorizontal } from '../../utils/layout';
+import { formatRatingValue } from '../../components';
+import { useThemeColors } from '../../context/ThemeContext';
+import { spacing, typography, radii, sizes, borderWidths, cardShadow, cardShadowStrong } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal, profileScrollPaddingBottom, fabBottomOffset } from '../../utils/layout';
 import { openWhatsAppDispute } from '../../utils/whatsapp';
 import { strings } from '../../constants/strings';
 
-function getRoleAccent(role: string, isScanner: boolean, c: ReturnType<typeof useThemeColors>) {
-  if (isScanner) return c.agency;
-  if (role === 'driver') return c.passengerDark;
-  if (role === 'agency') return c.agency;
-  return c.primary;
-}
-
-/** Single menu row: icon in rounded box, label, optional value, chevron (mockup style). */
-function MenuRow({
-  icon,
-  label,
-  value,
-  onPress,
-  accentColor,
-  themeColors,
-  iconName,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value?: string | null;
-  onPress: () => void;
-  accentColor: string;
-  themeColors: ReturnType<typeof useThemeColors>;
-  iconName?: keyof typeof Ionicons.glyphMap;
-}) {
-  const name = iconName ?? icon;
+function GlassCard({ children, style, onPress }: { children: React.ReactNode; style?: any; onPress?: () => void }) {
+  const themeColors = useThemeColors();
+  const Container = onPress ? TouchableOpacity : View;
   return (
-    <TouchableOpacity
-      style={[styles.menuRow, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}
+    <Container
+      style={[
+        styles.glassCard,
+        cardShadow,
+        { shadowColor: themeColors.cardShadowColor, backgroundColor: themeColors.card, borderColor: themeColors.borderLight },
+        style,
+      ]}
       onPress={onPress}
-      activeOpacity={0.85}
+      activeOpacity={onPress ? 0.7 : 1}
     >
-      <View style={[styles.menuRowIconBox, { backgroundColor: themeColors.ghostBg }]}>
-        <Ionicons name={name} size={20} color={themeColors.textMuted} />
-      </View>
-      <Text style={[styles.menuRowLabel, { color: themeColors.text }]} numberOfLines={1}>
-        {label}
-      </Text>
-      {value != null && value !== '' ? (
-        <Text style={[styles.menuRowValue, { color: accentColor }]} numberOfLines={1}>
-          {value}
-        </Text>
-      ) : null}
-      <Ionicons name="chevron-forward" size={18} color={themeColors.textMuted} />
-    </TouchableOpacity>
+      {children}
+    </Container>
   );
 }
 
@@ -70,59 +39,47 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { currentRole, agencySubRole } = useRole();
-  const responsive = useResponsiveThemeContext();
-  const themeContext = useThemeContext();
   const themeColors = useThemeColors();
-  const effectiveSpacing = responsive?.spacing ?? spacing;
-  const effectiveTypography = responsive?.typography ?? typography;
+  
+  const [driverRatingSummary, setDriverRatingSummary] = useState<{ average: number; count: number } | null>(null);
+  const [completedRidesCount, setCompletedRidesCount] = useState<number>(0);
+  const [firstVehicle, setFirstVehicle] = useState<{ make: string; model: string; licensePlate: string } | null>(null);
+
   const isScanner = currentRole === 'agency' && agencySubRole === 'agency_scanner';
-  const [driverRatingSummary, setDriverRatingSummary] = React.useState<{ average: number; count: number } | null>(null);
-  const [completedRidesCount, setCompletedRidesCount] = React.useState<number>(0);
-  const [firstVehicle, setFirstVehicle] = React.useState<{ make: string; model: string; licensePlate: string } | null>(null);
 
-  const isDriverOrAgency =
-    (user?.roles?.includes('driver') || user?.roles?.includes('agency')) ?? false;
-
-  React.useEffect(() => {
-    const load = async () => {
-      if (currentRole !== 'driver' || !user) {
+  // Load Data
+  useEffect(() => {
+    const loadDriverData = async () => {
+      if (currentRole === 'driver' && user) {
+        const summary = await getDriverRatingSummary(user.id);
+        setDriverRatingSummary(summary);
+        
+        const list = await getUserVehicles(user.id);
+        const approved = list.filter((v) => v.approvalStatus === 'approved');
+        if (approved[0]) {
+          setFirstVehicle({ make: approved[0].make, model: approved[0].model, licensePlate: approved[0].licensePlate });
+        } else {
+          setFirstVehicle(null);
+        }
+      } else {
         setDriverRatingSummary(null);
-        return;
+        setFirstVehicle(null);
       }
-      const summary = await getDriverRatingSummary(user.id);
-      setDriverRatingSummary(summary);
     };
-    void load();
+    void loadDriverData();
   }, [currentRole, user]);
 
-  React.useEffect(() => {
-    const load = async () => {
-      if (currentRole !== 'driver' || !user) {
-        setFirstVehicle(null);
-        return;
-      }
-      const list = await getUserVehicles(user.id);
-      const approved = list.filter((v) => v.approvalStatus === 'approved');
-      if (approved[0]) {
-        setFirstVehicle({ make: approved[0].make, model: approved[0].model, licensePlate: approved[0].licensePlate });
+  useEffect(() => {
+    const loadPassengerData = async () => {
+      if (currentRole === 'passenger' && user) {
+        const bookings = await getUserBookings(user.id);
+        setCompletedRidesCount(bookings.filter((b) => b.status === 'completed').length);
       } else {
-        setFirstVehicle(null);
-      }
-    };
-    void load();
-  }, [currentRole, user?.id]);
-
-  React.useEffect(() => {
-    const load = async () => {
-      if (currentRole !== 'passenger' || !user) {
         setCompletedRidesCount(0);
-        return;
       }
-      const bookings = await getUserBookings(user.id);
-      setCompletedRidesCount(bookings.filter((b) => b.status === 'completed').length);
     };
-    void load();
-  }, [currentRole, user?.id]);
+    void loadPassengerData();
+  }, [currentRole, user]);
 
   const handleLogout = () => {
     Alert.alert(strings.auth.logOut, strings.auth.logOutConfirm, [
@@ -131,516 +88,540 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const roleLabel =
-    isScanner ? strings.profile.scannerRole : currentRole === 'driver' ? strings.profile.driver : currentRole === 'agency' ? strings.profile.agency : strings.profile.passenger;
-  const accent = getRoleAccent(currentRole, isScanner, themeColors);
+  const renderHeader = () => (
+    <View style={[styles.header, { paddingTop: insets.top + spacing.sm, backgroundColor: themeColors.appBackground }]}>
+      <View style={styles.headerLeft}>
+        <GlassCard style={styles.backButton} onPress={() => navigation.goBack()}>
+          <FontAwesome name="chevron-left" size={14} color={themeColors.textMuted} />
+        </GlassCard>
+        <View>
+          <Text style={[styles.headerTitleSmall, { color: themeColors.textMuted }]}>EcoRide</Text>
+          <Text style={[styles.headerTitleLarge, { color: themeColors.text }]}>Profile</Text>
+        </View>
+      </View>
+      <GlassCard style={styles.menuButton} onPress={() => rootNavigate('EditProfile')}>
+        <FontAwesome name="ellipsis-h" size={14} color={themeColors.textMuted} />
+      </GlassCard>
+    </View>
+  );
 
-  const totalTripsStat = currentRole === 'passenger' ? completedRidesCount : (driverRatingSummary?.count ?? 0);
-  const statsTotalTrips = totalTripsStat || 0;
-  const statsKm = 0; // placeholder until API
-  const statsCo2 = '0kg'; // placeholder until API
-
-  const driverTheme = useDriverTheme();
-  const isDriverProfile = currentRole === 'driver' && !isScanner;
-  const d = driverTheme?.colors;
-
-  if (isDriverProfile && d) {
-    const memberYear = (user as { createdAt?: string })?.createdAt ? new Date((user as { createdAt: string }).createdAt).getFullYear() : 2023;
-    return (
-      <Screen
-        scroll
-        style={[styles.container, { backgroundColor: themeColors.appBackground }]}
-        contentContainerStyle={[styles.content, { paddingTop: 0, paddingBottom: effectiveSpacing.xxl }]}
-      >
-        <LandingHeader title="Account" />
-        <View style={[styles.driverProfileHeader, { backgroundColor: themeColors.card, paddingTop: effectiveSpacing.xl, paddingBottom: effectiveSpacing.lg, paddingHorizontal: landingHeaderPaddingHorizontal }]}>
-          <View style={styles.driverProfileAvatarWrap}>
-            <TouchableOpacity style={[styles.driverProfileAvatar, { borderColor: themeColors.card }]} onPress={() => rootNavigate('EditProfile')}>
-              {user?.avatarUri ? (
-                <Image source={{ uri: user.avatarUri }} style={styles.driverProfileAvatarImg} />
-              ) : (
-                <View style={[styles.driverProfileAvatarPlaceholder, { backgroundColor: themeColors.surface }]}>
-                  <Ionicons name="person" size={sizes.avatar.lg} color={themeColors.textMuted} />
-                </View>
-              )}
-            </TouchableOpacity>
-            <View style={[styles.driverProfileVerifiedBadge, { backgroundColor: d.instaGreen, borderColor: themeColors.surface }]}>
-              <Ionicons name="checkmark" size={16} color={themeColors.onAppPrimary} />
+  const renderDriverContent = () => (
+    <View style={styles.screenContent}>
+      <GlassCard style={styles.profileCard}>
+        <View style={styles.profileHeaderRow}>
+          <View style={styles.avatarContainer}>
+            <Image
+              source={{ uri: user?.avatarUri ?? 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&fit=crop' }}
+              style={[styles.avatarLarge, { borderColor: themeColors.card }]}
+            />
+            <View style={[styles.verifiedBadge, { backgroundColor: themeColors.success, borderColor: themeColors.card }]}>
+              <FontAwesome name="check" size={10} color={themeColors.onAccent} />
             </View>
           </View>
-          <Text style={[styles.driverProfileName, { color: d.primary }]}>{user?.name ?? strings.common.guest}</Text>
-          <Text style={[styles.driverProfileMember, { color: themeColors.textMuted }]}>Member since {memberYear}</Text>
-        </View>
-
-        <View style={[styles.driverProfileStatsRow, { paddingHorizontal: landingHeaderPaddingHorizontal, marginTop: effectiveSpacing.md }]}>
-          <TouchableOpacity style={[styles.driverProfileStatCard, styles.driverProfileStatCardPrimary, { backgroundColor: d.primary }]} onPress={() => rootNavigate('VehicleGarage')}>
-            <Text style={[styles.driverProfileStatValue, { color: themeColors.onAppPrimary }]}>{firstVehicle ? `${firstVehicle.make} ${firstVehicle.model}` : 'My Vehicle'}</Text>
-            <Text style={[styles.driverProfileStatLabel, { color: themeColors.onAppPrimaryMuted }]}>{firstVehicle?.licensePlate ?? 'Add vehicle'}</Text>
-          </TouchableOpacity>
-          <View style={[styles.driverProfileStatCard, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
-            <Text style={[styles.driverProfileStatValue, { color: d.primary }]}>{formatRatingValue(driverRatingSummary?.average ?? user?.rating ?? 0, '0.0')}</Text>
-            <Text style={[styles.driverProfileStatLabel, { color: themeColors.textMuted }]}>LIFETIME RATING</Text>
+          <View style={styles.profileInfo}>
+            <Text style={[styles.profileName, { color: themeColors.text }]}>{user?.name ?? 'Guest Driver'}</Text>
+            <View style={styles.ratingRow}>
+              <FontAwesome name="star" size={12} color={themeColors.starRating} />
+              <Text style={[styles.ratingText, { color: themeColors.starRating }]}>{formatRatingValue(driverRatingSummary?.average ?? 0, '0.0')}</Text>
+              <Text style={[styles.ratingLabel, { color: themeColors.textMuted }]}>• Ambassador</Text>
+            </View>
           </View>
         </View>
-
-        <View style={styles.section}>
-          <View style={[styles.preferencesCard, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
-            <MenuRow icon="settings-outline" iconName="settings-outline" label="Preferences" onPress={() => rootNavigate('EditProfile')} accentColor={d.accent} themeColors={themeColors} />
-            <MenuRow iconName="shield-checkmark-outline" icon="shield-checkmark-outline" label="Privacy & Security" onPress={() => navigation.navigate('Privacy')} accentColor={d.accent} themeColors={themeColors} />
-            <TouchableOpacity style={[styles.driverProfileLogout, { backgroundColor: themeColors.errorTint }]} onPress={handleLogout} activeOpacity={0.85}>
-              <Text style={[styles.driverProfileLogoutText, { color: themeColors.error }]}>{strings.auth.logOut}</Text>
-            </TouchableOpacity>
+        
+        <View style={styles.statsRow}>
+          <View style={[styles.statBox, { backgroundColor: themeColors.ghostBg, borderColor: themeColors.borderLight }]}>
+            <Text style={[styles.statLabel, { color: themeColors.textMuted }]}>TOTAL TRIPS</Text>
+            <Text style={[styles.statValue, { color: themeColors.text }]}>{driverRatingSummary?.count ?? 0}</Text>
+          </View>
+          <View style={[styles.statBox, { backgroundColor: themeColors.ghostBg, borderColor: themeColors.borderLight }]}>
+            <Text style={[styles.statLabel, { color: themeColors.textMuted }]}>RIDER LOVE</Text>
+            <Text style={[styles.statValue, { color: themeColors.text }]}>98%</Text>
           </View>
         </View>
+      </GlassCard>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionOverline, { color: themeColors.textMuted }]}>{strings.profile.account}</Text>
-          <MenuRow iconName="notifications-outline" icon="notifications-outline" label={strings.profile.notificationSettings} onPress={() => navigation.navigate('Notifications')} accentColor={d.accent} themeColors={themeColors} />
-          <MenuRow iconName="wallet-outline" icon="wallet-outline" label={strings.profile.withdrawalMethods} onPress={() => rootNavigate('WithdrawalMethods')} accentColor={d.accent} themeColors={themeColors} />
-          <MenuRow iconName="car-sport-outline" icon="car-sport-outline" label={strings.profile.myVehicles} onPress={() => rootNavigate('VehicleGarage')} accentColor={d.accent} themeColors={themeColors} />
-          <MenuRow iconName="stats-chart-outline" icon="stats-chart-outline" label={strings.profile.viewAllActivities} onPress={() => rootNavigate('DriverActivityListStack')} accentColor={d.accent} themeColors={themeColors} />
-          <MenuRow iconName="cash-outline" icon="cash-outline" label={strings.nav.earnings} onPress={() => rootNavigate('Earnings')} accentColor={d.accent} themeColors={themeColors} />
+      <GlassCard style={styles.vehicleCard} onPress={() => rootNavigate('VehicleGarage')}>
+        <View style={[styles.vehicleIconBox, { backgroundColor: themeColors.dark }]}>
+          <FontAwesome name="car" size={24} color={themeColors.onAccent} />
         </View>
-      </Screen>
-    );
-  }
+        <View style={styles.vehicleInfo}>
+          <Text style={[styles.vehicleLabel, { color: themeColors.textMuted }]}>CURRENT VEHICLE</Text>
+          <Text style={[styles.vehicleName, { color: themeColors.text }]}>{firstVehicle ? `${firstVehicle.make} ${firstVehicle.model}` : 'No Vehicle Selected'}</Text>
+          <Text style={[styles.vehiclePlate, { color: themeColors.primary }]}>{firstVehicle?.licensePlate ?? 'Add a vehicle'}</Text>
+        </View>
+        <FontAwesome name="chevron-right" size={12} color={themeColors.textMuted} />
+      </GlassCard>
+      
+      {/* Driver Actions */}
+      <View style={styles.actionSection}>
+        <GlassCard style={styles.actionRow} onPress={() => rootNavigate('Earnings')}>
+          <View style={styles.rowLeft}>
+            <Ionicons name="cash-outline" size={20} color={themeColors.text} />
+            <Text style={[styles.rowText, { color: themeColors.text }]}>{strings.nav.earnings}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={themeColors.textMuted} />
+        </GlassCard>
+        <GlassCard style={styles.actionRow} onPress={() => rootNavigate('DriverActivityListStack')}>
+          <View style={styles.rowLeft}>
+            <Ionicons name="stats-chart-outline" size={20} color={themeColors.text} />
+            <Text style={[styles.rowText, { color: themeColors.text }]}>{strings.profile.viewMyRides}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={themeColors.textMuted} />
+        </GlassCard>
+        <GlassCard style={styles.actionRow} onPress={() => rootNavigate('ActivitiesFeedStack')}>
+          <View style={styles.rowLeft}>
+            <Ionicons name="pulse-outline" size={20} color={themeColors.text} />
+            <Text style={[styles.rowText, { color: themeColors.text }]}>{strings.profile.activities}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={themeColors.textMuted} />
+        </GlassCard>
+        <GlassCard style={styles.actionRow} onPress={handleLogout}>
+          <View style={styles.rowLeft}>
+            <Ionicons name="log-out-outline" size={20} color={themeColors.error} />
+            <Text style={[styles.rowText, styles.signOutRowText, { color: themeColors.error }]}>Sign out</Text>
+          </View>
+        </GlassCard>
+      </View>
+
+    </View>
+  );
+
+  const renderAgencyContent = () => (
+    <View style={styles.screenContent}>
+      <GlassCard style={styles.profileCard}>
+        <View style={[styles.agencyIconContainer, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
+          <FontAwesome name="building" size={24} color={themeColors.text} />
+        </View>
+        <Text style={[styles.agencyName, { color: themeColors.text }]}>{user?.name ?? 'Global Trans Co.'}</Text>
+        <Text style={[styles.agencyTag, { color: themeColors.textMuted }]}>Verified Logistics Partner</Text>
+        
+        <View style={styles.agencyStatsCol}>
+          <View style={[styles.agencyStatRow, { backgroundColor: themeColors.ghostBg, borderColor: themeColors.borderLight }]}>
+            <View style={styles.agencyStatLeft}>
+              <View style={[styles.agencyStatIcon, { backgroundColor: themeColors.primaryTint }]}>
+                <FontAwesome name="users" size={14} color={themeColors.primary} />
+              </View>
+              <Text style={[styles.agencyStatLabel, { color: themeColors.text }]}>Total Drivers</Text>
+            </View>
+            <Text style={[styles.agencyStatValue, { color: themeColors.text }]}>152</Text>
+          </View>
+          <View style={[styles.agencyStatRow, { backgroundColor: themeColors.ghostBg, borderColor: themeColors.borderLight }]}>
+            <View style={styles.agencyStatLeft}>
+              <View style={[styles.agencyStatIcon, { backgroundColor: themeColors.successTint }]}>
+                <FontAwesome name="shield" size={14} color={themeColors.success} />
+              </View>
+              <Text style={[styles.agencyStatLabel, { color: themeColors.text }]}>Certification</Text>
+            </View>
+            <View style={[styles.agencyTierBadge, { backgroundColor: themeColors.successTint }]}>
+              <Text style={[styles.agencyTierText, { color: themeColors.success }]}>GOLD TIER</Text>
+            </View>
+          </View>
+        </View>
+      </GlassCard>
+      
+      <GlassCard style={styles.actionRow} onPress={() => rootNavigate('ActivitiesFeedStack')}>
+        <View style={styles.rowLeft}>
+          <Ionicons name="pulse-outline" size={20} color={themeColors.text} />
+          <Text style={[styles.rowText, { color: themeColors.text }]}>{strings.profile.activities}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={themeColors.textMuted} />
+      </GlassCard>
+      {isScanner && (
+        <GlassCard style={styles.actionRow} onPress={() => (navigation.getParent() as any)?.navigate('ScannerReport')}>
+          <View style={styles.rowLeft}>
+            <Ionicons name="document-text-outline" size={20} color={themeColors.text} />
+            <Text style={[styles.rowText, { color: themeColors.text }]}>{strings.profile.openReport}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={themeColors.textMuted} />
+        </GlassCard>
+      )}
+      <GlassCard style={styles.actionRow} onPress={handleLogout}>
+        <View style={styles.rowLeft}>
+          <Ionicons name="log-out-outline" size={20} color={themeColors.error} />
+          <Text style={[styles.rowText, styles.signOutRowText, { color: themeColors.error }]}>Sign out</Text>
+        </View>
+      </GlassCard>
+    </View>
+  );
+
+  const renderPassengerContent = () => (
+    <View style={styles.screenContent}>
+      <GlassCard style={styles.profileCard}>
+        <View style={styles.profileHeaderRow}>
+          <Image
+            source={{ uri: user?.avatarUri ?? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&fit=crop' }}
+            style={[styles.avatarMedium, { backgroundColor: themeColors.ghostBg }]}
+          />
+          <View style={styles.profileInfo}>
+            <Text style={[styles.profileNameSmall, { color: themeColors.text }]}>{user?.name ?? 'Sarah Jenkins'}</Text>
+            <View style={[styles.eliteBadge, { backgroundColor: themeColors.primaryTint }]}>
+              <Text style={[styles.eliteBadgeText, { color: themeColors.primary }]}>ELITE TRAVELER</Text>
+            </View>
+          </View>
+        </View>
+        
+        <Text style={[styles.sectionTitleSmall, { color: themeColors.textMuted }]}>RIDE PREFERENCES</Text>
+        <View style={styles.prefGrid}>
+          <View style={[styles.prefItem, { backgroundColor: themeColors.ghostBg, borderColor: themeColors.borderLight }]}>
+            <Text style={[styles.prefText, { color: themeColors.text }]}>MUSIC</Text>
+            <FontAwesome name="music" size={14} color={themeColors.primary} />
+          </View>
+          <View style={[styles.prefItem, { backgroundColor: themeColors.ghostBg, borderColor: themeColors.borderLight }]}>
+            <Text style={[styles.prefText, { color: themeColors.text }]}>QUIET</Text>
+            <FontAwesome name="volume-off" size={14} color={themeColors.textMuted} />
+          </View>
+        </View>
+      </GlassCard>
+      
+      <View style={styles.actionSection}>
+        <GlassCard style={styles.actionRow} onPress={() => rootNavigate('Wallet')}>
+          <View style={styles.rowLeft}>
+            <Ionicons name="wallet-outline" size={20} color={themeColors.text} />
+            <Text style={[styles.rowText, { color: themeColors.text }]}>{strings.nav.wallet}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={themeColors.textMuted} />
+        </GlassCard>
+        <GlassCard style={styles.actionRow} onPress={() => navigation.navigate('Privacy')}>
+          <View style={styles.rowLeft}>
+            <Ionicons name="shield-outline" size={20} color={themeColors.text} />
+            <Text style={[styles.rowText, { color: themeColors.text }]}>{strings.profile.privacy}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={themeColors.textMuted} />
+        </GlassCard>
+        <GlassCard style={styles.actionRow} onPress={handleLogout}>
+          <View style={styles.rowLeft}>
+            <Ionicons name="log-out-outline" size={20} color={themeColors.error} />
+            <Text style={[styles.rowText, styles.signOutRowText, { color: themeColors.error }]}>Sign out</Text>
+          </View>
+        </GlassCard>
+      </View>
+    </View>
+  );
 
   return (
-    <Screen
-      scroll
-      style={[styles.container, { backgroundColor: themeColors.appBackground }]}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: 0, paddingBottom: effectiveSpacing.xxl },
-      ]}
-    >
-      <LandingHeader title="Account" />
-      {/* Header block (mockup: white, rounded bottom, avatar, verified, rating, stats grid) */}
-      <View style={[styles.profileHeader, { backgroundColor: themeColors.card, paddingTop: effectiveSpacing.xl, paddingBottom: effectiveSpacing.lg, paddingHorizontal: landingHeaderPaddingHorizontal, shadowColor: themeColors.cardShadowColor }]}>
-        <View style={styles.profileHeaderRow}>
-          <View style={styles.avatarWrap}>
-            <TouchableOpacity
-              style={[styles.avatar, styles.avatarRounded, { borderColor: themeColors.card }]}
-              onPress={() => rootNavigate('EditProfile')}
-              activeOpacity={0.85}
-            >
-              {user?.avatarUri ? (
-                <Image source={{ uri: user.avatarUri }} style={styles.avatarImage} />
-              ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: themeColors.surface }]}>
-                  <Ionicons name="person" size={sizes.avatar.lg} color={themeColors.textMuted} />
-                </View>
-              )}
-            </TouchableOpacity>
-            <View style={[styles.onlineDot, { backgroundColor: themeColors.success, borderColor: themeColors.surface }]} />
-          </View>
-          <View style={styles.profileHeaderInfo}>
-            <Text style={[styles.profileName, effectiveTypography.h2, { color: themeColors.text }]}>
-              {user?.name ?? strings.common.guest}
-            </Text>
-            <Text style={[styles.verifiedLabel, { color: accent }]}>{roleLabel}</Text>
-            <View style={styles.ratingRow}>
-              <Ionicons name="star" size={14} color={themeColors.starRating ?? themeColors.warning} />
-              <Text style={[styles.ratingValue, { color: themeColors.text }]}>
-                {formatRatingValue(user?.rating ?? driverRatingSummary?.average ?? 0, '0.00')}
-              </Text>
-              <Text style={[styles.ridesCount, { color: themeColors.textMuted }]}>
-                ({statsTotalTrips} Rides)
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.statsGrid}>
-          <View style={[styles.statBox, { backgroundColor: themeColors.primaryTint ?? themeColors.ghostBg }]}>
-            <Text style={[styles.statValue, { color: themeColors.primary }]}>{statsTotalTrips}</Text>
-            <Text style={[styles.statLabel, { color: themeColors.textMuted }]}>Total Trips</Text>
-          </View>
-          <View style={[styles.statBox, { backgroundColor: themeColors.successTint ?? themeColors.ghostBg }]}>
-            <Text style={[styles.statValue, { color: themeColors.success }]}>{statsKm === 0 ? '—' : `${(statsKm / 1000).toFixed(1)}k`}</Text>
-            <Text style={[styles.statLabel, { color: themeColors.textMuted }]}>KM Traveled</Text>
-          </View>
-          <View style={[styles.statBox, { backgroundColor: themeColors.warningTint ?? themeColors.ghostBg }]}>
-            <Text style={[styles.statValue, { color: themeColors.warning }]}>{statsCo2}</Text>
-            <Text style={[styles.statLabel, { color: themeColors.textMuted }]}>CO2 Saved</Text>
-          </View>
-        </View>
+    <View style={[styles.container, { backgroundColor: themeColors.appBackground }]}>
+      {renderHeader()}
+      
+      <ScrollView
+         style={styles.scrollView}
+         contentContainerStyle={[styles.scrollContent, { paddingTop: spacing.md }]}
+         showsVerticalScrollIndicator={false}
+       >
+          {currentRole === 'driver' && renderDriverContent()}
+          {currentRole === 'agency' && renderAgencyContent()}
+          {currentRole === 'passenger' && renderPassengerContent()}
+
+       </ScrollView>
+
+      <View style={styles.floatingActions}>
+        <TouchableOpacity style={[styles.fabWhite, cardShadowStrong, { shadowColor: themeColors.cardShadowColor, backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]} onPress={() => navigation.navigate('Hotline')}>
+          <FontAwesome name="phone" size={20} color={themeColors.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.fabGreen, cardShadowStrong, { shadowColor: themeColors.cardShadowColor, backgroundColor: themeColors.whatsappGreen }]} onPress={() => openWhatsAppDispute()}>
+          <FontAwesome name="whatsapp" size={24} color={themeColors.onAccent} />
+        </TouchableOpacity>
       </View>
-
-      {/* Preferences (mockup: Account Details, Security & Safety, Log Out) */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionOverline, { color: themeColors.textMuted }]}>
-          Preferences
-        </Text>
-        <View style={[styles.preferencesCard, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
-          <MenuRow
-            icon="person-outline"
-            iconName="person-outline"
-            label="Account Details"
-            onPress={() => rootNavigate('EditProfile')}
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-          <MenuRow
-            iconName="shield-checkmark-outline"
-            icon="shield-checkmark-outline"
-            label="Security & Safety"
-            onPress={() =>
-              Alert.alert(
-                strings.profile.passwordAndSecurity,
-                'To change your password, sign out and use "Forgot password?" on the login screen.',
-                [{ text: strings.common.ok }]
-              )
-            }
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-          <TouchableOpacity
-            style={[styles.logoutRow, { backgroundColor: themeColors.errorTint ?? themeColors.ghostBg }]}
-            onPress={handleLogout}
-            activeOpacity={0.85}
-          >
-            <View style={[styles.menuRowIconBox, { backgroundColor: themeColors.errorTint ?? themeColors.ghostBg }]}>
-              <Ionicons name="log-out-outline" size={20} color={themeColors.error} />
-            </View>
-            <Text style={[styles.logoutRowLabel, { color: themeColors.error }]}>{strings.auth.logOut}</Text>
-            <Ionicons name="chevron-forward" size={18} color={themeColors.textMuted} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* About you */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionOverline, { color: themeColors.textMuted }]}>
-          {strings.profile.aboutYou}
-        </Text>
-        {isDriverOrAgency && !isScanner ? (
-          <MenuRow
-            icon="car-sport-outline"
-            iconName="car-sport-outline"
-            label={strings.profile.vehicle}
-            onPress={() => rootNavigate('VehicleGarage')}
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-        ) : null}
-        {currentRole === 'driver' && (driverRatingSummary != null || (user?.rating != null)) ? (
-          <MenuRow
-            icon="star-outline"
-            iconName="star-outline"
-            label={strings.profile.ratingsAndReviews}
-            value={formatRatingValue(driverRatingSummary?.average ?? user?.rating ?? 0, '0.0')}
-            onPress={() => {}}
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-        ) : null}
-      </View>
-
-      {/* Account */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionOverline, { color: themeColors.textMuted }]}>
-          {strings.profile.account}
-        </Text>
-        <MenuRow
-          iconName="notifications-outline"
-          icon="notifications-outline"
-          label={strings.profile.notificationSettings}
-          onPress={() => navigation.navigate('Notifications')}
-          accentColor={accent}
-          themeColors={themeColors}
-        />
-        <MenuRow
-          iconName="shield-checkmark-outline"
-          icon="shield-checkmark-outline"
-          label={strings.profile.passwordAndSecurity}
-          onPress={() =>
-            Alert.alert(
-              strings.profile.passwordAndSecurity,
-              'To change your password, sign out and use "Forgot password?" on the login screen.',
-              [{ text: strings.common.ok }]
-            )
-          }
-          accentColor={accent}
-          themeColors={themeColors}
-        />
-        {!isDriverOrAgency ? (
-          <MenuRow
-            iconName="wallet-outline"
-            icon="wallet-outline"
-            label={strings.nav.wallet}
-            onPress={() => rootNavigate('Wallet')}
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-        ) : null}
-        <MenuRow
-          iconName={isDriverOrAgency ? 'wallet-outline' : 'card-outline'}
-          icon="card-outline"
-          label={isDriverOrAgency ? strings.profile.withdrawalMethods : strings.profile.linkedAccounts}
-          onPress={() =>
-            navigation.navigate(isDriverOrAgency ? ('WithdrawalMethods' as never) : ('PaymentMethods' as never))
-          }
-          accentColor={accent}
-          themeColors={themeColors}
-        />
-        <MenuRow
-          iconName="contrast-outline"
-          icon="contrast-outline"
-          label={strings.profile.appearance}
-          value={themeContext?.colorScheme === 'dark' ? strings.profile.dark : strings.profile.light}
-          onPress={() => themeContext?.setColorScheme(themeContext.colorScheme === 'light' ? 'dark' : 'light')}
-          accentColor={accent}
-          themeColors={themeColors}
-        />
-        <MenuRow
-          iconName="shield-outline"
-          icon="shield-outline"
-          label={strings.profile.privacy}
-          onPress={() => navigation.navigate('Privacy')}
-          accentColor={accent}
-          themeColors={themeColors}
-        />
-        <MenuRow
-          iconName="document-text-outline"
-          icon="document-text-outline"
-          label={strings.nav.termsOfService}
-          onPress={() => rootNavigate('TermsOfService')}
-          accentColor={accent}
-          themeColors={themeColors}
-        />
-        <MenuRow
-          iconName="help-circle-outline"
-          icon="help-circle-outline"
-          label={strings.nav.faq}
-          onPress={() => rootNavigate('FAQ')}
-          accentColor={accent}
-          themeColors={themeColors}
-        />
-        <MenuRow
-          iconName="information-circle-outline"
-          icon="information-circle-outline"
-          label={strings.nav.about}
-          onPress={() => rootNavigate('About')}
-          accentColor={accent}
-          themeColors={themeColors}
-        />
-      </View>
-
-      {/* App (driver/agency) */}
-      {isDriverOrAgency && !isScanner ? (
-        <View style={styles.section}>
-          <Text style={[styles.sectionOverline, { color: themeColors.textMuted }]}>
-            {strings.profile.app}
-          </Text>
-          <MenuRow
-            iconName="stats-chart-outline"
-            icon="stats-chart-outline"
-            label={strings.profile.viewAllActivities}
-            onPress={() => rootNavigate('DriverActivityListStack')}
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-          <MenuRow
-            iconName="car-sport-outline"
-            icon="car-sport-outline"
-            label={strings.profile.myVehicles}
-            onPress={() => rootNavigate('VehicleGarage')}
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-          <MenuRow
-            iconName="cash-outline"
-            icon="cash-outline"
-            label={strings.nav.earnings}
-            onPress={() => rootNavigate('Earnings')}
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-        </View>
-      ) : null}
-
-      {/* Scanner: Report only */}
-      {isScanner ? (
-        <View style={styles.section}>
-          <Text style={[styles.sectionOverline, { color: themeColors.textMuted }]}>
-            {strings.profile.scanner}
-          </Text>
-          <MenuRow
-            iconName="document-text-outline"
-            icon="document-text-outline"
-            label={strings.profile.openReport}
-            onPress={() => (navigation.getParent() as any)?.navigate('ScannerReport')}
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-        </View>
-      ) : null}
-
-      {/* Support (non-agency) */}
-      {currentRole !== 'agency' ? (
-        <View style={styles.section}>
-          <Text style={[styles.sectionOverline, { color: themeColors.textMuted }]}>
-            {strings.profile.support}
-          </Text>
-          <MenuRow
-            iconName="call-outline"
-            icon="call-outline"
-            label={strings.profile.hotline}
-            onPress={() => navigation.navigate('Hotline')}
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-          <MenuRow
-            iconName="logo-whatsapp"
-            icon="logo-whatsapp"
-            label={strings.profile.disputeViaWhatsApp}
-            onPress={() => openWhatsAppDispute()}
-            accentColor={accent}
-            themeColors={themeColors}
-          />
-        </View>
-      ) : null}
-
-    </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { paddingHorizontal: landingHeaderPaddingHorizontal },
-  profileHeader: {
-    borderBottomLeftRadius: radii.xl + 8,
-    borderBottomRightRadius: radii.xl + 8,
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: landingHeaderPaddingHorizontal,
+    paddingBottom: spacing.md,
+    zIndex: 50,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.smMd,
+  },
+  headerTitleSmall: {
+    ...typography.bodySmall,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: -0.5,
+  },
+  headerTitleLarge: {
+    ...typography.h3,
+    fontWeight: '900',
+    marginTop: -spacing.xs,
+  },
+  glassCard: {
+    borderRadius: radii.glassCard,
+    borderWidth: borderWidths.thin,
+  },
+  backButton: {
+    width: sizes.touchTarget.iconButton,
+    height: sizes.touchTarget.iconButton,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuButton: {
+    width: sizes.touchTarget.iconButton,
+    height: sizes.touchTarget.iconButton,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: landingHeaderPaddingHorizontal,
+    paddingBottom: profileScrollPaddingBottom,
+  },
+  screenContent: {},
+  profileCard: {
+    padding: spacing.lg,
     marginBottom: spacing.lg,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 4,
   },
   profileHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    gap: spacing.lg,
+    marginBottom: spacing.xl,
   },
-  avatarWrap: { position: 'relative' },
-  avatar: {
+  avatarContainer: {
+    position: 'relative',
+  },
+  avatarLarge: {
+    width: sizes.avatar.xxl,
+    height: sizes.avatar.xxl,
+    borderRadius: spacing.xl,
+    borderWidth: borderWidths.medium,
+  },
+  avatarMedium: {
     width: sizes.avatar.xl,
     height: sizes.avatar.xl,
-    overflow: 'hidden',
-    borderWidth: 4,
+    borderRadius: radii.lg,
   },
-  avatarRounded: { borderRadius: radii.xlMobile },
-  avatarImage: { width: '100%', height: '100%' },
-  avatarPlaceholder: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
-  onlineDot: {
+  verifiedBadge: {
     position: 'absolute',
-    bottom: spacing.xs,
-    right: spacing.xs,
-    width: spacing.lg,
-    height: spacing.lg,
-    borderRadius: radii.smMedium,
-    borderWidth: spacing.xs,
+    bottom: -spacing.xs,
+    right: -spacing.xs,
+    width: radii.glassCard,
+    height: radii.glassCard,
+    borderRadius: radii.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: borderWidths.medium,
   },
-  profileHeaderInfo: { marginLeft: spacing.lg, flex: 1 },
-  profileName: { marginBottom: spacing.xxs },
-  verifiedLabel: { ...typography.bodySmall, fontWeight: '700', marginBottom: spacing.xxs },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  ratingValue: { ...typography.caption, fontWeight: '800' },
-  ridesCount: { ...typography.overline, marginLeft: spacing.xxs },
-  statsGrid: {
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    ...typography.timeLg,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  profileNameSmall: {
+    ...typography.time,
+    fontWeight: '900',
+  },
+  ratingRow: {
     flexDirection: 'row',
-    gap: spacing.md,
+    alignItems: 'center',
+    marginTop: spacing.xs,
+    gap: spacing.smDense,
+  },
+  ratingText: {
+    ...typography.bodySmall,
+    fontWeight: '900',
+  },
+  ratingLabel: {
+    ...typography.captionBold,
+  },
+  eliteBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    borderRadius: radii.xs,
+    marginTop: spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  eliteBadgeText: {
+    ...typography.overline,
+    letterSpacing: 1,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing.smMd,
   },
   statBox: {
     flex: 1,
     padding: spacing.md,
     borderRadius: radii.xl,
-    alignItems: 'center',
+    borderWidth: borderWidths.thin,
   },
-  statValue: { ...typography.h2, marginBottom: spacing.xxs },
-  statLabel: { ...typography.overline, marginTop: spacing.xxs },
-  preferencesCard: {
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    padding: spacing.sm,
-  },
-  logoutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.md,
-    marginTop: spacing.xs,
-  },
-  logoutRowLabel: { flex: 1, ...typography.body, fontWeight: '700' },
-  section: { marginBottom: spacing.lg },
-  sectionOverline: {
+  statLabel: {
     ...typography.overline,
-    marginBottom: spacing.sm,
-    paddingHorizontal: spacing.xs,
+    marginBottom: spacing.xs,
   },
-  menuRow: {
+  statValue: {
+    ...typography.time,
+    fontWeight: '900',
+  },
+  vehicleCard: {
+    padding: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    marginBottom: spacing.sm,
+    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
-  menuRowIconBox: {
-    width: sizes.touchTarget.iconButton,
-    height: sizes.touchTarget.iconButton,
-    borderRadius: radii.smMedium,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  menuRowLabel: { flex: 1, ...typography.body, fontWeight: '600' },
-  menuRowValue: { ...typography.bodySmall, fontWeight: '700', marginRight: spacing.xs },
-  driverProfileHeader: {
-    alignItems: 'center',
-    borderBottomLeftRadius: spacing.xxl,
-    borderBottomRightRadius: spacing.xxl,
-  },
-  driverProfileAvatarWrap: { position: 'relative', marginBottom: spacing.md },
-  driverProfileAvatar: {
+  vehicleIconBox: {
     width: sizes.avatar.xl,
     height: sizes.avatar.xl,
-    borderRadius: radii.xl,
-    overflow: 'hidden',
-    borderWidth: spacing.xs,
-  },
-  driverProfileAvatarImg: { width: '100%', height: '100%' },
-  driverProfileAvatarPlaceholder: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
-  driverProfileVerifiedBadge: {
-    position: 'absolute',
-    bottom: -spacing.xs,
-    right: -spacing.xs,
-    width: spacing.xl,
-    height: spacing.xl,
-    borderRadius: radii.smMedium,
-    borderWidth: spacing.xs,
+    borderRadius: radii.lg,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  driverProfileName: { ...typography.h2, marginBottom: spacing.xxs },
-  driverProfileMember: { ...typography.caption, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-  driverProfileStatsRow: { flexDirection: 'row', gap: spacing.md },
-  driverProfileStatCard: {
+  vehicleInfo: {
     flex: 1,
-    padding: spacing.md + spacing.xs,
-    borderRadius: radii.cardLarge ?? 32,
-    borderWidth: 1,
   },
-  driverProfileStatCardPrimary: { borderWidth: 0 },
-  driverProfileStatValue: { ...typography.h2, marginBottom: spacing.xxs },
-  driverProfileStatLabel: { ...typography.overline },
-  driverProfileLogout: {
-    marginTop: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: radii.cardLarge ?? 32,
+  vehicleLabel: {
+    ...typography.captionBold,
+    textTransform: 'uppercase',
+  },
+  vehicleName: {
+    ...typography.bodyBold,
+    fontWeight: '900',
+  },
+  vehiclePlate: {
+    ...typography.overline,
+    fontWeight: '700',
+    marginTop: spacing.xxs,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  agencyIconContainer: {
+    width: sizes.avatar.xl,
+    height: sizes.avatar.xl,
+    borderRadius: radii.lg,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+    borderWidth: borderWidths.thin,
   },
-  driverProfileLogoutText: { ...typography.bodySmall, fontWeight: '800' },
+  agencyName: {
+    ...typography.display,
+    lineHeight: 34,
+    marginBottom: spacing.sm,
+    letterSpacing: -1,
+  },
+  agencyTag: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    marginBottom: spacing.xl,
+  },
+  agencyStatsCol: {
+    gap: spacing.smMd,
+  },
+  agencyStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    borderWidth: borderWidths.thin,
+  },
+  agencyStatLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.smMd,
+  },
+  agencyStatIcon: {
+    width: sizes.avatar.sm,
+    height: sizes.avatar.sm,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  agencyStatLabel: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+  },
+  agencyStatValue: {
+    ...typography.bodySmall,
+    fontWeight: '900',
+  },
+  agencyTierBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.xs,
+  },
+  agencyTierText: {
+    ...typography.overline,
+  },
+  sectionTitleSmall: {
+    ...typography.captionBold,
+    fontWeight: '900',
+    letterSpacing: 2,
+    marginBottom: spacing.md,
+  },
+  prefGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  prefItem: {
+    flex: 1,
+    paddingVertical: spacing.smMd,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: borderWidths.thin,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  prefText: {
+    ...typography.overline,
+  },
+  actionSection: {
+    gap: spacing.smMd,
+    marginBottom: spacing.lg,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    marginBottom: spacing.smMd,
+  },
+  rowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.smMd,
+  },
+  rowText: {
+    ...typography.bodySmall,
+    fontWeight: '600',
+  },
+  signOutRowText: {
+    fontWeight: '600',
+  },
+  floatingActions: {
+    position: 'absolute',
+    bottom: fabBottomOffset,
+    right: spacing.lg,
+    gap: spacing.smMd,
+  },
+  fabWhite: {
+    width: sizes.avatar.xl,
+    height: sizes.avatar.xl,
+    borderRadius: radii.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: borderWidths.thin,
+  },
+  fabGreen: {
+    width: sizes.avatar.xl,
+    height: sizes.avatar.xl,
+    borderRadius: radii.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

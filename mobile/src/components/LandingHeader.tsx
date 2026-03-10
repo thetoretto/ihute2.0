@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../context/ThemeContext';
 import { typography, spacing } from '../utils/theme';
 import { landingHeaderPaddingTop, landingHeaderPaddingHorizontal } from '../utils/layout';
@@ -18,14 +17,13 @@ interface LandingHeaderProps {
  */
 export default function LandingHeader({ title, subtitle, style, contentContainerStyle }: LandingHeaderProps) {
   const c = useThemeColors();
-  const insets = useSafeAreaInsets();
 
   return (
     <View
       style={[
         styles.outer,
         {
-          paddingTop: insets.top + landingHeaderPaddingTop,
+          paddingTop: landingHeaderPaddingTop,
           paddingBottom: spacing.md,
           paddingHorizontal: landingHeaderPaddingHorizontal,
         },

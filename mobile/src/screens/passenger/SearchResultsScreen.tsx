@@ -15,7 +15,6 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Card,
   RideCard,
   Screen,
   CarWheelLoader,
@@ -23,7 +22,7 @@ import {
 } from '../../components';
 import { searchTrips, getHotpoints } from '../../services/api';
 import { spacing, typography, radii, sizes } from '../../utils/theme';
-import { landingHeaderPaddingHorizontal, listBottomPaddingTab, listScreenHeaderPaddingVertical } from '../../utils/layout';
+import { landingHeaderPaddingHorizontal, listBottomPaddingTab, screenContentStartPaddingTop } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
 import { selectorStyles } from '../../utils/selectorStyles';
 import type { Trip, Hotpoint } from '../../types';
@@ -59,9 +58,13 @@ export default function SearchResultsScreen() {
   const [sortBy, setSortBy] = useState<SortOption>('earliest');
   const [typeFilter, setTypeFilter] = useState<TripTypeFilter>('all');
   const [dateFilter, setDateFilter] = useState<string | undefined>(route.params?.date);
-  const [sortSheetVisible, setSortSheetVisible] = useState(false);
   const [filtersSheetVisible, setFiltersSheetVisible] = useState(false);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [tempFromId, setTempFromId] = useState<string | undefined>(undefined);
+  const [tempToId, setTempToId] = useState<string | undefined>(undefined);
+  const [tempDate, setTempDate] = useState<string | undefined>(undefined);
+  const [tempPassengers, setTempPassengers] = useState(1);
 
   useEffect(() => {
     getHotpoints().then(setHotpoints);
@@ -123,13 +126,18 @@ export default function SearchResultsScreen() {
       : hotpoints;
 
   const onSelectHotpoint = (h: Hotpoint) => {
-    if (pickerMode === 'from') {
-      setFromId(h.id);
-      setFromHotpoint(h);
-    }
-    if (pickerMode === 'to') {
-      setToId(h.id);
-      setToHotpoint(h);
+    if (isSearchOpen) {
+      if (pickerMode === 'from') setTempFromId(h.id);
+      if (pickerMode === 'to') setTempToId(h.id);
+    } else {
+      if (pickerMode === 'from') {
+        setFromId(h.id);
+        setFromHotpoint(h);
+      }
+      if (pickerMode === 'to') {
+        setToId(h.id);
+        setToHotpoint(h);
+      }
     }
     setPickerMode(null);
     setPickerQuery('');
@@ -141,63 +149,167 @@ export default function SearchResultsScreen() {
     { value: 'rating', label: 'Highest Rating' },
   ];
 
+  const openEditSearch = () => {
+    setTempFromId(fromId);
+    setTempToId(toId);
+    setTempDate(dateFilter);
+    setTempPassengers(filters.minSeats);
+    setIsSearchOpen(true);
+  };
+
+  const applyEditSearch = () => {
+    setFromId(tempFromId);
+    setToId(tempToId);
+    setFromHotpoint(tempFromId ? (hotpoints.find((h) => h.id === tempFromId) ?? null) : null);
+    setToHotpoint(tempToId ? (hotpoints.find((h) => h.id === tempToId) ?? null) : null);
+    setDateFilter(tempDate);
+    setFilters((f) => ({ ...f, minSeats: tempPassengers }));
+    setIsSearchOpen(false);
+    loadTrips(true);
+  };
+
+  const swapLocations = () => {
+    setTempFromId(tempToId);
+    setTempToId(tempFromId);
+  };
+
+  const dateLabel = dateFilter ? new Date(dateFilter).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : 'Any date';
+  const passengerLabel = filters.minSeats === 1 ? '1 passenger' : `${filters.minSeats} passengers`;
+
   return (
-    <Screen style={[styles.container, { paddingTop: insets.top, backgroundColor: c.appBackground }]}>
-      {/* Sticky header: search card with back + From? / To? + Sort results */}
-      <View style={styles.stickyHeaderWrap}>
-        <Card variant="elevated" padding="md" style={styles.searchCard}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
-            <Ionicons name="chevron-back" size={24} color={c.text} />
-          </TouchableOpacity>
-          <View style={styles.inputRow}>
-            <TouchableOpacity
-              style={[styles.inputBox, { backgroundColor: c.background || c.ghostBg, borderColor: c.borderLight }]}
-              onPress={() => setPickerMode('from')}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="location" size={16} color={c.primary} style={styles.inputIcon} />
-              <Text style={[styles.inputText, !fromName && styles.inputPlaceholder, { color: fromName ? c.text : c.textMuted }]} numberOfLines={1}>
-                {fromName || 'From?'}
-              </Text>
+    <Screen contentInset={false} style={[styles.container, { backgroundColor: c.appBackground }]}>
+      {/* Edit Search full-screen modal (template) */}
+      <Modal visible={isSearchOpen} animationType="slide">
+        <View style={[styles.editSearchModal, { backgroundColor: c.card, paddingTop: insets.top + spacing.lg }]}>
+          <View style={styles.editSearchHeader}>
+            <TouchableOpacity onPress={() => setIsSearchOpen(false)} style={styles.editSearchClose} hitSlop={12}>
+              <Ionicons name="close" size={28} color={c.primary} />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.inputBox, { backgroundColor: c.background || c.ghostBg, borderColor: c.borderLight }]}
-              onPress={() => setPickerMode('to')}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="location" size={16} color={c.primary} style={styles.inputIcon} />
-              <Text style={[styles.inputText, !toName && styles.inputPlaceholder, { color: toName ? c.text : c.textMuted }]} numberOfLines={1}>
-                {toName || 'To?'}
-              </Text>
-            </TouchableOpacity>
+            <Text style={[styles.editSearchTitle, { color: c.text }]}>Edit Search</Text>
+            <View style={styles.editSearchHeaderSpacer} />
           </View>
-          <View style={styles.typeRow}>
-            {(['all', 'insta', 'scheduled'] as const).map((type) => (
+          <View style={styles.editSearchBody}>
+            <View style={styles.editSearchFromToWrap}>
+              <View style={styles.editSearchFromTo}>
+                <TouchableOpacity
+                  style={[styles.editSearchInputCard, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }]}
+                  onPress={() => setPickerMode('from')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="location" size={20} color={c.primary} style={styles.editSearchInputIcon} />
+                  <View style={styles.editSearchInputInner}>
+                    <Text style={[styles.editSearchLabel, { color: c.textMuted }]}>Leaving from</Text>
+                    <Text style={[styles.editSearchValue, { color: c.text }]} numberOfLines={1}>
+                      {tempFromId ? getHotpointLabel(hotpoints.find((h) => h.id === tempFromId) ?? { id: '', name: '', latitude: 0, longitude: 0 }) : 'Select location'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <View style={styles.editSearchSwapBtnSpacer} />
+                <TouchableOpacity
+                  style={[styles.editSearchInputCard, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }]}
+                  onPress={() => setPickerMode('to')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="location-outline" size={20} color={c.textMuted} style={styles.editSearchInputIcon} />
+                  <View style={styles.editSearchInputInner}>
+                    <Text style={[styles.editSearchLabel, { color: c.textMuted }]}>Going to</Text>
+                    <Text style={[styles.editSearchValue, { color: c.text }]} numberOfLines={1}>
+                      {tempToId ? getHotpointLabel(hotpoints.find((h) => h.id === tempToId) ?? { id: '', name: '', latitude: 0, longitude: 0 }) : 'Select location'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity
-                key={type}
-                onPress={() => setTypeFilter(type)}
+                style={[styles.editSearchSwapBtn, { backgroundColor: c.card, borderColor: c.borderLight }]}
+                onPress={swapLocations}
+              >
+                <Ionicons name="swap-vertical" size={18} color={c.primary} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.editSearchRow}>
+              <View style={[styles.editSearchInputCard, styles.editSearchInputHalf, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }]}>
+                <Ionicons name="calendar-outline" size={20} color={c.textMuted} style={styles.editSearchInputIcon} />
+                <View style={styles.editSearchInputInner}>
+                  <Text style={[styles.editSearchLabel, { color: c.textMuted }]}>When</Text>
+                  <TextInput
+                    style={[styles.editSearchValue, { color: c.text }]}
+                    value={tempDate ?? ''}
+                    onChangeText={setTempDate}
+                    placeholder="Any date"
+                    placeholderTextColor={c.textMuted}
+                  />
+                </View>
+              </View>
+              <View style={[styles.editSearchInputCard, styles.editSearchInputHalf, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }]}>
+                <Ionicons name="people-outline" size={20} color={c.textMuted} style={styles.editSearchInputIcon} />
+                <View style={styles.editSearchInputInner}>
+                  <Text style={[styles.editSearchLabel, { color: c.textMuted }]}>Who</Text>
+                  <TextInput
+                    style={[styles.editSearchValue, { color: c.text }]}
+                    value={String(tempPassengers)}
+                    onChangeText={(v) => setTempPassengers(Math.max(1, parseInt(v, 10) || 1))}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.seeResultsBtn, { backgroundColor: c.primary }]}
+            onPress={applyEditSearch}
+            activeOpacity={0.9}
+          >
+            <Text style={[styles.seeResultsBtnText, { color: c.onPrimary ?? c.text }]}>See results</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Sticky header: Back, From → To, date + passengers, Search (template) */}
+      <View style={[styles.stickyHeaderWrap, { backgroundColor: c.card, borderBottomColor: c.borderLight }]}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
+            <Ionicons name="chevron-back" size={22} color={c.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerRouteWrap} onPress={openEditSearch} activeOpacity={0.8}>
+            <View style={styles.headerRouteRow}>
+              <Text style={[styles.headerRouteFrom, { color: c.text }]} numberOfLines={1}>{fromName || 'From'}</Text>
+              <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
+              <Text style={[styles.headerRouteTo, { color: c.text }]} numberOfLines={1}>{toName || 'To'}</Text>
+            </View>
+            <Text style={[styles.headerSubtitle, { color: c.textMuted }]}>{dateLabel}, {passengerLabel}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.headerSearchIconWrap, { backgroundColor: c.primaryTint }]} onPress={openEditSearch}>
+            <Ionicons name="search" size={18} color={c.primary} />
+          </TouchableOpacity>
+        </View>
+        {/* Quick filter pills: Earliest, Cheapest, Closest, More */}
+        <View style={styles.filterPillsRow}>
+          {(['Earliest', 'Cheapest', 'Closest'] as const).map((label) => {
+            const value: SortOption = label === 'Earliest' ? 'earliest' : label === 'Cheapest' ? 'price-low' : 'rating';
+            const active = sortBy === value;
+            return (
+              <TouchableOpacity
+                key={label}
+                onPress={() => setSortBy(value)}
                 style={[
-                  styles.typeChip,
-                  { borderColor: c.borderLight, backgroundColor: typeFilter === type ? c.primaryTint : (c.background || c.ghostBg) },
-                  typeFilter === type && { borderColor: c.primary },
+                  styles.filterPill,
+                  { borderColor: active ? c.primary : c.borderLight, backgroundColor: active ? c.primary : c.card },
                 ]}
                 activeOpacity={0.8}
               >
-                {type === 'insta' && <Ionicons name="flash" size={12} color={typeFilter === type ? c.primary : c.textMuted} style={styles.typeChipIcon} />}
-                <Text style={[styles.typeChipText, { color: typeFilter === type ? c.primary : c.textMuted }]}>
-                  {type === 'all' ? 'All' : type === 'insta' ? 'Instant' : 'Scheduled'}
-                </Text>
+                <Text style={[styles.filterPillText, { color: active ? (c.onPrimary ?? c.text) : c.textMuted }]}>{label}</Text>
               </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.sortRow}>
-            <TouchableOpacity onPress={() => setFiltersSheetVisible(true)} style={styles.sortBtn} activeOpacity={0.8}>
-              <Ionicons name="options-outline" size={14} color={c.primary} />
-              <Text style={[styles.sortBtnText, { color: c.primary }]}>Filters & sort</Text>
-            </TouchableOpacity>
-            <Text style={[styles.ridesCount, { color: c.textMuted }]}>{filteredAndSortedTrips.length} rides</Text>
-          </View>
-        </Card>
+            );
+          })}
+          <TouchableOpacity
+            style={[styles.filterPill, { borderColor: c.borderLight, backgroundColor: c.card }]}
+            onPress={() => setFiltersSheetVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="options-outline" size={12} color={c.textMuted} />
+            <Text style={[styles.filterPillText, { color: c.textMuted }]}>More</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <CarWheelLoader visible={loading} />
@@ -210,11 +322,18 @@ export default function SearchResultsScreen() {
       <FlatList
         data={filteredAndSortedTrips}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        style={[styles.listScroll, { backgroundColor: c.card }]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: listBottomPaddingTab }]}
         ListHeaderComponent={
-          filteredAndSortedTrips.length > 0 ? (
-            <Text style={[styles.listHeaderLabel, { color: c.textMuted }]}>Select a trip</Text>
-          ) : null
+          <View style={styles.listHeaderRow}>
+            <Text style={[styles.listHeaderCount, { color: c.textMuted }]}>
+              {filteredAndSortedTrips.length} rides found
+            </Text>
+            <TouchableOpacity onPress={() => {}} style={styles.trendsBtn}>
+              <Ionicons name="information-circle-outline" size={10} color={c.primary} />
+              <Text style={[styles.trendsText, { color: c.primary }]}>TRENDS</Text>
+            </TouchableOpacity>
+          </View>
         }
         refreshControl={
           <RefreshControl
@@ -357,68 +476,120 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   stickyHeaderWrap: {
     paddingHorizontal: landingHeaderPaddingHorizontal,
-    paddingTop: listScreenHeaderPaddingVertical,
-    paddingBottom: spacing.lg,
+    paddingTop: screenContentStartPaddingTop,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  searchCard: { marginBottom: 0 },
-  backBtn: { padding: spacing.xs, marginBottom: spacing.xs },
-  inputRow: {
-    flexDirection: 'column',
-    gap: spacing.sm,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     marginBottom: spacing.sm,
   },
-  inputBox: {
+  backBtn: { padding: spacing.xs },
+  headerRouteWrap: { flex: 1, minWidth: 0 },
+  headerRouteRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
+    gap: spacing.xs,
   },
-  inputIcon: { marginRight: spacing.md },
-  inputText: { ...typography.body, fontWeight: '700', flex: 1 },
-  inputPlaceholder: { fontWeight: '500' },
-  typeRow: {
+  headerRouteFrom: { ...typography.body, fontWeight: '700', maxWidth: 100 },
+  headerRouteTo: { ...typography.body, fontWeight: '700', maxWidth: 100 },
+  headerSubtitle: { ...typography.overline, fontSize: 10, marginTop: 2 },
+  headerSearchIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterPillsRow: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.md,
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
     flexWrap: 'wrap',
   },
-  typeChip: {
+  filterPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+    paddingVertical: 6,
     paddingHorizontal: spacing.md,
-    borderRadius: radii.md,
+    borderRadius: radii.full,
     borderWidth: 1,
   },
-  typeChipIcon: { marginRight: spacing.sm },
-  typeChipText: { ...typography.bodySmall, fontWeight: '700' },
-  sortRow: {
+  filterPillText: { ...typography.overline, fontSize: 11, fontWeight: '700' },
+  editSearchModal: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  editSearchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: spacing.sm,
+    marginBottom: spacing.xl,
   },
-  sortBtn: {
+  editSearchClose: { padding: spacing.sm },
+  editSearchTitle: { ...typography.h3, fontWeight: '800' },
+  editSearchHeaderSpacer: { width: 40 },
+  editSearchBody: { flex: 1 },
+  editSearchFromToWrap: { position: 'relative', marginBottom: spacing.lg },
+  editSearchFromTo: { gap: spacing.sm },
+  editSearchSwapBtnSpacer: { height: spacing.sm },
+  editSearchInputCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
   },
-  sortBtnText: { ...typography.bodySmall, fontWeight: '800' },
-  ridesCount: { ...typography.bodySmall, fontWeight: '800' },
+  editSearchInputIcon: { marginRight: spacing.md },
+  editSearchInputInner: { flex: 1, minWidth: 0 },
+  editSearchLabel: { ...typography.overline, fontSize: 10, marginBottom: 2 },
+  editSearchValue: { ...typography.body, fontWeight: '700' },
+  editSearchSwapBtn: {
+    position: 'absolute',
+    right: spacing.md,
+    top: '50%',
+    marginTop: -16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  editSearchRow: { flexDirection: 'row', gap: spacing.md },
+  editSearchInputHalf: { flex: 1 },
+  seeResultsBtn: {
+    paddingVertical: spacing.lg,
+    borderRadius: radii.lg,
+    alignItems: 'center',
+    marginTop: spacing.lg,
+  },
+  seeResultsBtnText: { ...typography.h3, fontWeight: '800' },
+  listScroll: { flex: 1 },
   listContent: {
     paddingHorizontal: landingHeaderPaddingHorizontal,
-    paddingTop: spacing.lg,
-    paddingBottom: listBottomPaddingTab,
+    paddingTop: spacing.sm,
   },
-  listHeaderLabel: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    marginBottom: spacing.md,
+  listHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
+  listHeaderCount: { ...typography.overline, fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
+  trendsBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  trendsText: { ...typography.overline, fontSize: 9, fontWeight: '700' },
   emptyWrap: {
     flex: 1,
     justifyContent: 'center',

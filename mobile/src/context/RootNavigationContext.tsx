@@ -4,6 +4,7 @@ import type { NavigationContainerRefWithCurrent } from '@react-navigation/native
 export type RootParamList = {
   VehicleGarage: undefined;
   DriverActivityListStack: undefined;
+  ActivitiesFeedStack: undefined;
   EditProfile: undefined;
   AddCard: undefined;
   AddMobileMoney: undefined;

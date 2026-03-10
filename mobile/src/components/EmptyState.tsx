@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { spacing, typography } from '../utils/theme';
+import { spacing, typography, radii, cardShadow } from '../utils/theme';
 import { useThemeColors } from '../context/ThemeContext';
 
 interface EmptyStateProps {
@@ -13,10 +13,10 @@ interface EmptyStateProps {
 export default function EmptyState({ icon = 'document-text-outline', title, subtitle }: EmptyStateProps) {
   const c = useThemeColors();
   return (
-    <View style={[styles.container, { backgroundColor: c.soft }]}>
-      <Ionicons name={icon} size={48} color={c.textMuted} />
+    <View style={[styles.container, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
+      <Ionicons name={icon} size={40} color={c.textMuted} />
       <Text style={[styles.title, { color: c.text }]}>{title}</Text>
-      {subtitle ? <Text style={[styles.subtitle, { color: c.textSecondary }]}>{subtitle}</Text> : null}
+      {subtitle ? <Text style={[styles.subtitle, { color: c.textMuted }]}>{subtitle}</Text> : null}
     </View>
   );
 }
@@ -27,6 +27,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
+    marginHorizontal: spacing.lg,
+    borderRadius: radii.lg,
+    borderWidth: 1,
   },
   title: {
     ...typography.h3,

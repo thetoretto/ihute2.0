@@ -65,7 +65,7 @@ export default function DriverNotificationsScreen() {
       <Text style={[styles.title, { color: c.text }]}>Notifications</Text>
       <Text style={[styles.subtitle, { color: c.textSecondary }]}>New bookings and trip updates</Text>
       {notifications.length === 0 ? (
-        <View style={[styles.emptyCard, { backgroundColor: c.card, borderColor: c.border }, cardShadow]}>
+        <View style={[styles.emptyCard, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
           <Ionicons name="notifications-off-outline" size={40} color={c.textMuted} />
           <Text style={[styles.emptyTitle, { color: c.text }]}>No notifications yet</Text>
           <Text style={[styles.emptySub, { color: c.textSecondary }]}>
@@ -78,7 +78,7 @@ export default function DriverNotificationsScreen() {
             key={n.id}
             style={[
               styles.card,
-              { backgroundColor: c.card, borderColor: c.border },
+              { backgroundColor: c.card, borderColor: c.borderLight },
               cardShadow,
               index === 0 && { borderLeftWidth: 4, borderLeftColor: c.primary },
             ]}

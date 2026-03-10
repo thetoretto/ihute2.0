@@ -5,7 +5,7 @@ import { Button, Screen } from '../../components';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { getWithdrawalMethods, updateWithdrawalMethods } from '../../services/api';
-import { spacing, typography, radii } from '../../utils/theme';
+import { spacing, typography, radii, cardShadow } from '../../utils/theme';
 import { strings } from '../../constants/strings';
 
 export default function WithdrawalMethodsScreen() {
@@ -52,7 +52,8 @@ export default function WithdrawalMethodsScreen() {
       <Text style={[styles.subtitle, { color: themeColors.textMuted }]}>{strings.profile.withdrawalSubtitle}</Text>
 
       <Text style={[styles.sectionLabel, { color: themeColors.textMuted }]}>Mobile Money</Text>
-      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
+      <Text style={[styles.hint, { color: themeColors.textMuted }]}>For payouts, your registered account phone number will be used as the withdrawal reference.</Text>
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }, cardShadow]}>
         <Ionicons name="phone-portrait-outline" size={20} color={themeColors.primary} />
         <TextInput
           style={[styles.input, { color: themeColors.text }]}
@@ -66,7 +67,7 @@ export default function WithdrawalMethodsScreen() {
       </View>
 
       <Text style={[styles.sectionLabel, { color: themeColors.textMuted }]}>Bank transfer</Text>
-      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }, cardShadow]}>
         <Ionicons name="business-outline" size={20} color={themeColors.primary} />
         <TextInput
           style={[styles.input, { color: themeColors.text }]}
@@ -77,7 +78,7 @@ export default function WithdrawalMethodsScreen() {
           autoCapitalize="words"
         />
       </View>
-      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }, cardShadow]}>
         <Ionicons name="card-outline" size={20} color={themeColors.primary} />
         <TextInput
           style={[styles.input, { color: themeColors.text }]}
@@ -89,7 +90,7 @@ export default function WithdrawalMethodsScreen() {
           autoCapitalize="none"
         />
       </View>
-      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }]}>
+      <View style={[styles.inputWrap, { backgroundColor: themeColors.card, borderColor: themeColors.borderLight }, cardShadow]}>
         <Ionicons name="person-outline" size={20} color={themeColors.primary} />
         <TextInput
           style={[styles.input, { color: themeColors.text }]}
@@ -111,6 +112,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xl },
   title: { ...typography.h2, marginBottom: spacing.xs },
   subtitle: { ...typography.caption, marginBottom: spacing.lg },
+  hint: { ...typography.caption, marginBottom: spacing.sm },
   sectionLabel: { ...typography.overline, marginTop: spacing.sm, marginBottom: spacing.xs },
   inputWrap: {
     flexDirection: 'row',

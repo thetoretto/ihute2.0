@@ -64,7 +64,7 @@ export default function DriverScanTicketScreen() {
   }
 
   return (
-    <Screen style={[styles.container, { paddingHorizontal: 0 }]}>
+    <Screen contentInset={false} style={[styles.container]}>
       <View style={styles.page}>
       <View style={[styles.cameraWrap, { borderColor: c.border, backgroundColor: c.surface }, cardShadow]}>
         <CameraView
@@ -75,7 +75,7 @@ export default function DriverScanTicketScreen() {
         />
       </View>
 
-      <View style={[styles.panel, { backgroundColor: c.card, borderColor: c.border }, cardShadow]}>
+      <View style={[styles.panel, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
         <Text style={[styles.panelTitle, { color: c.text }]}>Scan passenger ticket QR</Text>
         <Text style={[styles.panelText, { color: c.textSecondary }]}>
           Keep QR inside the frame for one-shot validation.

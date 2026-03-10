@@ -91,6 +91,8 @@ export interface Booking {
   ticketIssuedAt?: string;
   paymentStatus?: PaymentStatus;
   paymentReference?: string;
+  /** Set when the ticket was scanned at boarding (for passenger status "Scanned"). */
+  scannedAt?: string;
 }
 
 export interface DriverTripActivity {
@@ -105,11 +107,16 @@ export interface DriverTripActivity {
 export type ActivityLogEntryKind =
   | 'trip_created'
   | 'booking_created'
+  | 'payment_confirmed'
   | 'ticket_scanned'
   | 'car_full'
   | 'trip_cancelled'
   | 'booking_cancelled'
-  | 'trip_completed';
+  | 'trip_completed'
+  | 'withdrawal_requested'
+  | 'withdrawal_completed'
+  | 'withdrawal_failed'
+  | 'account_updated';
 
 /** Single entry in the chronological activity log for driver/agency. */
 export interface ActivityLogEntry {

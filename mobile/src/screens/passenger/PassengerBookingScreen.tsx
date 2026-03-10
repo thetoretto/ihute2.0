@@ -15,7 +15,7 @@ import { PaymentMethodIcons, Screen } from '../../components';
 import { getTrip, getTripsStore, bookTrip } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
-import { spacing, typography, radii, buttonHeights, cardShadowStrong, sizes, borderWidths } from '../../utils/theme';
+import { spacing, typography, radii, buttonHeights, cardShadow, cardShadowStrong, sizes, borderWidths } from '../../utils/theme';
 import { landingHeaderPaddingHorizontal, listScreenHeaderPaddingVertical, tightGap, scrollStepBottomPadding } from '../../utils/layout';
 import { formatRwf } from '../../../../shared/src';
 import type { Trip, PaymentMethod } from '../../types';
@@ -24,13 +24,22 @@ type Params = {
   PassengerBooking: { tripId: string };
 };
 
-/** Build seat layout for capacity: row 0 = [driver, 1 seat], then rows of 3. */
-function getSeatLayout(seatsAvailable: number): number[][] {
-  const layout: number[][] = [[0, 1]]; // driver (0) + first passenger (1)
-  let placed = 1;
-  while (placed < seatsAvailable) {
+/**
+ * Seat layout by vehicle capacity (max 30). Symmetric grid.
+ * 2+2: rows of 4 (coach/minibus when vehicle capacity > 14).
+ * 1+2: rows of 3 – one left, two right (shuttle).
+ * @param seatsToShow number of seat cells to show (e.g. trip.seatsAvailable)
+ * @param vehicleCapacity optional total vehicle seats (for layout shape; e.g. trip.vehicle?.seats)
+ */
+function getSeatLayoutSymmetric(seatsToShow: number, vehicleCapacity?: number): number[][] {
+  const capacity = Math.min(30, Math.max(1, seatsToShow));
+  const total = vehicleCapacity ?? capacity;
+  const perRow = total > 14 ? 4 : 3; // 2+2 vs 1+2
+  const layout: number[][] = [];
+  let placed = 0;
+  while (placed < capacity) {
     const row: number[] = [];
-    for (let i = 0; i < 3 && placed < seatsAvailable; i++) {
+    for (let i = 0; i < perRow && placed < capacity; i++) {
       row.push(1);
       placed++;
     }
@@ -76,7 +85,10 @@ export default function PassengerBookingScreen() {
     });
   }, [route.params.tripId]);
 
-  const layout = useMemo(() => (trip ? getSeatLayout(trip.seatsAvailable) : []), [trip]);
+  const layout = useMemo(
+    () => (trip ? getSeatLayoutSymmetric(trip.seatsAvailable, trip.vehicle?.seats) : []),
+    [trip]
+  );
   const bookableSeatIds = useMemo(() => getBookableSeatIds(layout), [layout]);
 
   const toggleSeat = (seatId: string) => {
@@ -157,7 +169,7 @@ export default function PassengerBookingScreen() {
 
   if (!trip) {
     return (
-      <Screen style={styles.center}>
+      <Screen contentInset={false} style={styles.center}>
         <ActivityIndicator size="large" color={c.primary} />
         <Text style={[styles.loadingText, { color: c.textSecondary }]}>Loading trip...</Text>
       </Screen>
@@ -171,7 +183,7 @@ export default function PassengerBookingScreen() {
   const renderSeatMap = () => {
     let seatCounter = 1;
     return (
-      <View style={[styles.seatMapContainer, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <View style={[styles.seatMapContainer, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
         <View style={[styles.windshield, { backgroundColor: c.textMuted }]} />
         {layout.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.seatRow}>
@@ -212,7 +224,7 @@ export default function PassengerBookingScreen() {
   return (
     <View style={[styles.container, { backgroundColor: c.appBackground }]}>
       {/* Header: card-style to match RideDetail */}
-      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.borderLight, paddingTop: insets.top }]}>
+      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.borderLight, paddingTop: insets.top + spacing.sm }]}>
         <TouchableOpacity
           onPress={goBack}
           style={[styles.headerBtn, step === 1 && styles.headerBtnInvisible]}

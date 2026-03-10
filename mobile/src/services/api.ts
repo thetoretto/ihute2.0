@@ -126,6 +126,11 @@ export async function updateDriverTripStatus(params: { tripId: string; driverId:
   return mockApi.updateDriverTripStatus(params);
 }
 
+export async function cancelDriverTrip(tripId: string, driverId: string) {
+  if (USE_REAL_API) return request<Trip>('PUT', `/api/trips/${tripId}/status`, { status: 'cancelled' });
+  return mockApi.updateDriverTripStatus({ tripId, driverId, status: 'cancelled' });
+}
+
 export async function getDriverActivitySummary(userId: string) {
   if (USE_REAL_API) return request<Awaited<ReturnType<typeof mockApi.getDriverActivitySummary>>>('GET', `/api/driver/activity-summary?userId=${encodeURIComponent(userId)}`);
   return mockApi.getDriverActivitySummary(userId);

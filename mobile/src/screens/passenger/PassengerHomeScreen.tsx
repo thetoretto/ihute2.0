@@ -20,7 +20,7 @@ import { RoleToggle, Screen, CarRefreshIndicator, LandingHeader } from '../../co
 import { useResponsiveThemeContext } from '../../context/ResponsiveThemeContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { spacing, typography, radii, sizes, buttonHeights } from '../../utils/theme';
-import { landingHeaderPaddingHorizontal, listBottomPaddingTab, listScreenHeaderPaddingVertical } from '../../utils/layout';
+import { landingHeaderPaddingHorizontal, listBottomPaddingTab, screenContentStartPaddingTop } from '../../utils/layout';
 import { strings } from '../../constants/strings';
 import { searchTrips, getUserBookings, getHotpoints, type SearchTripsSortBy } from '../../services/api';
 import { selectorStyles } from '../../utils/selectorStyles';
@@ -104,15 +104,12 @@ export default function PassengerHomeScreen() {
     setTimeout(() => setRefreshState('idle'), 240);
   };
 
-  const handleSearch = async () => {
-    setIsSearching(true);
-    try {
-      const items = await loadTrips();
-      setAvailableTrips(items);
-      setView('results');
-    } finally {
-      setIsSearching(false);
-    }
+  const handleSearch = () => {
+    navigation.navigate('AllTrips', {
+      fromId: fromId ?? undefined,
+      toId: toId ?? undefined,
+      passengerCount: 1,
+    });
   };
 
   const swapLocations = () => {
@@ -424,7 +421,7 @@ export default function PassengerHomeScreen() {
   );
 
   return (
-    <Screen style={[styles.container, { backgroundColor: c.appBackground }]}>
+    <Screen contentInset={false} style={[styles.container, { backgroundColor: c.appBackground }]}>
       {user?.roles?.length && user.roles.length > 1 ? (
         <View style={[styles.roleToggleWrap, { paddingHorizontal: landingHeaderPaddingHorizontal }]}>
           <RoleToggle
@@ -544,7 +541,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   flex1: { flex: 1 },
   roleToggleWrap: { marginBottom: spacing.sm },
-  searchScrollContent: { paddingTop: listScreenHeaderPaddingVertical },
+  searchScrollContent: { paddingTop: screenContentStartPaddingTop },
   searchBlock: { paddingTop: spacing.lg },
   inputCard: {
     borderRadius: radii.xl + 4,
@@ -685,7 +682,7 @@ const styles = StyleSheet.create({
   },
   resultsHeader: {
     paddingHorizontal: landingHeaderPaddingHorizontal,
-    paddingTop: listScreenHeaderPaddingVertical,
+    paddingTop: screenContentStartPaddingTop,
     paddingBottom: spacing.lg,
     borderBottomWidth: 1,
   },

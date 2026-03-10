@@ -91,6 +91,7 @@ import OnboardingScreen from '../screens/auth/OnboardingScreen';
 // Passenger
 import PassengerHomeScreen from '../screens/passenger/PassengerHomeScreen';
 import SearchResultsScreen from '../screens/passenger/SearchResultsScreen';
+import AllTripsScreen from '../screens/passenger/AllTripsScreen';
 import InstantQueueScreen from '../screens/passenger/InstantQueueScreen';
 import RideDetailScreen from '../screens/passenger/RideDetailScreen';
 import PassengerBookingScreen from '../screens/passenger/PassengerBookingScreen';
@@ -124,6 +125,7 @@ import FAQScreen from '../screens/shared/FAQScreen';
 import AboutScreen from '../screens/shared/AboutScreen';
 import AddVehicleScreen from '../screens/driver/AddVehicleScreen';
 import EditVehicleScreen from '../screens/driver/EditVehicleScreen';
+import ActivitiesFeedScreen from '../screens/shared/ActivitiesFeedScreen';
 
 const AuthStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
@@ -168,6 +170,7 @@ function PassengerHomeStack() {
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="PassengerHome" component={PassengerHomeScreen} />
       <Stack.Screen name="SearchResults" component={SearchResultsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="AllTrips" component={AllTripsScreen} options={{ headerShown: false, title: 'All Trips' }} />
       <Stack.Screen name="InstantQueue" component={InstantQueueScreen} options={{ headerShown: true, title: 'Drivers available now' }} />
       <Stack.Screen name="RideDetail" component={RideDetailScreen} options={{ headerShown: true, title: 'Ride' }} />
       <Stack.Screen name="PassengerBooking" component={PassengerBookingScreen} options={{ headerShown: false, title: 'Book trip' }} />
@@ -248,12 +251,25 @@ function DriverActivityListStack() {
       <Stack.Screen
         name="DriverActivityList"
         component={DriverMyRidesScreen}
-        options={{ title: strings.nav.activities }}
+        options={{ title: strings.nav.myRides }}
       />
       <Stack.Screen
         name="DriverScanTicket"
         component={DriverScanTicketScreen}
         options={{ headerShown: true, title: strings.nav.scanTicket }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+function ActivitiesFeedStack() {
+  const screenOptions = useStackScreenOptions();
+  return (
+    <Stack.Navigator screenOptions={screenOptions}>
+      <Stack.Screen
+        name="ActivitiesFeed"
+        component={ActivitiesFeedScreen}
+        options={{ title: 'Activities' }}
       />
     </Stack.Navigator>
   );
@@ -359,7 +375,7 @@ function DriverTabsNavigator() {
         name="DriverActivity"
         component={DriverActivityTabStack}
         options={{
-          tabBarLabel: 'Activity',
+          tabBarLabel: strings.tabs.myRides,
           tabBarIcon: ({ color }) => <Ionicons name="clipboard" size={tabBarIconSize} color={color} />,
         }}
       />
@@ -623,7 +639,7 @@ export default function AppNavigator() {
             <RootStack.Screen
               name="EditProfile"
               component={EditProfileScreen}
-              options={{ animation: 'slide_from_right', ...rootHeaderOptions, title: 'Edit profile' }}
+              options={{ animation: 'slide_from_right', headerShown: false }}
             />
             <RootStack.Screen
               name="AddCard"
@@ -679,6 +695,11 @@ export default function AppNavigator() {
               name="DriverActivityListStack"
               component={DriverActivityListStack}
               options={{ animation: 'slide_from_right' }}
+            />
+            <RootStack.Screen
+              name="ActivitiesFeedStack"
+              component={ActivitiesFeedStack}
+              options={{ animation: 'slide_from_right', title: 'Activities' }}
             />
           </>
         )}

@@ -31,6 +31,8 @@ export const layout = {
   screen: {
     horizontal: spacing.lg,
     searchHorizontal: spacing.lg,
+    /** Top padding so content starts at same position as Profile (below safe area). */
+    contentStartPaddingTop: spacing.sm,
   },
 
   driver: {
@@ -54,11 +56,15 @@ export const layout = {
     },
   },
 
-  // Components
+  // Components – BlaBlaCar style: large rounded cards, high whitespace
   card: {
     radius: radii.lg,
     panelRadius: radii.panel,
+    /** Large rounded card (rounded-2xl ~24px) for trip/booking cards. */
+    radiusLarge: radii.xl,
   },
+  /** Vertical gap between major sections (BlaBlaCar style). */
+  sectionGap: spacing.xl,
 
   // Interactive Elements
   header: {
@@ -66,9 +72,9 @@ export const layout = {
     iconSize: sizes.icon.medium,
   },
 
-  // Landing (no-bar) header – asymmetric padding
+  // Landing (no-bar) header – same content start as Profile
   landingHeader: {
-    paddingTop: 32,
+    paddingTop: spacing.sm,
     paddingHorizontal: 24,
   },
 
@@ -78,6 +84,12 @@ export const layout = {
     dotLg: sizes.timelineDotLg,
     divider: OFFSETS.DIVIDER,
   },
+
+  // Profile screen: FABs and scroll padding
+  /** Bottom offset for floating action buttons (above footer). */
+  fabBottomOffset: 112,
+  /** Scroll content padding bottom when profile has footer + FABs. */
+  profileScrollPaddingBottom: 160,
 };
 
 /**
@@ -92,6 +104,7 @@ export const sharedStyles = {
 };
 
 // For backward compatibility or specific direct imports
+export const headerIconSize = layout.header.iconSize;
 export const screenContentPadding = layout.screen.horizontal;
 export const dividerHeight = OFFSETS.DIVIDER;
 export const timelineDotSize = layout.timeline.dot;
@@ -103,10 +116,11 @@ export const listBottomPaddingTab = layout.list.bottom.tabScreen;
 export const listBottomPaddingDefault = layout.list.bottom.default;
 export const sectionTitleStyle = sharedStyles.sectionTitle;
 export const tightGap = layout.list.gapTight;
-export const searchResultsListPadding = layout.screen.searchHorizontal;
 export const scrollStepBottomPadding = 120;
 export const listScreenHeaderPaddingVertical = layout.list.headerVertical;
-export const listScreenHeaderPaddingHorizontal = layout.list.headerHorizontal;
-export const driverContentHorizontal = layout.driver.contentHorizontal;
 export const landingHeaderPaddingTop = layout.landingHeader.paddingTop;
+export const screenContentStartPaddingTop = layout.screen.contentStartPaddingTop;
 export const landingHeaderPaddingHorizontal = layout.landingHeader.paddingHorizontal;
+export const cardRadiusLarge = layout.card.radiusLarge;
+export const fabBottomOffset = layout.fabBottomOffset;
+export const profileScrollPaddingBottom = layout.profileScrollPaddingBottom;

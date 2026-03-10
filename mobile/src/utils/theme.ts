@@ -1,16 +1,13 @@
 /**
  * Design system – mobile theme
  *
- * All UI color tokens are derived from the 6-color palette only:
- *   #171C22 (dark) – text, headers, tab bar, primary dark surfaces
- *   #F8F3EF (cream) – backgrounds, on-dark text
- *   #DF0827 (red) – accent, error, critical, agency role
- *   #94A9BC (muted) – secondary text, borders, info
- *   #E2E6EB (neutral light) – borders, subtle surfaces (no purple)
- *   #FEE46B (yellow) – primary CTA, success, warning, star rating
+ * Global: #F8F3EF (cream) background, #FEE46B (gold) nav for all users.
+ * Role accents:
+ *   Passenger: #FEE46B (gold) & #171CEE (blue)
+ *   Driver: #94A9BC (steel blue) & #171C22 (charcoal)
+ *   Agency: #E6DBEB (lavender) & #171C22 (charcoal)
  *
- * Light: Surfaces = cream + white; text = dark + muted; primary/CTA = yellow; critical = red.
- * Dark: Elevation from dark; body text = cream; borders = cream rgba.
+ * Core palette: #171C22, #F8F3EF, #DF0827 (error), #94A9BC, #E2E6EB, #FEE46B.
  */
 
 // --- Core palette (single source of truth) ---
@@ -18,9 +15,21 @@ const CORE_DARK = '#171C22';
 const CORE_CREAM = '#F8F3EF';
 const CORE_RED = '#DF0827';
 const CORE_MUTED = '#94A9BC';
-/** Neutral light gray for borders and subtle surfaces (replaces former lavender). */
+/** Neutral light gray for borders and subtle surfaces. */
 const CORE_NEUTRAL_LIGHT = '#E2E6EB';
 const CORE_YELLOW = '#FEE46B';
+/** Passenger accent (blue) – spec #171CEE. */
+const CORE_PASSENGER_ACCENT = '#171CEE';
+/** Agency primary (lavender) – spec #E6DBEB. */
+const CORE_AGENCY_LAVENDER = '#E6DBEB';
+/** Driver primary (steel blue) – spec #94A9BC. */
+const CORE_DRIVER_STEEL = '#94A9BC';
+
+/** Neutral palette (soft grays, blues, greens) – for consistent status and surfaces. */
+const CORE_NEUTRAL_GRAY = '#6B7280';
+const CORE_SOFT_BLUE = '#3B82F6';
+const CORE_SOFT_GREEN = '#22C55E';
+const CORE_SOFT_ORANGE = '#F59E0B';
 
 /** Primary pressed state (derived from CORE_YELLOW). */
 const PRIMARY_PRESSED = '#FDD835';
@@ -39,8 +48,15 @@ export const corePalette = {
   muted: CORE_MUTED,
   neutralLight: CORE_NEUTRAL_LIGHT,
   yellow: CORE_YELLOW,
+  passengerAccent: CORE_PASSENGER_ACCENT,
+  agencyLavender: CORE_AGENCY_LAVENDER,
+  driverSteel: CORE_DRIVER_STEEL,
 } as const;
 
+/**
+ * Contrast: Text on primary/appAccent → onPrimary. Text on dark/appPrimary → onAppPrimary.
+ * Text on card/appBackground → text / textSecondary / textMuted.
+ */
 export const colors = {
   // --- Surfaces ---
   background: CORE_CREAM,
@@ -131,24 +147,27 @@ export const colors = {
   /** Landing / no-bar display headline – deep brand dark (spec: #054752). */
   displayHeadlineColor: '#054752',
 
-  // --- Role (passenger, driver, agency) ---
+  // --- Role (passenger, driver, agency) – spec colors ---
   passengerBrand: CORE_YELLOW,
+  /** Passenger accent blue – spec #171CEE. */
+  passengerAccent: CORE_PASSENGER_ACCENT,
   passengerDark: CORE_DARK,
   passengerBgLight: CORE_CREAM,
   passengerOnBrand: CORE_DARK,
   driverDark: CORE_DARK,
-  /** Driver app – from palette. */
-  driverPrimary: CORE_DARK,
+  /** Driver primary – steel blue #94A9BC. */
+  driverPrimary: CORE_DRIVER_STEEL,
   driverAccent: CORE_YELLOW,
   driverBg: CORE_CREAM,
   driverInstaGreen: CORE_YELLOW,
-  driverPrimaryTint: 'rgba(23,28,34,0.08)',
+  driverPrimaryTint: 'rgba(148,169,188,0.15)',
   driverAccentTint: 'rgba(254,228,107,0.12)',
   driverInstaGreenTint: 'rgba(254,228,107,0.12)',
-  agency: CORE_RED,
-  agencyDark: CORE_RED,
-  agencyTint: 'rgba(223,8,39,0.14)',
-  agencyBorder: 'rgba(223,8,39,0.5)',
+  /** Agency primary – lavender #E6DBEB; dark #171C22. */
+  agency: CORE_AGENCY_LAVENDER,
+  agencyDark: CORE_DARK,
+  agencyTint: 'rgba(230,219,235,0.5)',
+  agencyBorder: 'rgba(230,219,235,0.6)',
 
   // --- Semantic (from palette) ---
   success: CORE_YELLOW,
@@ -161,6 +180,26 @@ export const colors = {
 
   // --- Other ---
   onAccent: ON_ACCENT,
+  /** WhatsApp FAB / external link brand color. */
+  whatsappGreen: '#25D366',
+  /** Badge/pill on primary-colored backgrounds (e.g. passenger upcoming card). */
+  surfaceOnPrimary: 'rgba(255,255,255,0.25)',
+
+  // --- Status colors (unified across Driver, Passenger, Agency) ---
+  /** Completed / success state. */
+  statusCompleted: CORE_SOFT_GREEN,
+  statusCompletedTint: 'rgba(34,197,94,0.12)',
+  /** Canceled / destructive. */
+  statusCanceled: CORE_RED,
+  statusCanceledTint: 'rgba(223,8,39,0.12)',
+  /** Pending / Seatbooked / Booked. */
+  statusPending: CORE_SOFT_ORANGE,
+  statusPendingTint: 'rgba(245,158,11,0.12)',
+  /** Scanned / In progress. */
+  statusInProgress: CORE_SOFT_BLUE,
+  statusInProgressTint: 'rgba(59,130,246,0.12)',
+  /** Neutral gray for secondary surfaces. */
+  neutralGray: CORE_NEUTRAL_GRAY,
 } as const;
 
 /** Dark theme colors. Use with ThemeContext for light/dark switching. */
@@ -175,11 +214,11 @@ export const colorsDark = {
   popupSurface: ELEVATION_2,
   ghostBg: ELEVATION_1,
 
-  // --- App-wide (dark mode) – from palette ---
+  // --- App-wide (dark mode) – from palette; main screen background stays cream for consistency ---
   appPrimary: CORE_DARK,
   appAccent: CORE_YELLOW,
   appSuccess: CORE_YELLOW,
-  appBackground: ELEVATION_1,
+  appBackground: CORE_CREAM,
   navInactiveIcon: CORE_CREAM,
   onAppPrimary: ON_ACCENT,
   tabBarBlurBg: 'rgba(30,37,45,0.9)',
@@ -219,18 +258,23 @@ export const colorsDark = {
   overlay: 'rgba(0,0,0,0.5)',
   overlayModal: 'rgba(0,0,0,0.5)',
 
-  // --- Role ---
+  // --- Role (dark mode) ---
   passengerBrand: CORE_YELLOW,
+  passengerAccent: CORE_PASSENGER_ACCENT,
   passengerDark: CORE_DARK,
   passengerBgLight: ELEVATION_1,
   passengerOnBrand: CORE_DARK,
-  driverPrimary: CORE_DARK,
+  driverPrimary: CORE_DRIVER_STEEL,
   driverAccent: CORE_YELLOW,
   driverBg: CORE_CREAM,
   driverInstaGreen: CORE_YELLOW,
-  driverPrimaryTint: 'rgba(23,28,34,0.15)',
+  driverPrimaryTint: 'rgba(148,169,188,0.2)',
   driverAccentTint: 'rgba(254,228,107,0.15)',
   driverInstaGreenTint: 'rgba(254,228,107,0.15)',
+  agency: CORE_AGENCY_LAVENDER,
+  agencyDark: CORE_DARK,
+  agencyTint: 'rgba(230,219,235,0.3)',
+  agencyBorder: 'rgba(230,219,235,0.5)',
 
   // --- Tints (from palette) ---
   primaryTint: 'rgba(254,228,107,0.18)',
@@ -238,6 +282,17 @@ export const colorsDark = {
   warningTint: 'rgba(254,228,107,0.18)',
 
   onAccent: ON_ACCENT,
+
+  // --- Status colors (dark mode) ---
+  statusCompleted: CORE_SOFT_GREEN,
+  statusCompletedTint: 'rgba(34,197,94,0.2)',
+  statusCanceled: CORE_RED,
+  statusCanceledTint: 'rgba(223,8,39,0.2)',
+  statusPending: CORE_SOFT_ORANGE,
+  statusPendingTint: 'rgba(245,158,11,0.2)',
+  statusInProgress: CORE_SOFT_BLUE,
+  statusInProgressTint: 'rgba(59,130,246,0.2)',
+  neutralGray: CORE_NEUTRAL_GRAY,
 } as const;
 
 export type ColorScheme = 'light' | 'dark';
@@ -272,13 +327,15 @@ export const radii = {
   xlMobile: 24,
   xxl: 24,
   cardXLarge: 24,
+  /** Profile glass-style cards. */
+  glassCard: 28,
   full: 9999,
 } as const;
 
 /** Layout / box sizes – icons, avatars, touch targets. */
 export const sizes = {
   icon: { small: 12, mid: 16, medium: 20, large: 24 },
-  avatar: { xs: 24, sm: 32, md: 36, lg: 48, xl: 56 },
+  avatar: { xs: 24, sm: 32, md: 36, lg: 48, xl: 56, xxl: 80 },
   touchTarget: { min: 44, iconButton: 40 },
   timelineDot: 8,
   timelineDotLg: 12,
@@ -353,3 +410,27 @@ export const typography = {
   /** Landing screen no-bar headline: 30px, extrabold, tight leading. */
   display: { fontSize: 30, fontWeight: '800' as const, fontFamily: 'Poppins_700Bold', lineHeight: 36 },
 } as const;
+
+/** Status color keys for use with theme colors (e.g. colors[getStatusColorKey(status)]). */
+export type StatusColorKey = 'statusCompleted' | 'statusCanceled' | 'statusPending' | 'statusInProgress';
+
+/**
+ * Map trip/booking status to unified status color key (Driver, Passenger, Agency).
+ * Completed → green; Canceled → red; Pending/Seatbooked/Booked → orange; Scanned/In progress → blue.
+ */
+export function getStatusColorKey(
+  status: string,
+  opts?: { hasBookings?: boolean; scanned?: boolean }
+): StatusColorKey {
+  const s = status?.toLowerCase() ?? '';
+  if (s === 'completed') return 'statusCompleted';
+  if (s === 'cancelled' || s === 'canceled') return 'statusCanceled';
+  if (s === 'scanned' || opts?.scanned) return 'statusInProgress';
+  if (s === 'full' || s === 'active' || s === 'booked' || s === 'upcoming' || s === 'ongoing' || opts?.hasBookings) return 'statusPending';
+  return 'statusPending';
+}
+
+/** Tint key for status (e.g. statusCompletedTint). */
+export function getStatusTintKey(key: StatusColorKey): keyof typeof colors {
+  return `${key}Tint` as keyof typeof colors;
+}

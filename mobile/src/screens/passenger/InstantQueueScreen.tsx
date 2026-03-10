@@ -12,8 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen, HotpointPicker } from '../../components';
 import { getInstantQueue, getHotpoints } from '../../services/api';
 import { useThemeColors } from '../../context/ThemeContext';
-import { spacing, typography, radii, borderWidths, sizes } from '../../utils/theme';
-import { landingHeaderPaddingHorizontal, listBottomPaddingTab, listScreenHeaderPaddingVertical, tightGap } from '../../utils/layout';
+import { spacing, typography, radii, borderWidths, sizes, cardShadow } from '../../utils/theme';
+import { landingHeaderPaddingHorizontal, listBottomPaddingTab, screenContentStartPaddingTop, tightGap } from '../../utils/layout';
 import type { DriverInstantQueueEntry, Hotpoint } from '../../types';
 
 function formatRwf(value: number) {
@@ -60,11 +60,12 @@ export default function InstantQueueScreen() {
 
   return (
     <Screen
+      contentInset={false}
       scroll={false}
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingBottom: listBottomPaddingTab }]}
     >
-      <View style={[styles.filterSection, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={[styles.filterSection, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
         <Text style={[styles.filterLabel, { color: c.textSecondary }]}>Filter by destination (optional)</Text>
         <View style={[styles.pickerRow, { borderBottomColor: c.border }]}>
           <Text style={[styles.pickerLabel, { color: c.textSecondary }]}>To</Text>
@@ -109,7 +110,7 @@ export default function InstantQueueScreen() {
             />
           }
           renderItem={({ item }) => (
-            <View style={[styles.entryCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <View style={[styles.entryCard, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
               <View style={styles.entryRoute}>
                 <View style={styles.entryRouteRow}>
                   <View style={[styles.entryDot, { backgroundColor: c.primary }]} />
@@ -143,7 +144,7 @@ export default function InstantQueueScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flexGrow: 1, paddingTop: listScreenHeaderPaddingVertical },
+  content: { flexGrow: 1, paddingTop: screenContentStartPaddingTop },
   filterSection: {
     marginHorizontal: landingHeaderPaddingHorizontal,
     marginBottom: spacing.lg,

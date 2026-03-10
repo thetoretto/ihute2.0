@@ -17,9 +17,8 @@ import { useRole } from '../../context/RoleContext';
 import { buttonHeights, colors, spacing, typography, radii, cardShadow, sizes, borderWidths } from '../../utils/theme';
 import { useThemeColors } from '../../context/ThemeContext';
 import { useDriverTheme } from '../../context/DriverThemeContext';
-import { useToast } from '../../context/ToastContext';
 import { selectorStyles } from '../../utils/selectorStyles';
-import { landingHeaderPaddingHorizontal, tightGap } from '../../utils/layout';
+import { tightGap } from '../../utils/layout';
 import { formatRwf } from '../../../../shared/src';
 import type { Hotpoint, Vehicle, PaymentMethod } from '../../types';
 
@@ -55,6 +54,16 @@ function formatTimeValue(date: Date) {
   return `${h}:${m}`;
 }
 
+/** Format duration in minutes as "Xh Y" for trip card display (e.g. 90 -> "1h 30"). */
+function formatDurationHours(minutes: number): string {
+  if (minutes <= 0) return '—';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}`;
+}
+
 const REPETITION_INTERVALS = [15, 30, 60, 120] as const;
 
 export default function PublishRideScreen() {
@@ -63,11 +72,7 @@ export default function PublishRideScreen() {
   const { currentRole } = useRole();
   const c = useThemeColors();
   const driver = useDriverTheme();
-  const toast = useToast();
   const d = driver?.colors ?? c;
-  const isDriver = currentRole === 'driver';
-  const [showQuickPublish, setShowQuickPublish] = useState(true);
-  const [quickPublishPublishing, setQuickPublishPublishing] = useState(false);
   const [step, setStep] = useState(0);
   const [hotpoints, setHotpoints] = useState<Hotpoint[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -89,7 +94,7 @@ export default function PublishRideScreen() {
   const [maxRear, setMaxRear] = useState(false);
   const [allowFullCar, setAllowFullCar] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(['cash', 'mobile_money', 'card']);
-  const [durationDisplay, setDurationDisplay] = useState('45 mins');
+  const [durationMinutes, setDurationMinutes] = useState(45);
   const [driverNote, setDriverNote] = useState('');
   const [amenities, setAmenities] = useState<string[]>(['ac', 'music']);
   const isAgency = currentRole === 'agency';
@@ -135,7 +140,7 @@ export default function PublishRideScreen() {
     setMaxRear(false);
     setAllowFullCar(true);
     setPaymentMethods(['cash', 'mobile_money', 'card']);
-    setDurationDisplay('45 mins');
+    setDurationMinutes(45);
     setDriverNote('');
     setAmenities(['ac', 'music']);
   };
@@ -181,54 +186,6 @@ export default function PublishRideScreen() {
     }
   };
 
-  const handleGoLiveNow = async () => {
-    if (!user || !departure || !destination) {
-      Alert.alert('Required', 'Please set Leaving from and Going to.');
-      return;
-    }
-    const priceNum = typeof price === 'number' ? price : parseInt(String(price), 10);
-    if (isNaN(priceNum) || priceNum < 1000) {
-      Alert.alert('Required', 'Please set a valid price per seat (min 1000 RWF).');
-      return;
-    }
-    const approvedVehicles = vehicles.filter((x) => x.approvalStatus === 'approved');
-    const defaultVehicle = vehicle ?? approvedVehicles[0];
-    if (!defaultVehicle) {
-      Alert.alert('No vehicle', 'Add and get an approved vehicle first.');
-      return;
-    }
-    setQuickPublishPublishing(true);
-    try {
-      const now = new Date();
-      const depTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      const arrHour = (now.getHours() + 3) % 24;
-      const arrTime = `${arrHour.toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      await publishTrip({
-        type: 'scheduled',
-        departureHotpoint: departure,
-        destinationHotpoint: destination,
-        departureDate: formatDateValue(now),
-        departureTime: depTime,
-        arrivalTime: arrTime,
-        durationMinutes: 180,
-        seatsAvailable: seats,
-        pricePerSeat: priceNum,
-        allowFullCar: true,
-        paymentMethods: ['cash', 'mobile_money', 'card'],
-        driver: user,
-        vehicle: defaultVehicle,
-        status: 'active',
-      });
-      toast?.showToast('Trip Published Successfully!');
-      if (navigation.canGoBack()) navigation.goBack();
-      else navigation.navigate('DriverHome');
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not publish trip.');
-    } finally {
-      setQuickPublishPublishing(false);
-    }
-  };
-
   const handlePublish = async () => {
     if (!user || !vehicle || !departure || !destination) {
       Alert.alert('Missing required fields');
@@ -248,7 +205,7 @@ export default function PublishRideScreen() {
         destinationHotpoint: destination,
         departureTime: depTime,
         arrivalTime: arrTime,
-        durationMinutes: 180,
+        durationMinutes,
         seatsAvailable: seats,
         pricePerSeat: price,
         allowFullCar,
@@ -294,82 +251,6 @@ export default function PublishRideScreen() {
       prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]
     );
   };
-
-  if (isDriver && showQuickPublish) {
-    return (
-      <Screen scroll style={[styles.container, { backgroundColor: c.appBackground }]} contentContainerStyle={[styles.content, styles.quickPublishContent]}>
-        <View style={styles.quickPublishHeader}>
-          <Text style={[styles.quickPublishTitle, { color: d.primary }]}>Start a Trip</Text>
-          <Text style={[styles.quickPublishSubtitle, { color: c.textSecondary }]}>Create a trip for immediate passengers.</Text>
-        </View>
-        <View style={[styles.quickPublishToggle, { backgroundColor: d.card, borderColor: c.border }]}>
-          <TouchableOpacity style={[styles.quickPublishToggleBtn, { backgroundColor: d.primary }]}><Text style={[styles.quickPublishToggleText, { color: d.onPrimary }]}>Regular</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.quickPublishToggleBtn}><Text style={[styles.quickPublishToggleText, { color: d.primary }]}>Express (Non-stop)</Text></TouchableOpacity>
-        </View>
-        <View style={styles.quickPublishField}>
-          <Text style={[styles.quickPublishLabel, { color: c.textSecondary }]}>ROUTE DETAIL</Text>
-          <View style={[styles.quickPublishRouteCard, { backgroundColor: d.card, borderColor: c.border }]}>
-            <View style={[styles.quickPublishRouteRow, { borderBottomColor: c.border }]}>
-              <View style={[styles.quickPublishRouteDot, { borderColor: d.accent }]} />
-              <HotpointPicker value={departure} hotpoints={hotpoints} onSelect={setDeparture} placeholder="Leaving from..." triggerStyle={styles.quickPublishRouteInput} />
-            </View>
-            <View style={styles.quickPublishRouteRow}>
-              <View style={[styles.quickPublishRouteDotFilled, { backgroundColor: d.accent }]} />
-              <HotpointPicker value={destination} hotpoints={hotpoints} onSelect={setDestination} placeholder="Going to..." triggerStyle={styles.quickPublishRouteInput} />
-            </View>
-          </View>
-        </View>
-        <View style={styles.quickPublishRow}>
-          <View style={styles.quickPublishField}>
-            <Text style={[styles.quickPublishLabel, { color: c.textSecondary }]}>PRICE / SEAT</Text>
-            <View style={[styles.quickPublishInputCard, { backgroundColor: d.card, borderColor: c.border }]}>
-              <Text style={[styles.quickPublishInputPrefix, { color: c.textMuted }]}>RWF</Text>
-              <TextInput
-                style={[styles.quickPublishInput, { color: d.primary }]}
-                value={String(price)}
-                onChangeText={(t) => setPrice(Math.max(0, parseInt(t, 10) || 0))}
-                keyboardType="number-pad"
-                placeholder="3000"
-              />
-            </View>
-          </View>
-          <View style={styles.quickPublishField}>
-            <Text style={[styles.quickPublishLabel, { color: c.textSecondary }]}>MAX SEATS</Text>
-            <View style={[styles.quickPublishInputCard, { backgroundColor: d.card, borderColor: c.border }]}>
-              <Text style={[styles.quickPublishInput, { color: d.primary }]}>{seats} Seats</Text>
-              <View style={styles.quickPublishSeatBtns}>
-                <TouchableOpacity onPress={() => setSeats((s) => Math.max(1, s - 1))}><Ionicons name="remove" size={18} color={d.primary} /></TouchableOpacity>
-                <TouchableOpacity onPress={() => setSeats((s) => Math.min(6, s + 1))}><Ionicons name="add" size={18} color={d.primary} /></TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-        <View style={[styles.quickPublishInfo, { backgroundColor: d.accentTint, borderColor: d.accent }]}>
-          <View style={[styles.quickPublishInfoIcon, { backgroundColor: d.accentTint }]}>
-            <Ionicons name="information-circle" size={24} color={d.accent} />
-          </View>
-          <Text style={[styles.quickPublishInfoText, { color: d.primary }]}>
-            Publishing this trip makes you visible to over <Text style={styles.quickPublishInfoBold}>120 riders</Text> currently looking for a ride on this route.
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={[styles.quickPublishCta, { backgroundColor: d.accent }]}
-          onPress={handleGoLiveNow}
-          disabled={quickPublishPublishing}
-          activeOpacity={0.9}
-        >
-          {quickPublishPublishing ? (
-            <ActivityIndicator color={c.onAppPrimary} />
-          ) : (
-            <Text style={[styles.quickPublishCtaText, { color: d.onPrimary }]}>Go Live Now</Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.quickPublishScheduleLink} onPress={() => setShowQuickPublish(false)}>
-          <Text style={[styles.quickPublishScheduleLinkText, { color: d.primary }]}>Schedule for later</Text>
-        </TouchableOpacity>
-      </Screen>
-    );
-  }
 
   return (
     <Screen scroll style={styles.container} contentContainerStyle={styles.content}>
@@ -442,7 +323,7 @@ export default function PublishRideScreen() {
           {vehicles.map((v) => (
             <TouchableOpacity
               key={v.id}
-              style={[styles.option, { backgroundColor: c.card, borderColor: c.border }, vehicle?.id === v.id && { backgroundColor: c.primary, borderColor: c.primary }]}
+              style={[styles.option, { backgroundColor: c.card, borderColor: c.borderLight }, vehicle?.id === v.id && { backgroundColor: c.primary, borderColor: c.primary }]}
               onPress={() => {
                 setVehicle(v);
                 if (isAgency) setSeats(v.seats);
@@ -463,7 +344,7 @@ export default function PublishRideScreen() {
 
       {currentStep === 'Route' && (
         <View style={styles.stepContent}>
-          <View style={[styles.routeCard, { backgroundColor: c.primaryTint, borderColor: c.border }, cardShadow]}>
+          <View style={[styles.routeCard, { backgroundColor: c.primaryTint, borderColor: c.borderLight }, cardShadow]}>
             <View style={styles.routeLineWrap}>
               <View style={[styles.routeDotStart, { borderColor: c.primary }]} />
               <View style={[styles.routeLine, { backgroundColor: c.border }]} />
@@ -542,7 +423,12 @@ export default function PublishRideScreen() {
 
       {currentStep === 'Repetition' && (
         <View style={styles.stepContent}>
-          <Text style={styles.label}>Departures every (minutes)</Text>
+          {isAgency && (
+            <Text style={[styles.scheduleIntro, { color: c.text }]}>
+              Post a schedule: same route, repeated departures. Set the interval and end time. Only vehicle capacity is required for the route.
+            </Text>
+          )}
+          <Text style={styles.label}>{isAgency ? 'Departures every' : 'Departures every (minutes)'}</Text>
           <View style={styles.repetitionRow}>
             {REPETITION_INTERVALS.map((mins) => (
               <TouchableOpacity
@@ -591,7 +477,9 @@ export default function PublishRideScreen() {
             mode="time"
           />
           <Text style={styles.scheduleHint}>
-            Buses will depart at the selected interval. Set an end time to limit the number of trips.
+            {isAgency
+              ? 'e.g. Route X to Y, every hour from 8 AM to 8 PM. Buses will depart at the selected interval.'
+              : 'Buses will depart at the selected interval. Set an end time to limit the number of trips.'}
           </Text>
         </View>
       )}
@@ -599,7 +487,7 @@ export default function PublishRideScreen() {
       {currentStep === 'Details' && (
         <View style={styles.stepContent}>
           <View style={styles.detailsGrid}>
-            <View style={[styles.detailsCard, { backgroundColor: c.card, borderColor: c.border }, cardShadow]}>
+            <View style={[styles.detailsCard, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
               <Text style={[styles.detailsCardLabel, { color: c.textSecondary }]}>CAPACITY</Text>
               <View style={styles.detailsStepperRow}>
                 <TouchableOpacity
@@ -617,7 +505,7 @@ export default function PublishRideScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-            <View style={[styles.detailsCard, { backgroundColor: c.card, borderColor: c.border }, cardShadow]}>
+            <View style={[styles.detailsCard, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
               <Text style={[styles.detailsCardLabel, { color: c.textSecondary }]}>PRICE / SEAT</Text>
               <View style={styles.detailsPriceRow}>
                 <Text style={[styles.detailsPricePrefix, { color: c.primary }]}>RWF</Text>
@@ -640,22 +528,27 @@ export default function PublishRideScreen() {
             </View>
           </View>
 
-          <View style={[styles.durationRow, { backgroundColor: c.primaryTint, borderColor: c.border }]}>
+          <View style={[styles.durationRow, { backgroundColor: c.primaryTint, borderColor: c.borderLight }]}>
             <View style={[styles.durationIconWrap, { backgroundColor: c.appBackground }]}>
               <Ionicons name="time-outline" size={20} color={c.primary} />
             </View>
             <View style={styles.durationBody}>
-              <Text style={[styles.detailsCardLabel, { color: c.textSecondary }]}>TRIP DURATION</Text>
+              <Text style={[styles.detailsCardLabel, { color: c.textSecondary }]}>TRIP DURATION (minutes)</Text>
               <TextInput
                 style={[styles.durationInput, { color: c.text }]}
-                value={durationDisplay}
-                onChangeText={setDurationDisplay}
-                placeholder="e.g. 45 mins"
+                value={String(durationMinutes)}
+                onChangeText={(t) => {
+                  const n = parseInt(t.replace(/\D/g, ''), 10);
+                  if (!Number.isNaN(n) && n >= 1 && n <= 999) setDurationMinutes(n);
+                  if (t === '') setDurationMinutes(45);
+                }}
+                placeholder="45"
                 placeholderTextColor={c.textSecondary}
+                keyboardType="number-pad"
               />
             </View>
             <View style={[styles.autoCalcBadge, { backgroundColor: c.primary }]}>
-              <Text style={[styles.autoCalcText, { color: c.onPrimary }]}>Auto-Calc</Text>
+              <Text style={[styles.autoCalcText, { color: c.onPrimary }]}>{formatDurationHours(durationMinutes)}</Text>
             </View>
           </View>
 
@@ -777,10 +670,10 @@ export default function PublishRideScreen() {
               <Ionicons name="cash-outline" size={16} color={d.primary} />
               <Text style={styles.reviewText}>{formatRwf(price)}/seat</Text>
             </View>
-            {durationDisplay ? (
+            {durationMinutes > 0 ? (
               <View style={styles.reviewRow}>
                 <Ionicons name="time-outline" size={16} color={d.primary} />
-                <Text style={styles.reviewText}>{durationDisplay}</Text>
+                <Text style={styles.reviewText}>{formatDurationHours(durationMinutes)}</Text>
               </View>
             ) : null}
             {driverNote ? (
@@ -832,33 +725,6 @@ export default function PublishRideScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingTop: spacing.lg, paddingBottom: spacing.xl },
-  quickPublishContent: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingBottom: spacing.xxl },
-  quickPublishHeader: { marginBottom: spacing.lg },
-  quickPublishTitle: { ...typography.h1, fontWeight: '800', marginBottom: spacing.xs },
-  quickPublishSubtitle: { ...typography.bodySmall },
-  quickPublishToggle: { flexDirection: 'row', borderRadius: radii.cardLarge, padding: spacing.xs, marginBottom: spacing.lg, borderWidth: 1 },
-  quickPublishToggleBtn: { flex: 1, paddingVertical: spacing.sm + spacing.xs, borderRadius: radii.lg, alignItems: 'center' },
-  quickPublishToggleText: { ...typography.captionBold },
-  quickPublishField: { marginBottom: spacing.lg, flex: 1 },
-  quickPublishLabel: { ...typography.overline, marginLeft: spacing.xs, marginBottom: spacing.xs },
-  quickPublishRouteCard: { borderRadius: radii.cardLarge, padding: spacing.sm, borderWidth: 1 },
-  quickPublishRouteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderBottomWidth: 1 },
-  quickPublishRouteDot: { width: sizes.routeDot, height: sizes.routeDot, borderRadius: radii.xs, borderWidth: 2 },
-  quickPublishRouteDotFilled: { width: sizes.routeDot, height: sizes.routeDot, borderRadius: radii.xs },
-  quickPublishRouteInput: { flex: 1, paddingVertical: 0, borderBottomWidth: 0, backgroundColor: colors.buttonSecondaryBg, minHeight: spacing.lg },
-  quickPublishRow: { flexDirection: 'row', gap: spacing.md },
-  quickPublishInputCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radii.cardLarge, padding: spacing.md, borderWidth: 1 },
-  quickPublishInputPrefix: { ...typography.captionBold },
-  quickPublishInput: { flex: 1, ...typography.body, fontWeight: '800', paddingVertical: 0 },
-  quickPublishSeatBtns: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  quickPublishInfo: { flexDirection: 'row', gap: spacing.md, padding: spacing.lg, borderRadius: radii.cardLarge, borderWidth: 1, marginBottom: spacing.lg },
-  quickPublishInfoIcon: { width: sizes.touchTarget.iconButton, height: sizes.touchTarget.iconButton, borderRadius: radii.lg, alignItems: 'center', justifyContent: 'center' },
-  quickPublishInfoText: { flex: 1, ...typography.caption },
-  quickPublishInfoBold: { fontWeight: '800' },
-  quickPublishCta: { paddingVertical: spacing.lg, borderRadius: radii.cardLarge, alignItems: 'center', marginBottom: spacing.sm },
-  quickPublishCtaText: { ...typography.bodyBold18 },
-  quickPublishScheduleLink: { alignItems: 'center', paddingVertical: spacing.sm },
-  quickPublishScheduleLinkText: { ...typography.bodySmall, fontWeight: '700' },
   introWrap: { paddingVertical: spacing.md },
   introTitle: { ...typography.h2, marginBottom: spacing.xs },
   introSub: { ...typography.bodySmall, marginBottom: spacing.lg },
@@ -945,6 +811,10 @@ const styles = StyleSheet.create({
   },
   checkboxChecked: {},
   checkLabel: { ...typography.body, color: colors.text },
+  scheduleIntro: {
+    ...typography.bodySmall,
+    marginBottom: spacing.md,
+  },
   scheduleHint: {
     ...typography.caption,
     color: colors.textSecondary,

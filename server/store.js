@@ -36,6 +36,7 @@ const profileCompleteByUserId = {};
 const notificationPrefsByUserId = {};
 const scannerTicketCountByUserId = {};
 const scannedBookingIds = new Set(); // bookingId when ticket validated
+const scannedAtByBookingId = {}; // bookingId -> ISO timestamp when ticket was scanned (for activity log)
 const conversationsStore = [];
 const messagesByConversationId = {};
 
@@ -109,6 +110,7 @@ module.exports = {
   notificationPrefsByUserId,
   scannerTicketCountByUserId,
   scannedBookingIds,
+  scannedAtByBookingId,
   conversationsStore,
   messagesByConversationId,
   driverDriveModeStore,

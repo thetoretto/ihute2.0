@@ -34,7 +34,7 @@ export default function VehicleGarageScreen() {
   };
 
   return (
-    <Screen style={[styles.container, { backgroundColor: c.appBackground }, { paddingHorizontal: 0 }]}>
+    <Screen contentInset={false} style={[styles.container, { backgroundColor: c.appBackground }]}>
       <Button title="Add Vehicle" onPress={() => rootNavigate('AddVehicle')} style={styles.addBtn} />
       {vehicles.length === 0 ? (
         <EmptyState
@@ -47,7 +47,7 @@ export default function VehicleGarageScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
-          <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }, cardShadow]}>
+          <View style={[styles.card, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
             <View style={styles.cardRow}>
               <View style={[styles.cardIconWrap, { backgroundColor: c.primaryTint }]}>
                 <Ionicons name="car-sport" size={24} color={c.primary} />
