@@ -29,7 +29,7 @@ import { useThemeColors } from '../../context/ThemeContext';
 import { useDriverTheme } from '../../context/DriverThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { strings } from '../../constants/strings';
-import { landingHeaderPaddingHorizontal, listBottomPaddingTab } from '../../utils/layout';
+import { getTabScreenScrollPaddingBottom, landingHeaderPaddingHorizontal } from '../../utils/layout';
 import { getTripStatusLabel } from '../../components/RideCard';
 import { getStatusColorKey, getStatusTintKey } from '../../utils/theme';
 import type { DriverTripActivity } from '../../types';
@@ -233,7 +233,7 @@ export default function DriverMyRidesScreen() {
           key={tab}
           data={list}
           keyExtractor={(item) => item.trip.id}
-          contentContainerStyle={[styles.listContent, { paddingBottom: listBottomPaddingTab }]}
+          contentContainerStyle={[styles.listContent, { paddingBottom: getTabScreenScrollPaddingBottom(insets) }]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

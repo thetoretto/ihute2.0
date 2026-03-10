@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,10 +17,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, CarWheelLoader, CarRefreshIndicator } from '../../components';
 import { searchTrips, getHotpoints } from '../../services/api';
-import { spacing, typography, radii, sizes } from '../../utils/theme';
+import { spacing, typography, radii, sizes, cardShadow } from '../../utils/theme';
 import { landingHeaderPaddingHorizontal, listBottomPaddingTab, screenContentStartPaddingTop } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
-import { selectorStyles } from '../../utils/selectorStyles';
 import type { Trip, Hotpoint } from '../../types';
 
 const DEFAULT_FILTERS = {
@@ -195,7 +194,7 @@ export default function AllTripsScreen() {
     <Screen contentInset={false} style={[styles.container, { backgroundColor: c.appBackground }]}>
       {/* 1. Edit Search full-screen modal (template) */}
       <Modal visible={isSearchOpen} animationType="slide">
-        <View style={[styles.editSearchModal, { backgroundColor: c.card, paddingTop: insets.top + spacing.lg }]}>
+        <View style={[styles.editSearchModal, { backgroundColor: c.card, paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + spacing.lg }]}>
           <View style={styles.editSearchHeader}>
             <TouchableOpacity onPress={() => setIsSearchOpen(false)} style={styles.editSearchClose} hitSlop={12}>
               <Ionicons name="close" size={28} color={c.primary} />
@@ -206,11 +205,13 @@ export default function AllTripsScreen() {
           <View style={styles.editSearchBody}>
             <View style={styles.editSearchFromToWrap}>
               <TouchableOpacity
-                style={[styles.editSearchInputCard, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }]}
+                style={[styles.editSearchInputCard, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }, styles.editSearchInputCardElevated]}
                 onPress={() => setPickerMode('from')}
                 activeOpacity={0.8}
               >
-                <Ionicons name="location" size={20} color={c.primary} style={styles.editSearchInputIcon} />
+                <View style={[styles.editSearchInputIconWrap, { backgroundColor: c.primaryTint }]}>
+                  <Ionicons name="location" size={20} color={c.primary} />
+                </View>
                 <View style={styles.editSearchInputInner}>
                   <Text style={[styles.editSearchLabel, { color: c.textMuted }]}>LEAVING FROM</Text>
                   <Text style={[styles.editSearchValue, { color: c.text }]} numberOfLines={1}>
@@ -219,17 +220,19 @@ export default function AllTripsScreen() {
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.editSearchSwapBtn, { backgroundColor: c.card, borderColor: c.borderLight }]}
+                style={[styles.editSearchSwapBtn, { backgroundColor: c.card, borderColor: c.borderLight }, styles.editSearchSwapBtnElevated]}
                 onPress={swapLocations}
               >
-                <Ionicons name="swap-vertical" size={16} color={c.primary} />
+                <Ionicons name="swap-vertical" size={18} color={c.primary} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.editSearchInputCard, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }]}
+                style={[styles.editSearchInputCard, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }, styles.editSearchInputCardElevated]}
                 onPress={() => setPickerMode('to')}
                 activeOpacity={0.8}
               >
-                <Ionicons name="location-outline" size={20} color={c.textMuted} style={styles.editSearchInputIcon} />
+                <View style={[styles.editSearchInputIconWrap, { backgroundColor: c.surface }]}>
+                  <Ionicons name="location-outline" size={20} color={c.textMuted} />
+                </View>
                 <View style={styles.editSearchInputInner}>
                   <Text style={[styles.editSearchLabel, { color: c.textMuted }]}>GOING TO</Text>
                   <Text style={[styles.editSearchValue, { color: c.text }]} numberOfLines={1}>
@@ -239,8 +242,10 @@ export default function AllTripsScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.editSearchRow}>
-              <View style={[styles.editSearchInputCard, styles.editSearchInputHalf, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }]}>
-                <Ionicons name="calendar-outline" size={20} color={c.textMuted} style={styles.editSearchInputIcon} />
+              <View style={[styles.editSearchInputCard, styles.editSearchInputHalf, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }, styles.editSearchInputCardElevated]}>
+                <View style={[styles.editSearchInputIconWrap, { backgroundColor: c.surface }]}>
+                  <Ionicons name="calendar-outline" size={20} color={c.textMuted} />
+                </View>
                 <View style={styles.editSearchInputInner}>
                   <Text style={[styles.editSearchLabel, { color: c.textMuted }]}>WHEN</Text>
                   <TextInput
@@ -252,8 +257,10 @@ export default function AllTripsScreen() {
                   />
                 </View>
               </View>
-              <View style={[styles.editSearchInputCard, styles.editSearchInputHalf, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }]}>
-                <Ionicons name="people-outline" size={20} color={c.textMuted} style={styles.editSearchInputIcon} />
+              <View style={[styles.editSearchInputCard, styles.editSearchInputHalf, { backgroundColor: c.surface ?? c.ghostBg, borderColor: c.borderLight }, styles.editSearchInputCardElevated]}>
+                <View style={[styles.editSearchInputIconWrap, { backgroundColor: c.surface }]}>
+                  <Ionicons name="people-outline" size={20} color={c.textMuted} />
+                </View>
                 <View style={styles.editSearchInputInner}>
                   <Text style={[styles.editSearchLabel, { color: c.textMuted }]}>WHO</Text>
                   <TextInput
@@ -267,7 +274,7 @@ export default function AllTripsScreen() {
             </View>
           </View>
           <TouchableOpacity
-            style={[styles.seeResultsBtn, { backgroundColor: c.primary }]}
+            style={[styles.seeResultsBtn, { backgroundColor: c.primary }, styles.seeResultsBtnElevated]}
             onPress={applyEditSearch}
             activeOpacity={0.9}
           >
@@ -278,12 +285,12 @@ export default function AllTripsScreen() {
 
       {/* 2. Hotpoint Picker Overlay (template) */}
       <Modal visible={pickerMode !== null} animationType="slide" transparent>
-        <View style={[selectorStyles.overlay, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-          <View style={[selectorStyles.sheet, { backgroundColor: c.card }]}>
-            <View style={[selectorStyles.searchRow, { backgroundColor: c.surface }]}>
+        <View style={[styles.pickerOverlay, { backgroundColor: c.overlayModal ?? 'rgba(0,0,0,0.55)' }]}>
+          <View style={[styles.pickerSheet, { backgroundColor: c.card }]}>
+            <View style={[styles.pickerSearchRow, { backgroundColor: c.surface, borderColor: c.borderLight }]}>
               <Ionicons name="search" size={18} color={c.textMuted} />
               <TextInput
-                style={[selectorStyles.searchInput, { color: c.text }]}
+                style={[styles.pickerSearchInput, { color: c.text }]}
                 placeholder="Type city or hotpoint"
                 placeholderTextColor={c.textMuted}
                 value={pickerQuery}
@@ -295,18 +302,20 @@ export default function AllTripsScreen() {
               data={filteredHotpoints}
               keyExtractor={(item) => item.id}
               keyboardShouldPersistTaps="handled"
+              style={styles.pickerList}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[selectorStyles.optionRow, { borderBottomColor: c.borderLight }]}
+                  style={[styles.pickerOptionRow, { borderColor: c.borderLight }]}
                   onPress={() => onSelectHotpoint(item)}
+                  activeOpacity={0.7}
                 >
-                  <View style={[styles.pickerIconWrap, { backgroundColor: c.surface }]}>
-                    <Ionicons name="location-outline" size={18} color={c.textMuted} />
+                  <View style={[styles.pickerIconWrap, { backgroundColor: c.primaryTint }]}>
+                    <Ionicons name="location-outline" size={18} color={c.primary} />
                   </View>
-                  <Text style={[selectorStyles.optionPrimary, { color: c.text }]} numberOfLines={1}>
+                  <Text style={[styles.pickerOptionText, { color: c.text }]} numberOfLines={1}>
                     {item.name}, {item.country ?? ''}
                   </Text>
-                  <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+                  <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
                 </TouchableOpacity>
               )}
             />
@@ -324,7 +333,7 @@ export default function AllTripsScreen() {
       </Modal>
 
       {/* 3. Sticky Header: Back, Route, Search (template) */}
-      <View style={[styles.stickyHeaderWrap, { backgroundColor: c.card, borderBottomColor: c.borderLight }]}>
+      <View style={[styles.stickyHeaderWrap, { backgroundColor: c.card, borderBottomColor: c.borderLight }, styles.stickyHeaderShadow]}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
             <Ionicons name="chevron-back" size={24} color={c.primary} />
@@ -343,7 +352,7 @@ export default function AllTripsScreen() {
               {dateLabel}, {filters.minSeats} passenger{filters.minSeats > 1 ? 's' : ''}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.headerSearchIconWrap, { backgroundColor: c.primaryTint }]} onPress={openEditSearch}>
+          <TouchableOpacity style={[styles.headerSearchIconWrap, { backgroundColor: c.primaryTint }, styles.headerSearchIconShadow]} onPress={openEditSearch}>
             <Ionicons name="search" size={18} color={c.primary} />
           </TouchableOpacity>
         </View>
@@ -362,6 +371,7 @@ export default function AllTripsScreen() {
                 style={[
                   styles.filterPill,
                   { borderColor: active ? c.primary : c.borderLight, backgroundColor: active ? c.primary : c.card },
+                  active && styles.filterPillActiveShadow,
                 ]}
                 activeOpacity={0.8}
               >
@@ -385,7 +395,7 @@ export default function AllTripsScreen() {
         <TouchableWithoutFeedback onPress={() => setFiltersSheetVisible(false)}>
           <View style={[styles.sortOverlay, { backgroundColor: c.overlayModal ?? 'rgba(0,0,0,0.5)' }]} />
         </TouchableWithoutFeedback>
-        <View style={[styles.sortSheet, { backgroundColor: c.card }]}>
+        <View style={[styles.sortSheet, { backgroundColor: c.card }, styles.sortSheetShadow]}>
           <View style={[styles.sortSheetHandle, { backgroundColor: c.border }]} />
           <Text style={[styles.sortSheetTitle, { color: c.text }]}>Filters & Sort</Text>
           <Text style={[styles.filterLabel, { color: c.textMuted }]}>TRIP TYPE</Text>
@@ -406,30 +416,24 @@ export default function AllTripsScreen() {
               </TouchableOpacity>
             ))}
           </View>
-          <View style={styles.filterInputRow}>
-            <View style={styles.filterInputHalf}>
-              <Text style={[styles.filterLabelInGrid, { color: c.textMuted }]}>MAX PRICE (RWF)</Text>
-              <TextInput
-                style={[styles.filterInput, { backgroundColor: c.background, borderColor: c.borderLight, color: c.text }]}
-                value={String(filters.maxPrice)}
-                onChangeText={(v) => setFilters((f) => ({ ...f, maxPrice: Math.max(0, parseInt(v, 10) || 0) }))}
-                keyboardType="number-pad"
-                placeholder="e.g. 50000"
-              />
-            </View>
-            <View style={styles.filterInputHalf}>
-              <Text style={[styles.filterLabelInGrid, { color: c.textMuted }]}>MIN SEATS</Text>
-              <TextInput
-                style={[styles.filterInput, { backgroundColor: c.background, borderColor: c.borderLight, color: c.text }]}
-                value={String(filters.minSeats)}
-                onChangeText={(v) => setFilters((f) => ({ ...f, minSeats: Math.max(1, parseInt(v, 10) || 1) }))}
-                keyboardType="number-pad"
-                placeholder="1"
-              />
-            </View>
-          </View>
+          <Text style={[styles.filterLabel, { color: c.textMuted }]}>MAX PRICE (RWF)</Text>
+          <TextInput
+            style={[styles.filterInput, { backgroundColor: c.background, borderColor: c.borderLight, color: c.text }]}
+            value={String(filters.maxPrice)}
+            onChangeText={(v) => setFilters((f) => ({ ...f, maxPrice: Math.max(0, parseInt(v, 10) || 0) }))}
+            keyboardType="number-pad"
+            placeholder="e.g. 50000"
+          />
+          <Text style={[styles.filterLabel, { color: c.textMuted }]}>MIN SEATS</Text>
+          <TextInput
+            style={[styles.filterInput, { backgroundColor: c.background, borderColor: c.borderLight, color: c.text }]}
+            value={String(filters.minSeats)}
+            onChangeText={(v) => setFilters((f) => ({ ...f, minSeats: Math.max(1, parseInt(v, 10) || 1) }))}
+            keyboardType="number-pad"
+            placeholder="1"
+          />
           <TouchableOpacity
-            style={[styles.applyFiltersBtn, { backgroundColor: c.primary }]}
+            style={[styles.applyFiltersBtn, { backgroundColor: c.primary }, styles.applyFiltersBtnShadow]}
             onPress={() => {
               setFiltersSheetVisible(false);
               loadTrips(true);
@@ -444,23 +448,25 @@ export default function AllTripsScreen() {
       <CarWheelLoader visible={loading} />
 
       {/* 5. Main content: X rides found, TRENDS, then list or empty (template) */}
-      <View style={styles.mainWrap}>
+      <View style={[styles.mainWrap, { backgroundColor: c.appBackground }]}>
         <View style={styles.listHeaderRow}>
           <Text style={[styles.listHeaderCount, { color: c.textMuted }]}>{trips.length} rides found</Text>
           <TouchableOpacity onPress={() => {}} style={styles.trendsBtn}>
-            <Ionicons name="information-circle-outline" size={10} color={c.primary} />
+            <Ionicons name="information-circle-outline" size={12} color={c.primary} />
             <Text style={[styles.trendsText, { color: c.primary }]}>TRENDS</Text>
           </TouchableOpacity>
         </View>
 
         {loading ? (
           <View style={styles.loadingWrap}>
-            <Ionicons name="car-sport-outline" size={64} color={c.primaryTint ?? c.textMuted} style={styles.loadingIcon} />
+            <View style={[styles.emptyIconCircle, { backgroundColor: c.surface }, styles.loadingIconCircle]}>
+              <Ionicons name="car-sport-outline" size={40} color={c.primaryTint ?? c.textMuted} />
+            </View>
             <View style={[styles.loadingBar, { backgroundColor: c.surface }]} />
           </View>
         ) : trips.length === 0 ? (
           <View style={styles.emptyWrap}>
-            <View style={[styles.emptyIconCircle, { backgroundColor: c.surface }]}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: c.surface }, styles.emptyIconCircleElevated]}>
               <Ionicons name="search" size={32} color={c.textMuted} />
             </View>
             <Text style={[styles.emptyText, { color: c.text }]}>No trips found</Text>
@@ -520,7 +526,7 @@ function TripCard({
 
   return (
     <TouchableOpacity
-      style={[styles.tripCard, { backgroundColor: c.card, borderColor: c.borderLight }]}
+      style={[styles.tripCard, { backgroundColor: c.card, borderColor: c.borderLight }, styles.tripCardShadow]}
       onPress={onPress}
       activeOpacity={0.98}
     >
@@ -572,21 +578,21 @@ function TripCard({
         </View>
         <View style={styles.tripCardTimelineContent}>
           <View style={styles.tripCardTimelineRow}>
-            <View style={styles.tripCardTimelineLeft}>
+            <View>
               <Text style={[styles.tripCardTime, { color: c.text }]}>{depTime}</Text>
               <Text style={[styles.tripCardPlace, { color: c.textMuted }]} numberOfLines={1}>{fromPlace}</Text>
             </View>
-            <View style={[styles.tripCardRightPill, { backgroundColor: c.surface }]}>
+            <View style={[styles.tripCardDurationPill, { backgroundColor: c.surface }]}>
               <Ionicons name="time-outline" size={9} color={c.textMuted} />
               <Text style={[styles.tripCardDurationText, { color: c.textMuted }]}>{duration}</Text>
             </View>
           </View>
-          <View style={[styles.tripCardTimelineRow, { marginBottom: 0 }]}>
-            <View style={styles.tripCardTimelineLeft}>
+          <View style={styles.tripCardTimelineRow}>
+            <View>
               <Text style={[styles.tripCardTime, { color: c.text }]}>{arrTime}</Text>
               <Text style={[styles.tripCardPlace, { color: c.textMuted }]} numberOfLines={1}>{toPlace}</Text>
             </View>
-            <View style={[styles.tripCardRightPill, { backgroundColor: 'transparent' }]}>
+            <View style={styles.tripCardCarRow}>
               <Ionicons name="car-sport-outline" size={10} color={c.textMuted} />
               <Text style={[styles.tripCardCarText, { color: c.textMuted }]}>{carLabel}</Text>
             </View>
@@ -615,24 +621,12 @@ function TripCard({
 
 const CARD_VERIFIED_BG = '#22C55E';
 
-/** Symmetric spacing: same value for section gaps and balanced padding. */
-const SYM = {
-  sectionGap: spacing.lg,
-  itemGap: spacing.sm,
-  cardPadding: spacing.md,
-  iconSize: 20,
-  headerIconBox: 40,
-  pillPaddingV: 6,
-  pillPaddingH: spacing.md,
-} as const;
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  // —— Sticky header (symmetric left/right wings) ——
   stickyHeaderWrap: {
     paddingHorizontal: landingHeaderPaddingHorizontal,
     paddingTop: screenContentStartPaddingTop,
-    paddingBottom: SYM.sectionGap,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -643,186 +637,240 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SYM.itemGap,
-    marginBottom: SYM.itemGap,
+    gap: spacing.md,
+    marginBottom: spacing.sm,
   },
-  backBtn: {
-    width: SYM.headerIconBox,
-    height: SYM.headerIconBox,
-    borderRadius: SYM.headerIconBox / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  backBtn: { padding: spacing.xs },
   headerRouteWrap: { flex: 1, minWidth: 0 },
   headerRouteRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
-  headerRouteFrom: { ...typography.body, fontWeight: '700', maxWidth: 88 },
-  headerRouteTo: { ...typography.body, fontWeight: '700', maxWidth: 88 },
+  headerRouteFrom: { ...typography.body, fontWeight: '700', maxWidth: 80 },
+  headerRouteTo: { ...typography.body, fontWeight: '700', maxWidth: 80 },
   headerSubtitle: { ...typography.overline, fontSize: 10, marginTop: 2, textTransform: 'uppercase' },
   headerSearchIconWrap: {
-    width: SYM.headerIconBox,
-    height: SYM.headerIconBox,
-    borderRadius: SYM.headerIconBox / 2,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   filterPillsRow: {
     flexDirection: 'row',
-    gap: SYM.itemGap,
+    gap: spacing.sm,
     paddingVertical: spacing.xs,
     flexWrap: 'wrap',
   },
   filterPill: {
-    paddingVertical: SYM.pillPaddingV,
-    paddingHorizontal: SYM.pillPaddingH,
+    paddingVertical: 6,
+    paddingHorizontal: spacing.md,
     borderRadius: radii.full,
     borderWidth: 1,
   },
   filterPillText: { ...typography.overline, fontSize: 11, fontWeight: '700' },
-  // —— Edit Search modal (symmetric header + from/to + when/who) ——
   editSearchModal: {
     flex: 1,
-    paddingHorizontal: SYM.sectionGap,
-    paddingBottom: SYM.sectionGap,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   editSearchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: SYM.sectionGap * 2,
+    marginBottom: spacing.xl,
   },
-  editSearchClose: {
-    width: SYM.headerIconBox,
-    height: SYM.headerIconBox,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  editSearchClose: { padding: spacing.sm },
   editSearchTitle: { ...typography.h3, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
-  editSearchHeaderSpacer: { width: SYM.headerIconBox },
+  editSearchHeaderSpacer: { width: 40 },
   editSearchBody: { flex: 1 },
-  editSearchFromToWrap: { gap: SYM.itemGap, marginBottom: SYM.sectionGap },
+  editSearchFromToWrap: { gap: spacing.sm, marginBottom: spacing.lg },
   editSearchInputCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SYM.cardPadding,
-    borderRadius: radii.lg,
+    padding: spacing.md,
+    borderRadius: radii.xl,
     borderWidth: 1,
   },
-  editSearchInputIcon: { marginRight: SYM.cardPadding },
+  editSearchInputCardElevated: {
+    ...cardShadow,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  editSearchInputIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
   editSearchInputInner: { flex: 1, minWidth: 0 },
   editSearchLabel: { ...typography.overline, fontSize: 10, marginBottom: 2, letterSpacing: 1 },
   editSearchValue: { ...typography.body, fontWeight: '700' },
   editSearchSwapBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    alignSelf: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'center',
   },
-  editSearchRow: { flexDirection: 'row', gap: SYM.sectionGap },
+  editSearchSwapBtnElevated: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  editSearchRow: { flexDirection: 'row', gap: spacing.md },
   editSearchInputHalf: { flex: 1 },
   seeResultsBtn: {
-    paddingVertical: SYM.sectionGap,
-    borderRadius: radii.lg,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.xl,
     alignItems: 'center',
-    marginTop: SYM.sectionGap,
+    marginTop: spacing.lg,
+  },
+  seeResultsBtnElevated: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   seeResultsBtnText: { ...typography.h3, fontWeight: '800' },
-  // —— Picker (symmetric option row) ——
+  pickerOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  pickerSheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '82%',
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    overflow: 'hidden',
+  },
+  pickerSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  pickerSearchInput: {
+    flex: 1,
+    ...typography.body,
+  },
+  pickerList: { maxHeight: 320 },
+  pickerOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    gap: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  pickerOptionText: { ...typography.body, fontWeight: '700', flex: 1 },
   pickerIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: radii.sm,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pickerCloseBtn: {
-    paddingVertical: SYM.cardPadding,
-    paddingHorizontal: SYM.sectionGap,
+    padding: spacing.lg,
     alignItems: 'center',
     borderTopWidth: 1,
   },
   pickerCloseBtnText: { ...typography.bodySmall, fontWeight: '700' },
-  // —— Filter sheet (symmetric sections + grid) ——
+  stickyHeaderShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  headerSearchIconShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  filterPillActiveShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   sortOverlay: { flex: 1 },
   sortSheet: {
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: SYM.sectionGap,
-    paddingTop: SYM.cardPadding,
-    paddingBottom: SYM.sectionGap + 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl + 24,
+  },
+  sortSheetShadow: {
+    ...cardShadow,
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
   },
   sortSheetHandle: {
     width: 48,
     height: 6,
     borderRadius: 3,
     alignSelf: 'center',
-    marginBottom: SYM.sectionGap,
+    marginBottom: spacing.lg,
   },
-  sortSheetTitle: { ...typography.h3, fontWeight: '800', marginBottom: SYM.sectionGap },
-  filterLabel: {
-    ...typography.overline,
-    fontSize: 10,
-    fontWeight: '800',
-    marginBottom: SYM.itemGap,
-    marginTop: SYM.sectionGap,
-    letterSpacing: 0.5,
-  },
-  filterTypeRow: {
-    flexDirection: 'row',
-    gap: SYM.itemGap,
-    marginBottom: SYM.itemGap,
-  },
+  sortSheetTitle: { ...typography.h3, fontWeight: '800', marginBottom: spacing.lg },
+  filterLabel: { ...typography.overline, fontSize: 10, fontWeight: '800', marginBottom: spacing.sm, marginTop: spacing.md, letterSpacing: 0.5 },
+  filterTypeRow: { flexDirection: 'row', gap: spacing.md, flexWrap: 'wrap', marginBottom: spacing.sm },
   filterChip: {
     flex: 1,
-    paddingVertical: SYM.cardPadding,
-    paddingHorizontal: SYM.sectionGap,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderRadius: radii.lg,
   },
   filterChipText: { ...typography.bodySmall, fontWeight: '700' },
-  filterInputRow: {
-    flexDirection: 'row',
-    gap: SYM.sectionGap,
-    marginTop: SYM.sectionGap,
-  },
-  filterInputHalf: { flex: 1 },
-  filterLabelInGrid: {
-    ...typography.overline,
-    fontSize: 10,
-    fontWeight: '800',
-    marginBottom: SYM.itemGap,
-    letterSpacing: 0.5,
-  },
   filterInput: {
     borderWidth: 1,
     borderRadius: radii.lg,
-    paddingHorizontal: SYM.sectionGap,
-    paddingVertical: SYM.cardPadding,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     ...typography.bodySmall,
+    marginBottom: spacing.sm,
   },
   applyFiltersBtn: {
-    marginTop: SYM.sectionGap,
-    paddingVertical: SYM.sectionGap,
-    borderRadius: radii.lg,
+    marginTop: spacing.lg,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.xl,
     alignItems: 'center',
   },
-  applyFiltersBtnText: { ...typography.body, fontWeight: '800' },
-  // —— Main content ——
-  mainWrap: {
-    flex: 1,
-    paddingHorizontal: landingHeaderPaddingHorizontal,
-    paddingTop: SYM.itemGap,
+  applyFiltersBtnShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
+  applyFiltersBtnText: { ...typography.body, fontWeight: '800' },
+  mainWrap: { flex: 1, paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.md },
   listHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SYM.itemGap,
+    marginBottom: spacing.sm,
     paddingHorizontal: spacing.xs,
   },
   listHeaderCount: { ...typography.overline, fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
@@ -834,8 +882,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 80,
   },
-  loadingIcon: { marginBottom: SYM.cardPadding },
-  loadingBar: { width: 128, height: 16, borderRadius: 8, marginTop: SYM.itemGap },
+  loadingIconCircle: {
+    marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  loadingIcon: { marginBottom: spacing.md },
+  loadingBar: { width: 140, height: 8, borderRadius: 4, marginTop: spacing.sm },
   emptyWrap: {
     flex: 1,
     justifyContent: 'center',
@@ -843,36 +899,48 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   emptyIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SYM.cardPadding,
+    marginBottom: spacing.md,
   },
-  emptyText: { ...typography.body, fontWeight: '700' },
-  emptySubtitle: { ...typography.bodySmall, marginTop: spacing.xs },
+  emptyIconCircleElevated: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  emptyText: { ...typography.body, fontWeight: '700', fontSize: 16 },
+  emptySubtitle: { ...typography.bodySmall, marginTop: spacing.sm, textAlign: 'center', paddingHorizontal: spacing.xl },
   listScroll: { flex: 1 },
-  listContent: { paddingTop: spacing.xs, gap: SYM.itemGap },
-  // —— Trip card (symmetric header, timeline rows, footer) ——
+  listContent: { paddingTop: spacing.sm, gap: spacing.md },
   tripCard: {
-    borderRadius: radii.lg,
-    padding: SYM.cardPadding,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
     borderWidth: 1,
-    marginBottom: SYM.itemGap,
+    marginBottom: spacing.md,
+  },
+  tripCardShadow: {
+    ...cardShadow,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   tripCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: SYM.cardPadding,
+    marginBottom: spacing.md,
   },
   tripCardDriverRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   tripCardAvatarWrap: { position: 'relative' },
   tripCardAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.md,
+    width: 44,
+    height: 44,
+    borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -885,7 +953,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#fff',
   },
-  tripCardDriverInfo: { flex: 1, minWidth: 0, justifyContent: 'center' },
+  tripCardDriverInfo: {},
   tripCardDriverName: { ...typography.bodySmall, fontWeight: '700', marginBottom: 2 },
   tripCardRatingRow: {
     flexDirection: 'row',
@@ -896,27 +964,26 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   tripCardRatingText: { ...typography.overline, fontSize: 10, fontWeight: '700' },
-  tripCardPriceCol: { alignItems: 'flex-end', justifyContent: 'flex-start' },
+  tripCardPriceCol: { alignItems: 'flex-end' },
   tripCardPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 2 },
   tripCardPriceLabel: { ...typography.overline, fontSize: 10, fontWeight: '700' },
   tripCardPriceValue: { ...typography.h3, fontSize: 20, fontWeight: '800' },
   tripCardInstantRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
   tripCardInstantText: { ...typography.overline, fontSize: 8, fontWeight: '800', letterSpacing: 0.5 },
-  tripCardTimeline: { flexDirection: 'row', gap: SYM.itemGap, marginBottom: SYM.cardPadding },
+  tripCardTimeline: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   tripCardDots: { alignItems: 'center', paddingVertical: 2 },
-  tripCardDot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1 },
-  tripCardLine: { width: 2, flex: 1, minHeight: 20, marginVertical: 2 },
-  tripCardTimelineContent: { flex: 1, minWidth: 0 },
+  tripCardDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5 },
+  tripCardLine: { width: 2, flex: 1, minHeight: 24, marginVertical: 2 },
+  tripCardTimelineContent: { flex: 1 },
   tripCardTimelineRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: SYM.itemGap,
+    marginBottom: spacing.sm,
   },
-  tripCardTimelineLeft: { flex: 1, minWidth: 0 },
   tripCardTime: { ...typography.bodySmall, fontWeight: '800' },
   tripCardPlace: { ...typography.bodySmall, fontSize: 11, marginTop: 2 },
-  tripCardRightPill: {
+  tripCardDurationPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -931,10 +998,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: SYM.cardPadding,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
   },
-  tripCardAmenitiesRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', flex: 1 },
+  tripCardAmenitiesRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   tripCardAmenityPill: {
     flexDirection: 'row',
     alignItems: 'center',

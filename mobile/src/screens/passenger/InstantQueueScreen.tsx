@@ -8,12 +8,13 @@ import {
   FlatList,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, HotpointPicker } from '../../components';
 import { getInstantQueue, getHotpoints } from '../../services/api';
 import { useThemeColors } from '../../context/ThemeContext';
 import { spacing, typography, radii, borderWidths, sizes, cardShadow } from '../../utils/theme';
-import { landingHeaderPaddingHorizontal, listBottomPaddingTab, screenContentStartPaddingTop, tightGap } from '../../utils/layout';
+import { getTabScreenScrollPaddingBottom, landingHeaderPaddingHorizontal, screenContentStartPaddingTop, tightGap } from '../../utils/layout';
 import type { DriverInstantQueueEntry, Hotpoint } from '../../types';
 
 function formatRwf(value: number) {
@@ -22,6 +23,7 @@ function formatRwf(value: number) {
 
 export default function InstantQueueScreen() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const c = useThemeColors();
   const [entries, setEntries] = useState<DriverInstantQueueEntry[]>([]);
   const [hotpoints, setHotpoints] = useState<Hotpoint[]>([]);
@@ -63,7 +65,7 @@ export default function InstantQueueScreen() {
       contentInset={false}
       scroll={false}
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingBottom: listBottomPaddingTab }]}
+      contentContainerStyle={[styles.content, { paddingBottom: getTabScreenScrollPaddingBottom(insets) }]}
     >
       <View style={[styles.filterSection, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
         <Text style={[styles.filterLabel, { color: c.textSecondary }]}>Filter by destination (optional)</Text>
@@ -100,7 +102,7 @@ export default function InstantQueueScreen() {
         <FlatList
           data={entries}
           keyExtractor={(item) => item.driver?.id ?? String(Math.random())}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: getTabScreenScrollPaddingBottom(insets) }]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
   pickerLabel: { ...typography.caption, marginBottom: spacing.xs },
   pickerTrigger: { borderBottomWidth: 1, paddingVertical: spacing.sm },
   sectionTitle: { ...typography.h3, marginHorizontal: landingHeaderPaddingHorizontal, marginTop: spacing.md, marginBottom: spacing.md },
-  listContent: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.lg, paddingBottom: listBottomPaddingTab },
+  listContent: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.lg },
   entryCard: {
     padding: spacing.lg,
     borderRadius: radii.md,

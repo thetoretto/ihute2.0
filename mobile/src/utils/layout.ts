@@ -17,6 +17,11 @@ export const MAX_VIEWPORT_WIDTH = 450;
 /** Design system: content padding bottom so scroll clears floating nav. */
 export const CONTENT_PADDING_BOTTOM_TAB_SCREEN = 120;
 
+/** Bottom padding for tab screens: clears tab bar and safe area. */
+export function getTabScreenScrollPaddingBottom(insets: { bottom?: number }): number {
+  return Math.max(insets?.bottom ?? 0, CONTENT_PADDING_BOTTOM_TAB_SCREEN);
+}
+
 /** Toast offset above tab bar (bottom-28). */
 export const TOAST_BOTTOM_OFFSET = 28;
 

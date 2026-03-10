@@ -48,7 +48,7 @@ import { useThemeColors } from '../../context/ThemeContext';
 import { useDriverTheme } from '../../context/DriverThemeContext';
 import { useToast } from '../../context/ToastContext';
 import { colors, spacing, typography, radii, sizes, cardShadow, borderWidths } from '../../utils/theme';
-import { cardRadius, landingHeaderPaddingHorizontal, layout, listBottomPaddingTab, sectionTitleStyle, tightGap } from '../../utils/layout';
+import { cardRadius, getTabScreenScrollPaddingBottom, landingHeaderPaddingHorizontal, layout, sectionTitleStyle, tightGap } from '../../utils/layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { strings } from '../../constants/strings';
 import type { DriverTripActivity, Hotpoint } from '../../types';
@@ -222,7 +222,7 @@ export default function DriverHomeScreen() {
     <Screen
       scroll
       style={[styles.container, { backgroundColor: c.appBackground }]}
-      contentContainerStyle={[styles.content, { paddingTop: effectiveSpacing.lg, paddingBottom: listBottomPaddingTab }]}
+      contentContainerStyle={[styles.content, { paddingTop: effectiveSpacing.lg, paddingBottom: getTabScreenScrollPaddingBottom(insets) }]}
       scrollProps={{
         refreshControl: (
           <RefreshControl

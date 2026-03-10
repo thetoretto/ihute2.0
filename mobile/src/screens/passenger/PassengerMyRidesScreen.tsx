@@ -3,15 +3,17 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   LayoutAnimation,
   Platform,
   UIManager,
   Alert,
   RefreshControl,
+  Image,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
@@ -22,19 +24,10 @@ import {
   rateDriverFromBooking,
   cancelBooking,
 } from '../../services/api';
-import {
-  Screen,
-  Button,
-  CarRefreshIndicator,
-  ExpansionDetailsCard,
-  ExpandActionButton,
-  LandingHeader,
-} from '../../components';
+import { Screen, Button, CarRefreshIndicator } from '../../components';
 import { buttonHeights, spacing, typography, radii, borderWidths, sizes, cardShadow } from '../../utils/theme';
-import { landingHeaderPaddingHorizontal, listBottomPaddingTab, screenContentStartPaddingTop, tightGap, dividerHeight } from '../../utils/layout';
-import { sharedStyles } from '../../utils/sharedStyles';
+import { landingHeaderPaddingHorizontal, listBottomPaddingTab } from '../../utils/layout';
 import { useThemeColors } from '../../context/ThemeContext';
-import { useRoleTheme } from '../../context/RoleThemeContext';
 import { getStatusColorKey, getStatusTintKey } from '../../utils/theme';
 import type { Booking } from '../../types';
 
@@ -53,11 +46,6 @@ function getBookingDisplayStatus(booking: Booking): 'completed' | 'cancelled' | 
   return 'booked';
 }
 
-function routeCode(name: string) {
-  if (name.length >= 3) return name.slice(0, 3).toUpperCase();
-  return name.toUpperCase();
-}
-
 function formatPastDate(dateStr: string) {
   const d = new Date(dateStr);
   const now = new Date();
@@ -68,15 +56,38 @@ function formatPastDate(dateStr: string) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function formatTime(t: string | undefined): string {
+  if (!t) return '—';
+  if (/^\d{1,2}:\d{2}$/.test(t)) return t;
+  const idx = t.indexOf('T');
+  if (idx !== -1) return t.slice(idx + 1, idx + 6);
+  return t.slice(0, 5);
+}
+
+function formatCardDate(b: Booking, isHistory: boolean): string {
+  const dateStr = b.trip.departureDate ?? b.createdAt;
+  if (!dateStr) return '—';
+  if (isHistory) return formatPastDate(dateStr);
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function getPaymentLabel(booking: Booking): string {
+  return booking.paymentStatus === 'pending' ? 'Pending' : 'Paid';
+}
+
+type FilterTab = 'upcoming' | 'history';
+
 export default function PassengerMyRidesScreen() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const c = useThemeColors();
-  const roleTheme = useRoleTheme();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshState, setRefreshState] = useState<'idle' | 'refreshing' | 'done'>('idle');
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterTab>('upcoming');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [ratingsByBooking, setRatingsByBooking] = useState<Record<string, number>>({});
   const [ratingLoadingId, setRatingLoadingId] = useState<string | null>(null);
@@ -137,9 +148,10 @@ export default function PassengerMyRidesScreen() {
     }, [refresh])
   );
 
-  const upcoming = bookings.filter((b) => b.status === 'upcoming');
-  const completed = bookings.filter((b) => b.status === 'completed');
-  const firstUpcoming = upcoming[0] ?? null;
+  const filteredBookings =
+    filter === 'upcoming'
+      ? bookings.filter((b) => b.status === 'upcoming' || b.status === 'ongoing')
+      : bookings.filter((b) => b.status === 'completed' || b.status === 'cancelled');
 
   const toggleExpanded = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
@@ -214,13 +226,33 @@ export default function PassengerMyRidesScreen() {
   };
 
   return (
-    <Screen
-      contentInset={false}
-      style={[styles.container, { backgroundColor: c.appBackground }]}
-      scroll
-      contentContainerStyle={[styles.scrollContent, { paddingBottom: listBottomPaddingTab }]}
-      scrollProps={{
-        refreshControl: (
+    <Screen contentInset={false} style={[styles.container, { backgroundColor: c.appBackground }]}>
+      {/* Sticky header: Your Rides + Upcoming | History tabs */}
+      <View style={[styles.stickyHeader, { backgroundColor: c.card, borderBottomColor: c.borderLight, paddingTop: insets.top + spacing.md, paddingHorizontal: landingHeaderPaddingHorizontal }]}>
+        <Text style={[styles.headerTitle, { color: c.text }]}>Your Rides</Text>
+        <View style={styles.tabRow}>
+          <TouchableOpacity style={styles.tabWrap} onPress={() => setFilter('upcoming')}>
+            <Text style={[styles.tabLabel, { color: filter === 'upcoming' ? c.primary : c.textMuted }]}>Upcoming</Text>
+            {filter === 'upcoming' && <View style={[styles.tabIndicator, { backgroundColor: c.primary }]} />}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tabWrap} onPress={() => setFilter('history')}>
+            <Text style={[styles.tabLabel, { color: filter === 'history' ? c.primary : c.textMuted }]}>History</Text>
+            {filter === 'history' && <View style={[styles.tabIndicator, { backgroundColor: c.primary }]} />}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {loadError ? (
+        <View style={[styles.errorBanner, { backgroundColor: c.surfaceElevated, borderColor: c.error, marginHorizontal: landingHeaderPaddingHorizontal, marginTop: spacing.md }]}>
+          <Text style={[styles.errorText, { color: c.error }]}>{loadError}</Text>
+          <Button title="Retry" onPress={() => void refresh()} />
+        </View>
+      ) : null}
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: listBottomPaddingTab }]}
+        refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
@@ -228,285 +260,420 @@ export default function PassengerMyRidesScreen() {
             tintColor={c.primary}
             progressBackgroundColor={c.background}
           />
-        ),
-      }}
-    >
-      {loadError ? (
-        <View style={[styles.errorBanner, { backgroundColor: c.surfaceElevated, borderColor: c.error }]}>
-          <Text style={[styles.errorText, { color: c.error }]}>{loadError}</Text>
-          <Button title="Retry" onPress={() => void refresh()} />
-        </View>
-      ) : null}
-
-      <LandingHeader title="My Travels" subtitle="Tracking your city hops" />
-
-      {/* Upcoming: one prominent card */}
-      <View style={[styles.section, { paddingHorizontal: landingHeaderPaddingHorizontal }]}>
-        <Text style={[styles.sectionOverline, { color: c.textMuted }]}>Upcoming</Text>
-        {firstUpcoming ? (
-          <TouchableOpacity
-            style={[styles.upcomingCard, { backgroundColor: c.card, borderWidth: 1, borderColor: c.borderLight }, cardShadow]}
-            onPress={() => navigation.navigate('TicketDetail', { bookingId: firstUpcoming.id })}
-            activeOpacity={0.9}
-          >
-            <View style={styles.upcomingCardTop}>
-              <View style={[styles.confirmedBadge, { backgroundColor: (c[getStatusTintKey(getStatusColorKey(getBookingDisplayStatus(firstUpcoming)))] as string) }]}>
-                <Text style={[styles.confirmedBadgeText, { color: c[getStatusColorKey(getBookingDisplayStatus(firstUpcoming))] as string }]}>{getBookingStatusLabel(firstUpcoming)}</Text>
-              </View>
-              <Text style={[styles.upcomingTime, { color: c.text }]}>{formatUpcomingTime(firstUpcoming)}</Text>
+        }
+      >
+        {filteredBookings.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: c.surface }]}>
+              <Ionicons name="time-outline" size={32} color={c.textMuted} />
             </View>
-            <View style={styles.upcomingRouteRow}>
-              <View style={styles.routeBlock}>
-                <Text style={[styles.routeCode, { color: c.text }]}>{routeCode(firstUpcoming.trip.departureHotpoint.name)}</Text>
-                <Text style={[styles.routeCity, { color: c.textSecondary }]}>{firstUpcoming.trip.departureHotpoint.name}</Text>
-              </View>
-              <View style={styles.routeDots}>
-                <View style={[styles.routeDot, { backgroundColor: c.primary }]} />
-                <View style={[styles.routeLine, { borderColor: c.border }]} />
-                <Ionicons name="arrow-forward" size={16} color={c.textMuted} />
-                <View style={[styles.routeLine, { borderColor: c.border }]} />
-                <View style={[styles.routeDot, { backgroundColor: c.border }]} />
-              </View>
-              <View style={styles.routeBlock}>
-                <Text style={[styles.routeCode, { color: c.text }]}>{routeCode(firstUpcoming.trip.destinationHotpoint.name)}</Text>
-                <Text style={[styles.routeCity, { color: c.textSecondary }]}>{firstUpcoming.trip.destinationHotpoint.name}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ) : (
-          <View style={[styles.upcomingEmpty, { backgroundColor: c.card, borderColor: c.borderLight }]}>
-            <Text style={[styles.upcomingEmptyText, { color: c.textMuted }]}>No upcoming trips</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Past Week */}
-      <View style={[styles.section, { paddingHorizontal: landingHeaderPaddingHorizontal }]}>
-        <Text style={[styles.sectionOverline, { color: c.textMuted }]}>Past Week</Text>
-        {completed.length === 0 ? (
-          <View style={[styles.pastEmpty, { backgroundColor: c.card, borderColor: c.borderLight }]}>
-            <Text style={[styles.pastEmptyText, { color: c.textMuted }]}>No past trips yet</Text>
+            <Text style={[styles.emptyTitle, { color: c.text }]}>No rides yet</Text>
+            <Text style={[styles.emptySubtitle, { color: c.textMuted }]}>
+              Your {filter === 'upcoming' ? 'Upcoming' : 'History'} trips will appear here.
+            </Text>
           </View>
         ) : (
-          <View style={styles.pastList}>
-            {completed.map((item) => {
-              const amountTotal = item.seats * item.trip.pricePerSeat;
-              const dateLabel = item.trip.departureDate ? formatPastDate(item.trip.departureDate) : (item.createdAt ? formatPastDate(item.createdAt) : '—');
-              const isExpanded = expandedId === item.id;
-              return (
-                <View key={item.id} style={[styles.pastCardWrap, { backgroundColor: c.card, borderColor: c.borderLight }, cardShadow]}>
-                  <View style={styles.pastCardRow}>
-                    <View style={[styles.pastIconWrap, { backgroundColor: (c[getStatusTintKey(getStatusColorKey(getBookingDisplayStatus(item)))] as string) }]}>
-                      <Ionicons name="checkmark-done" size={20} color={c[getStatusColorKey(getBookingDisplayStatus(item))] as string} />
-                    </View>
-                    <TouchableOpacity
-                      style={styles.pastContent}
-                      onPress={() => toggleExpanded(item.id)}
-                    >
-                      <View style={styles.pastRouteRow}>
-                        <Text style={[styles.pastRoute, { color: c.text }]}>
-                          {item.trip.departureHotpoint.name} to {item.trip.destinationHotpoint.name}
-                        </Text>
-                        <View style={[styles.pastStatusPill, { backgroundColor: (c[getStatusTintKey(getStatusColorKey(getBookingDisplayStatus(item)))] as string) }]}>
-                          <Text style={[styles.pastStatusPillText, { color: c[getStatusColorKey(getBookingDisplayStatus(item))] as string }]}>{getBookingStatusLabel(item)}</Text>
-                        </View>
-                      </View>
-                      <Text style={[styles.pastMeta, { color: c.textMuted }]}>
-                        {dateLabel} • With {item.trip.driver.name}
-                      </Text>
-                    </TouchableOpacity>
-                    <Text style={[styles.pastPrice, { color: c.text }]}>
-                      {Number(amountTotal).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF
-                    </Text>
-                    <ExpandActionButton expanded={isExpanded} onPress={() => toggleExpanded(item.id)} />
-                  </View>
-                  {isExpanded ? (
-                    <View style={styles.pastExpanded}>
-                      <ExpansionDetailsCard
-                        tone="passenger"
-                        title="Ticket & trip details"
-                        rows={[
-                          { icon: 'ticket', label: 'Ticket number', value: item.ticketNumber ?? '—' },
-                          { icon: 'flag', label: 'Status', value: getBookingStatusLabel(item) },
-                          { icon: 'cash', label: 'Amount', value: `${Number(amountTotal).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF` },
-                        ]}
-                      />
-                      <View style={styles.actionRow}>
-                        <TouchableOpacity
-                          style={[styles.actionBtn, { borderColor: c.primary, backgroundColor: c.primaryTint }]}
-                          onPress={() => navigation.navigate('TicketDetail', { bookingId: item.id })}
-                        >
-                          <Ionicons name="document-text-outline" size={14} color={c.primary} />
-                          <Text style={[styles.actionText, { color: c.text }]}>View ticket</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[styles.actionBtn, { borderColor: c.primary, backgroundColor: c.primaryTint }]}
-                          onPress={() => void onDownloadTicket(item.id)}
-                        >
-                          <Ionicons name="download-outline" size={14} color={c.primary} />
-                          <Text style={[styles.actionText, { color: c.text }]}>Download PDF</Text>
-                        </TouchableOpacity>
-                      </View>
-                      {item.status === 'completed' ? (
-                        <View style={[styles.ratingCard, { backgroundColor: c.surfaceElevated, borderColor: c.borderLight }]}>
-                          <Text style={[styles.ratingTitle, { color: c.textSecondary }]}>Rate this driver</Text>
-                          <View style={styles.ratingRow}>
-                            {[1, 2, 3, 4, 5].map((score) => (
-                              <TouchableOpacity
-                                key={`${item.id}-${score}`}
-                                onPress={() => void onRateDriver(item, score)}
-                                disabled={ratingLoadingId === item.id || ratingsByBooking[item.id] != null}
-                                style={styles.starBtn}
-                              >
-                                <Ionicons
-                                  name={score <= (ratingsByBooking[item.id] ?? 0) ? 'star' : 'star-outline'}
-                                  size={18}
-                                  color={c.primary}
-                                />
-                              </TouchableOpacity>
-                            ))}
-                          </View>
-                          {ratingsByBooking[item.id] != null && (
-                            <Text style={[styles.ratingLocked, { color: c.textMuted }]}>Thanks, you already submitted a rating.</Text>
-                          )}
-                        </View>
-                      ) : null}
-                    </View>
-                  ) : null}
-                </View>
-              );
-            })}
+          <View style={[styles.cardList, { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.md }]}>
+            {filteredBookings.map((item) => (
+              <TripCard
+                key={item.id}
+                booking={item}
+                isExpanded={expandedId === item.id}
+                onToggleExpand={() => toggleExpanded(item.id)}
+                onViewTicket={() => navigation.navigate('TicketDetail', { bookingId: item.id })}
+                onCancel={() => onCancelBooking(item)}
+                onRateDriver={(score) => onRateDriver(item, score)}
+                rating={ratingsByBooking[item.id]}
+                ratingLoading={ratingLoadingId === item.id}
+                isHistory={filter === 'history'}
+                colors={c}
+              />
+            ))}
           </View>
         )}
-      </View>
-
+      </ScrollView>
       <CarRefreshIndicator state={refreshState} />
     </Screen>
   );
 }
 
+function TripCard({
+  booking,
+  isExpanded,
+  onToggleExpand,
+  onViewTicket,
+  onCancel,
+  onRateDriver,
+  rating,
+  ratingLoading,
+  isHistory,
+  colors: c,
+}: {
+  booking: Booking;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onViewTicket: () => void;
+  onCancel: () => void;
+  onRateDriver: (score: number) => void;
+  rating: number | undefined;
+  ratingLoading: boolean;
+  isHistory: boolean;
+  colors: Record<string, string>;
+}) {
+  const total = booking.seats * booking.trip.pricePerSeat;
+  const depTime = formatTime(booking.trip.departureTime);
+  const arrTime = formatTime(booking.trip.arrivalTime);
+  const fromName = booking.trip.departureHotpoint.name;
+  const toName = booking.trip.destinationHotpoint.name;
+  const dateLabel = formatCardDate(booking, isHistory);
+  const refLabel = booking.ticketNumber ?? booking.id.slice(0, 8).toUpperCase();
+  const displayStatus = getBookingDisplayStatus(booking);
+  const isCompleted = booking.status === 'completed';
+
+  return (
+    <View style={[styles.card, { backgroundColor: c.card, borderColor: isExpanded ? c.primary : c.borderLight }, cardShadow]}>
+      <TouchableOpacity style={styles.cardMain} onPress={onToggleExpand} activeOpacity={0.9}>
+        <View style={styles.cardTopRow}>
+          <View style={[styles.statusPill, { backgroundColor: (c[getStatusTintKey(getStatusColorKey(displayStatus))] as string) }]}>
+            <Text style={[styles.statusPillText, { color: c[getStatusColorKey(displayStatus)] as string }]}>{getBookingStatusLabel(booking)}</Text>
+          </View>
+          <View style={[styles.paymentPill, { backgroundColor: c.primaryTint }]}>
+            <Ionicons name="checkmark-circle" size={12} color={c.primary} />
+            <Text style={[styles.paymentPillText, { color: c.primary }]}>{getPaymentLabel(booking)}</Text>
+          </View>
+        </View>
+        <View style={styles.cardTimesRow}>
+          <View style={styles.timesCol}>
+            <Text style={[styles.timeText, { color: c.text }]}>{depTime}</Text>
+            <View style={[styles.timeLine, { backgroundColor: c.borderLight }]} />
+            <Text style={[styles.timeText, { color: c.text }]}>{arrTime}</Text>
+          </View>
+          <View style={styles.placesCol}>
+            <View>
+              <Text style={[styles.placeText, { color: c.text }]} numberOfLines={1}>{fromName}</Text>
+              <Text style={[styles.dateSubtext, { color: c.textMuted }]}>{dateLabel}</Text>
+            </View>
+            <Text style={[styles.placeText, { color: c.text }]} numberOfLines={1}>{toName}</Text>
+          </View>
+          <View style={styles.priceCol}>
+            <Text style={[styles.priceText, { color: c.text }]}>{Number(total).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF</Text>
+            <Text style={[styles.refText, { color: c.textMuted }]}>Ref: {refLabel}</Text>
+          </View>
+        </View>
+        <View style={[styles.driverRow, { borderTopColor: c.borderLight }]}>
+          {booking.trip.driver.avatarUri ? (
+            <Image source={{ uri: booking.trip.driver.avatarUri }} style={styles.driverAvatar} />
+          ) : (
+            <View style={[styles.driverAvatar, { backgroundColor: c.primaryTint }]}>
+              <Ionicons name="person" size={20} color={c.primary} />
+            </View>
+          )}
+          <View style={styles.driverInfo}>
+            <Text style={[styles.driverName, { color: c.text }]} numberOfLines={1}>{booking.trip.driver.name}</Text>
+            <Text style={[styles.driverCar, { color: c.textMuted }]} numberOfLines={1}>
+              {booking.trip.vehicle ? `${booking.trip.vehicle.make} ${booking.trip.vehicle.model}` : '—'}
+            </Text>
+          </View>
+          {!isCompleted && (
+            <TouchableOpacity style={[styles.contactBtn, { backgroundColor: c.primaryTint }]} onPress={() => {}}>
+              <Text style={[styles.contactBtnText, { color: c.primary }]}>Contact</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={onToggleExpand} style={styles.chevronWrap}>
+            <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={20} color={c.textMuted} />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+
+      {isExpanded && (
+        <View style={[styles.expanded, { backgroundColor: c.surface ?? c.ghostBg }]}>
+          <View style={styles.ridePathSection}>
+            <View style={styles.ridePathLabelRow}>
+              <Ionicons name="navigate" size={12} color={c.textMuted} />
+              <Text style={[styles.ridePathLabel, { color: c.textMuted }]}>Ride Path</Text>
+            </View>
+            <View style={styles.ridePathRow}>
+              <View style={styles.ridePathTrack}>
+                <View style={[styles.ridePathDot, { borderColor: c.primary, backgroundColor: c.card }]} />
+                <View style={[styles.ridePathDashed, { borderColor: c.borderLight }]} />
+                <View style={[styles.ridePathDot, { borderColor: c.primary, backgroundColor: c.card }]} />
+              </View>
+              <View style={styles.ridePathLabels}>
+                <Text style={[styles.ridePathPlace, { color: c.text }]}>{fromName}</Text>
+                <Text style={[styles.ridePathPlace, { color: c.text }]}>{toName}</Text>
+              </View>
+            </View>
+          </View>
+          <View style={[styles.bookingDetailsCard, { backgroundColor: c.card, borderColor: c.borderLight }]}>
+            <View style={styles.bookingDetailRow}>
+              <View style={styles.bookingDetailLabelRow}>
+                <Ionicons name="receipt-outline" size={14} color={c.textMuted} />
+                <Text style={[styles.bookingDetailLabel, { color: c.textMuted }]}>Total Paid</Text>
+              </View>
+              <Text style={[styles.bookingDetailValue, { color: c.text }]}>{Number(total).toLocaleString('en-RW', { maximumFractionDigits: 0 })} RWF</Text>
+            </View>
+            <View style={[styles.bookingDetailRow, { marginBottom: 0 }]}>
+              <View style={styles.bookingDetailLabelRow}>
+                <Ionicons name="person-outline" size={14} color={c.textMuted} />
+                <Text style={[styles.bookingDetailLabel, { color: c.textMuted }]}>Passenger</Text>
+              </View>
+              <Text style={[styles.bookingDetailValue, { color: c.text }]}>You ({booking.seats} seat{booking.seats > 1 ? 's' : ''})</Text>
+            </View>
+          </View>
+          {!isCompleted && (
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={[styles.primaryActionBtn, { backgroundColor: c.primary }]} onPress={onViewTicket}>
+                <Text style={[styles.primaryActionText, { color: c.onPrimary ?? c.text }]}>View Ticket</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.cancelBtn, { borderColor: c.borderLight, backgroundColor: c.card }]} onPress={onCancel}>
+                <Text style={[styles.cancelBtnText, { color: c.error }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {isCompleted && (
+            <View style={[styles.ratingSection, { backgroundColor: c.surface }]}>
+              <Text style={[styles.ratingLabel, { color: c.textMuted }]}>Rate this driver</Text>
+              <View style={styles.starRow}>
+                {[1, 2, 3, 4, 5].map((score) => (
+                  <TouchableOpacity
+                    key={score}
+                    onPress={() => onRateDriver(score)}
+                    disabled={ratingLoading || rating != null}
+                    style={styles.starBtn}
+                  >
+                    <Ionicons name={score <= (rating ?? 0) ? 'star' : 'star-outline'} size={22} color={c.primary} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {rating != null && <Text style={[styles.ratingThanks, { color: c.textMuted }]}>Thanks, you already submitted a rating.</Text>}
+            </View>
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { paddingTop: screenContentStartPaddingTop },
+  stickyHeader: {
+    borderBottomWidth: 1,
+    paddingBottom: spacing.sm,
+  },
+  headerTitle: {
+    ...typography.h2,
+    fontWeight: '800',
+    marginBottom: spacing.lg,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: 'transparent',
+  },
+  tabWrap: {
+    paddingBottom: spacing.sm,
+    position: 'relative',
+  },
+  tabLabel: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+  },
   errorBanner: {
-    marginBottom: spacing.md,
     padding: spacing.md,
     borderRadius: radii.md,
     borderWidth: borderWidths.thin,
     gap: spacing.sm,
   },
   errorText: { ...typography.body },
-  section: { marginBottom: spacing.xl },
-  sectionOverline: {
-    ...typography.bodySmall,
-    fontWeight: '800',
-    letterSpacing: 2,
-    marginBottom: spacing.lg,
-    paddingLeft: spacing.sm,
-  },
-  upcomingCard: {
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-  },
-  upcomingCardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
+  emptyWrap: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    paddingVertical: 48,
+    paddingHorizontal: spacing.xl,
   },
-  confirmedBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-    borderRadius: radii.full,
-  },
-  confirmedBadgeText: {
-    ...typography.overline,
-    letterSpacing: 1,
-  },
-  upcomingTime: { ...typography.bodySmall, fontWeight: '700', opacity: 0.9 },
-  upcomingRouteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  routeBlock: { flex: 1, alignItems: 'center' },
-  routeCode: { ...typography.timeLg },
-  routeCity: { ...typography.bodySmall, opacity: 0.7, marginTop: tightGap },
-  routeDots: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-  },
-  routeDot: { width: sizes.timelineDot, height: sizes.timelineDot, borderRadius: spacing.xs },
-  routeLine: { width: spacing.lg, height: dividerHeight, borderTopWidth: borderWidths.thin, marginHorizontal: spacing.xs },
-  upcomingEmpty: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: radii.lg,
-    paddingVertical: spacing.xl,
+  emptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: spacing.md,
   },
-  upcomingEmptyText: { ...typography.body },
-  pastList: { gap: spacing.md },
-  pastCardWrap: {
-    borderRadius: radii.lg,
-    borderWidth: 1,
+  emptyTitle: { ...typography.body, fontWeight: '700', fontSize: 16 },
+  emptySubtitle: { ...typography.bodySmall, marginTop: spacing.xs, textAlign: 'center' },
+  cardList: { gap: spacing.md, paddingBottom: spacing.md },
+  card: {
+    borderRadius: radii.xl,
+    borderWidth: 2,
     overflow: 'hidden',
   },
-  pastCardRow: {
+  cardMain: { padding: spacing.md },
+  cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
-  pastExpanded: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
-  pastIconWrap: {
-    width: sizes.avatar.md,
-    height: sizes.avatar.md,
-    borderRadius: radii.md,
+  statusPill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.sm,
+  },
+  statusPillText: {
+    ...typography.overline,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  paymentPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.sm,
+  },
+  paymentPillText: { ...typography.overline, fontSize: 10, fontWeight: '700' },
+  cardTimesRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  timesCol: {
+    alignItems: 'center',
+  },
+  timeText: { ...typography.body, fontWeight: '800', fontSize: 18 },
+  timeLine: {
+    width: 2,
+    height: 24,
+    marginVertical: spacing.xs,
+  },
+  placesCol: { flex: 1, minWidth: 0, justifyContent: 'space-between' },
+  placeText: { ...typography.body, fontWeight: '600' },
+  dateSubtext: { ...typography.overline, fontSize: 10, marginTop: 2 },
+  priceCol: { alignItems: 'flex-end' },
+  priceText: { ...typography.body, fontWeight: '800', fontSize: 18 },
+  refText: { ...typography.overline, fontSize: 10, marginTop: 2 },
+  driverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: spacing.sm,
+    marginTop: spacing.sm,
+    borderTopWidth: 1,
+    gap: spacing.sm,
+  },
+  driverAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  driverInfo: { flex: 1, minWidth: 0 },
+  driverName: { ...typography.bodySmall, fontWeight: '700' },
+  driverCar: { ...typography.bodySmall, fontSize: 12, marginTop: 2 },
+  contactBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radii.md,
+  },
+  contactBtnText: { ...typography.bodySmall, fontWeight: '700' },
+  chevronWrap: { padding: spacing.xs },
+  expanded: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  ridePathSection: { marginBottom: spacing.lg },
+  ridePathLabelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
+  ridePathLabel: {
+    ...typography.overline,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  ridePathRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  ridePathTrack: {
+    alignItems: 'center',
     marginRight: spacing.md,
   },
-  pastContent: { flex: 1, minWidth: 0 },
-  pastRouteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  pastRoute: { ...typography.body, fontWeight: '700', flex: 1 },
-  pastStatusPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs, borderRadius: radii.xs },
-  pastStatusPillText: { ...typography.caption9 },
-  pastMeta: { ...typography.bodySmall, marginTop: tightGap },
-  pastPrice: { ...typography.bodyBold, fontWeight: '800' },
-  actionRow: {
-    ...sharedStyles.listRow,
-    flexWrap: 'wrap',
-    marginTop: spacing.md,
+  ridePathDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
   },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: buttonHeights.small,
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: borderWidths.thin,
-  },
-  actionText: { ...typography.bodySmall, fontWeight: '700' },
-  ratingCard: {
-    marginTop: spacing.md,
-    borderWidth: borderWidths.thin,
-    borderRadius: radii.md,
-    padding: spacing.md,
-  },
-  ratingTitle: { ...typography.bodySmall, fontWeight: '700', marginBottom: spacing.sm },
-  ratingRow: { flexDirection: 'row', gap: spacing.sm },
-  starBtn: { padding: spacing.sm },
-  ratingLocked: { ...typography.bodySmall, marginTop: spacing.sm },
-  pastEmpty: {
-    borderWidth: 1,
+  ridePathDashed: {
+    width: 2,
+    flex: 1,
+    minHeight: 20,
+    marginVertical: 2,
+    borderLeftWidth: 2,
     borderStyle: 'dashed',
+  },
+  ridePathLabels: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingVertical: 0,
+    minHeight: 44,
+  },
+  ridePathPlace: { ...typography.bodySmall, fontWeight: '700' },
+  bookingDetailsCard: {
     borderRadius: radii.lg,
-    paddingVertical: spacing.xl,
+    borderWidth: 1,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  bookingDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  bookingDetailLabelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  bookingDetailLabel: { ...typography.bodySmall },
+  bookingDetailValue: { ...typography.bodySmall, fontWeight: '700' },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  primaryActionBtn: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pastEmptyText: { ...typography.body },
+  primaryActionText: { ...typography.body, fontWeight: '700' },
+  cancelBtn: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelBtnText: { ...typography.bodySmall, fontWeight: '700' },
+  ratingSection: {
+    borderRadius: radii.lg,
+    padding: spacing.md,
+  },
+  ratingLabel: { ...typography.bodySmall, fontWeight: '700', marginBottom: spacing.sm },
+  starRow: { flexDirection: 'row', gap: spacing.sm },
+  starBtn: { padding: spacing.xs },
+  ratingThanks: { ...typography.bodySmall, marginTop: spacing.sm },
 });
