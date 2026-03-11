@@ -1,11 +1,17 @@
 /**
- * Single API facade: when EXPO_PUBLIC_USE_REAL_API is true, calls the local API server;
- * otherwise delegates to mockApi and mockPersistence.
+ * Single API facade: when EXPO_PUBLIC_USE_REAL_API is not 'false', the app calls the API server;
+ * set EXPO_PUBLIC_USE_REAL_API=false to use in-app mocks (mockApi and mockPersistence).
  */
+import { Platform } from 'react-native';
 import type { User, Trip, DriverInstantQueueEntry } from '../types';
 
-const USE_REAL_API = process.env.EXPO_PUBLIC_USE_REAL_API === 'true';
-const API_BASE = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+const USE_REAL_API = process.env.EXPO_PUBLIC_USE_REAL_API !== 'false';
+const rawBase = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+// Android Emulator: localhost is the emulator; use 10.0.2.2 to reach the host. iOS Simulator / web: localhost is correct.
+const API_BASE =
+  Platform.OS === 'android' && (rawBase.includes('localhost') || rawBase.includes('127.0.0.1'))
+    ? rawBase.replace(/localhost|127\.0\.0\.1/g, '10.0.2.2')
+    : rawBase;
 
 async function request<T>(
   method: string,

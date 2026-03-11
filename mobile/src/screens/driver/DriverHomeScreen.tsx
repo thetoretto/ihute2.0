@@ -835,11 +835,11 @@ const styles = StyleSheet.create({
   route: { ...typography.body, color: colors.text, flex: 1 },
   time: { ...typography.caption, color: colors.textSecondary },
   meta: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
-  // Driver mockup
-  driverMockupWrapper: { flex: 1 },
-  driverMockupScroll: { flex: 1 },
-  driverMockupScrollContent: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.md },
-  driverMockupHeader: {
+  // Driver home
+  driverHomeWrapper: { flex: 1 },
+  driverHomeScroll: { flex: 1 },
+  driverHomeScrollContent: { paddingHorizontal: landingHeaderPaddingHorizontal, paddingTop: spacing.md },
+  driverHomeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

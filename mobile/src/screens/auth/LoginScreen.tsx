@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { Input, Button, Screen } from '../../components';
 import { useThemeColors } from '../../context/ThemeContext';
-import { colors, spacing, typography, radii, buttonHeights } from '../../utils/theme';
+import { colors, spacing, typography, radii, buttonHeights, sizes } from '../../utils/theme';
 import { strings } from '../../constants/strings';
 
 export default function LoginScreen() {
@@ -35,7 +35,15 @@ export default function LoginScreen() {
     try {
       await login(normalizedEmail, normalizedPassword);
     } catch (e) {
-      setError(e instanceof Error ? e.message : strings.auth.couldNotSignIn);
+      const msg = e instanceof Error ? e.message : String(e);
+      const isNetworkError =
+        /network request failed|failed to fetch|could not connect|connection refused|timeout/i.test(msg) ||
+        msg === 'Network Error';
+      setError(
+        isNetworkError
+          ? 'Cannot reach server. Set EXPO_PUBLIC_API_BASE_URL in mobile/.env to your PC IP (run ipconfig for IPv4), e.g. http://192.168.1.105:3000, then restart Expo.'
+          : msg
+      );
     } finally {
       setLoading(false);
     }
@@ -51,6 +59,11 @@ export default function LoginScreen() {
 
   return (
     <Screen style={styles.container}>
+      <View style={styles.brandWrap}>
+        <Image source={require('../../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+        <Text style={[styles.appName, { color: c.text }]}>{strings.app.name}</Text>
+        <Text style={[styles.appSlogan, { color: c.textSecondary }]}>{strings.app.slogan}</Text>
+      </View>
       <Text style={[styles.title, { color: c.text }]}>{strings.auth.welcomeBack}</Text>
       <Text style={[styles.subtitle, { color: c.textSecondary }]}>{strings.auth.signInContinue}</Text>
       <Text style={[styles.helper, { color: c.textMuted }]}>{strings.auth.helperAccounts}</Text>
@@ -129,6 +142,24 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
+  },
+  brandWrap: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  logo: {
+    width: sizes.logo.width * 1.5,
+    height: sizes.logo.height * 1.5,
+    marginBottom: spacing.xs,
+  },
+  appName: {
+    ...typography.h1,
+    letterSpacing: 0.8,
+    textTransform: 'lowercase',
+  },
+  appSlogan: {
+    ...typography.caption,
+    marginTop: spacing.xs,
   },
   title: { ...typography.h1, color: colors.text },
   subtitle: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.xl },

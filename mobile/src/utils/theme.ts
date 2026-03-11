@@ -41,6 +41,9 @@ const ELEVATION_2 = '#252D38';
 /** Text on red/agency buttons (not in core 6). */
 const ON_ACCENT = '#FFFFFF';
 
+/** Landing / display headline – deep brand teal (spec: #054752). Used for title and secondary/muted text. */
+const DISPLAY_HEADLINE = '#054752';
+
 export const corePalette = {
   dark: CORE_DARK,
   cream: CORE_CREAM,
@@ -68,14 +71,14 @@ export const colors = {
 
   // --- Text hierarchy ---
   text: CORE_DARK,
-  textSecondary: CORE_MUTED,
-  textMuted: CORE_MUTED,
+  textSecondary: DISPLAY_HEADLINE,
+  textMuted: DISPLAY_HEADLINE,
   onPrimary: CORE_DARK,
   buttonPrimaryText: CORE_DARK,
-  buttonSecondaryText: CORE_MUTED,
+  buttonSecondaryText: DISPLAY_HEADLINE,
   primaryTextOnLight: CORE_DARK,
-  ghostText: CORE_MUTED,
-  neutral: CORE_MUTED,
+  ghostText: DISPLAY_HEADLINE,
+  neutral: DISPLAY_HEADLINE,
 
   // --- Primary & CTA ---
   primary: CORE_YELLOW,
@@ -145,7 +148,7 @@ export const colors = {
   /** Shadow for cards (design system). */
   cardShadowColor: CORE_DARK,
   /** Landing / no-bar display headline – deep brand dark (spec: #054752). */
-  displayHeadlineColor: '#054752',
+  displayHeadlineColor: DISPLAY_HEADLINE,
 
   // --- Role (passenger, driver, agency) – spec colors ---
   passengerBrand: CORE_YELLOW,

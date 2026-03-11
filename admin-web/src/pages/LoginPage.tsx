@@ -45,7 +45,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           <img src="/logo.png" className="h-16 w-auto rounded-xl block mb-1" alt="ihute" />
         </div>
         <h1 className="text-2xl font-black text-dark m-0 mb-1">Admin Portal</h1>
-        <p className="text-sm text-muted m-0 mb-7">Sign in to manage ihute operations</p>
+        <p className="text-sm text-muted m-0 mb-7">Sign in to manage ihute operations. Ride smart, ride safe.</p>
 
         <form className="flex flex-col gap-4 mb-6" onSubmit={handleSubmit} noValidate>
           <div className="flex flex-col gap-1.5">

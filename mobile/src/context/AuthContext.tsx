@@ -79,13 +79,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    setIsLoading(true);
     try {
       const u = await apiLogin(email, password);
       setUser(u);
       await updateMockStore({ authUserId: u.id });
-    } finally {
-      setIsLoading(false);
+    } catch (e) {
+      throw e;
     }
   }, []);
 

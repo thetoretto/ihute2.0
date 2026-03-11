@@ -11,14 +11,17 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [colorScheme, setColorScheme] = useState<ColorScheme>('light');
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    const resolved = colorScheme === 'dark' ? colorsDark : colors;
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e2426e2f-6eb8-4ea6-91af-e79e0dbac3a5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cd236f'},body:JSON.stringify({sessionId:'cd236f',location:'ThemeContext.tsx:ThemeProvider',message:'Theme resolved',data:{colorScheme,textSecondary:resolved.textSecondary,textMuted:resolved.textMuted,isTeal:resolved.textSecondary==='#054752'},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+    // #endregion
+    return {
       colorScheme,
       setColorScheme,
-      colors: colorScheme === 'dark' ? colorsDark : colors,
-    }),
-    [colorScheme]
-  );
+      colors: resolved,
+    };
+  }, [colorScheme]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 

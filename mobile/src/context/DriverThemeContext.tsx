@@ -2,7 +2,7 @@ import { useThemeColors } from './ThemeContext';
 import { radii } from '../utils/theme';
 
 /**
- * Driver app theme: mockup palette (teal/cyan) + large card radii.
+ * Driver app theme: teal/cyan palette + large card radii.
  * Use only in driver screens and driver tab bar.
  */
 export function useDriverTheme() {

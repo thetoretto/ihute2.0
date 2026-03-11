@@ -4,7 +4,8 @@
  */
 export const strings = {
   app: {
-    name: 'iHute',
+    name: 'ihute',
+    slogan: 'ride smart ride safe',
   },
 
   tabs: {
@@ -57,7 +58,7 @@ export const strings = {
 
   home: {
     greeting: (name: string) => `Hello, ${name}!`,
-    tagline: 'Bus, train, carpool: iHute takes you where you want.',
+    tagline: 'Bus, train, carpool: ihute takes you where you want.',
   },
 
   profile: {

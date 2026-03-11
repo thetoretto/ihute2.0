@@ -542,7 +542,7 @@ function useRootHeaderOptions() {
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, isProfileComplete, isLoading } = useAuth();
+  const { isAuthenticated, isProfileComplete, isLoading, user } = useAuth();
   const { currentRole } = useRole();
   const rootHeaderOptions = useRootHeaderOptions();
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
@@ -574,8 +574,9 @@ export default function AppNavigator() {
   return (
     <OnboardingContext.Provider value={hasSeenOnboarding === false ? { completeOnboarding } : null}>
       <RootNavigationProvider rootNavRef={rootNavRef}>
-        <NavigationContainer ref={rootNavRef}>
+        <NavigationContainer key={`nav-${initialRoute}-${user?.id ?? 'guest'}`} ref={rootNavRef}>
           <RootStack.Navigator
+          key={`stack-${initialRoute}`}
           initialRouteName={initialRoute}
           screenOptions={{ headerShown: false, animation: 'fade' }}
         >

@@ -16,7 +16,6 @@ import {
   LogOut,
   Search,
   Bell,
-  Zap,
   Menu,
   X,
 } from 'lucide-react';
@@ -144,9 +143,7 @@ function Layout({ user, onLogout }: LayoutProps) {
       >
         <div className="p-6 lg:p-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-dark rounded-xl flex items-center justify-center shrink-0">
-              <Zap className="text-primary" size={24} fill="currentColor" />
-            </div>
+            <img src="/logo.png" alt="" className="w-10 h-10 rounded-xl object-contain shrink-0" />
             <span className="font-black text-2xl tracking-tight text-dark">ihute</span>
           </div>
           <button

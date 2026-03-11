@@ -1,4 +1,4 @@
-import React, { useState, useRef, useContext } from 'react';
+import React, { useState, useRef, useContext, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,15 @@ import {
   FlatList,
   TouchableOpacity,
   useWindowDimensions,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { OnboardingContext } from '../../context/OnboardingContext';
-import { colors, spacing, radii, typography } from '../../utils/theme';
+import { colors, spacing, radii, typography, sizes } from '../../utils/theme';
 import { Button } from '../../components';
+import { strings } from '../../constants/strings';
 
 const ONBOARDING_STORAGE_KEY = '@ihute_has_seen_onboarding';
 
@@ -69,11 +71,18 @@ export default function OnboardingScreen() {
     completeOnboarding();
   };
 
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7242/ingest/e2426e2f-6eb8-4ea6-91af-e79e0dbac3a5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cd236f'},body:JSON.stringify({sessionId:'cd236f',location:'OnboardingScreen.tsx',message:'Onboarding branding shown',data:{appName:strings.app.name,slogan:strings.app.slogan,logoPath:'../../../assets/logo.png'},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+  }, []);
+  // #endregion
+
   return (
     <View style={styles.container}>
       <View style={styles.brandBar}>
-        <Text style={styles.brandTitle}>ihute</Text>
-        <Text style={styles.brandSubtitle}>Smart regional rides</Text>
+        <Image source={require('../../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+        <Text style={styles.brandTitle}>{strings.app.name}</Text>
+        <Text style={styles.brandSubtitle}>{strings.app.slogan}</Text>
       </View>
       <FlatList
         ref={flatRef}
@@ -121,6 +130,11 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
+  },
+  logo: {
+    width: sizes.logo.width * 1.5,
+    height: sizes.logo.height * 1.5,
+    marginBottom: spacing.sm,
   },
   brandTitle: {
     ...typography.h1,

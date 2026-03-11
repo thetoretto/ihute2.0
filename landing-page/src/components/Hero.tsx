@@ -33,11 +33,10 @@ export default function Hero({ onSearch }: HeroProps) {
     <section className="rs-hero" id="hero">
       <div className="rs-hero-inner">
         <h1>
-          Travel light, <br />
-          <span className="accent">travel together.</span>
+          ihute
         </h1>
         <p className="rs-hero-sub">
-          Connect with drivers heading your way. Simple, affordable, and sustainable travel across East Africa.
+          ride smart ride safe
         </p>
       </div>
 
