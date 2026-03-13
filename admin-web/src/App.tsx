@@ -18,6 +18,8 @@ import {
   Bell,
   Menu,
   X,
+  Settings,
+  FileText,
 } from 'lucide-react';
 import DashboardPage from './pages/DashboardPage';
 import UsersPage from './pages/UsersPage';
@@ -30,14 +32,18 @@ import TicketsPage from './pages/TicketsPage';
 import VehiclesPage from './pages/VehiclesPage';
 import ScannerOperatorsPage from './pages/ScannerOperatorsPage';
 import AgencyManagementPage from './pages/AgencyManagementPage';
+import SettingsPage from './pages/SettingsPage';
+import ScannerReportPage from './pages/ScannerReportPage';
 import LoginPage from './pages/LoginPage';
 import { AdminScopeProvider } from './context/AdminScopeContext';
+import { getStoredAuth, clearStoredAuth } from './services/auth';
 import type { AdminUser } from './types';
 
 const ROUTE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
   '/agency-management': 'Agencies',
   '/scanner-operators': 'Scanner operators',
+  '/scanner-report': 'Scanner report',
   '/users': 'Users',
   '/hotpoints': 'Hot points',
   '/routes': 'Routes',
@@ -46,9 +52,10 @@ const ROUTE_TITLES: Record<string, string> = {
   '/vehicles': 'Vehicles',
   '/disputes': 'Disputes',
   '/income': 'Income',
+  '/settings': 'Settings',
 };
 
-type VisibleFor = 'all' | 'system' | 'agency';
+type VisibleFor = 'all' | 'system' | 'agency' | 'scanner';
 
 // Super admin: Overview + Operations (Agencies, Users, Hot points, Routes, Activities, Vehicles) + Support + Finance.
 // Agency admin: Overview + Agency (My agency, Scanner operators) + Operations (Users, Routes, Activities, Vehicles) + Support + Finance.
@@ -76,6 +83,7 @@ const NAV_SECTIONS: {
       { to: '/agency-management', label: 'Agencies', end: true, icon: <Building2 size={20} />, visibleFor: 'system' },
       { to: '/agency-management', label: 'My agency', end: true, icon: <Building2 size={20} />, visibleFor: 'agency' },
       { to: '/scanner-operators', label: 'Scanner operators', icon: <ScanLine size={20} />, visibleFor: 'agency' },
+      { to: '/scanner-report', label: 'Scanner report', end: true, icon: <FileText size={20} />, visibleFor: 'scanner' },
     ],
   },
   {
@@ -99,12 +107,17 @@ const NAV_SECTIONS: {
     label: 'Finance',
     links: [{ to: '/income', label: 'Income', icon: <Wallet size={20} />, visibleFor: 'all' }],
   },
+  {
+    label: 'Platform',
+    links: [{ to: '/settings', label: 'Settings', end: true, icon: <Settings size={20} />, visibleFor: 'system' }],
+  },
 ];
 
 function isLinkVisible(visibleFor: VisibleFor | undefined, adminType: AdminUser['adminType']): boolean {
   if (!visibleFor || visibleFor === 'all') return true;
   if (adminType === 'system') return visibleFor === 'system';
   if (adminType === 'agency') return visibleFor === 'agency';
+  if (adminType === 'scanner') return visibleFor === 'scanner';
   return true;
 }
 
@@ -168,7 +181,8 @@ function Layout({ user, onLogout }: LayoutProps) {
                   {section.label}
                 </p>
                 {visibleLinks.map(({ to, label, labelForAgency, end, icon }) => {
-                  const displayLabel = user.adminType === 'agency' && labelForAgency != null ? labelForAgency : label;
+                  const displayLabel =
+                    user.adminType === 'agency' && labelForAgency != null ? labelForAgency : label;
                   return (
                     <NavLink
                       key={to}
@@ -238,7 +252,7 @@ function Layout({ user, onLogout }: LayoutProps) {
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold truncate max-w-truncate-name">{user.name}</p>
                 <p className="text-xs text-muted font-bold uppercase tracking-widest">
-                  {user.adminType === 'agency' ? 'Agency Admin' : 'System Admin'}
+                  {user.adminType === 'agency' ? 'Agency Admin' : user.adminType === 'scanner' ? 'Scanner' : 'System Admin'}
                 </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-soft border-2 border-primary flex items-center justify-center font-bold text-dark shrink-0">
@@ -259,7 +273,12 @@ function Layout({ user, onLogout }: LayoutProps) {
 }
 
 export default function App() {
-  const [authedUser, setAuthedUser] = React.useState<AdminUser | null>(null);
+  const [authedUser, setAuthedUser] = React.useState<AdminUser | null>(() => getStoredAuth()?.user ?? null);
+
+  const handleLogout = React.useCallback(() => {
+    clearStoredAuth();
+    setAuthedUser(null);
+  }, []);
 
   if (!authedUser) {
     return <LoginPage onLogin={setAuthedUser} />;
@@ -275,7 +294,7 @@ export default function App() {
       <Routes>
         <Route
           path="/"
-          element={<Layout user={authedUser} onLogout={() => setAuthedUser(null)} />}
+          element={<Layout user={authedUser} onLogout={handleLogout} />}
         >
           <Route index element={<DashboardPage />} />
           <Route path="users" element={<UsersPage />} />
@@ -285,7 +304,9 @@ export default function App() {
           <Route path="tickets" element={<TicketsPage />} />
           <Route path="vehicles" element={<VehiclesPage />} />
           <Route path="scanner-operators" element={<ScannerOperatorsPage />} />
+          <Route path="scanner-report" element={<ScannerReportPage />} />
           <Route path="agency-management" element={<AgencyManagementPage />} />
+          <Route path="settings" element={<SettingsPage />} />
           <Route path="disputes" element={<DisputesPage />} />
           <Route path="income" element={<IncomePage />} />
         </Route>

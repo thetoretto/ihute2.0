@@ -1,10 +1,15 @@
-import { mockHotpoints } from '@shared/mocks';
+import { useEffect, useState } from 'react';
 import { IconMapPin } from './Icons';
-
-const cityIds = ['hp1', 'hp2', 'hp3', 'hp4', 'hp5', 'hp6'];
+import { fetchHotpointsFromApi } from '../api';
+import type { Hotpoint } from '@shared/types';
 
 export default function PopularDestinations() {
-  const cities = mockHotpoints.filter((point) => cityIds.includes(point.id));
+  const [cities, setCities] = useState<Hotpoint[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchHotpointsFromApi().then((list) => { if (!cancelled) setCities(list.slice(0, 6)); }).catch(() => { if (!cancelled) setCities([]); });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <section className="lp-section destination-section" id="destinations">

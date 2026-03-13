@@ -1,4 +1,3 @@
-import { mockTrips, mockBookings } from '@shared/mocks';
 import type { Trip, Booking } from '@shared/types';
 
 const STORAGE_KEY = 'ihute_landing_data';
@@ -24,8 +23,6 @@ function isValidBooking(b: unknown): b is Booking {
     typeof o.id === 'string' &&
     typeof o.trip === 'object' &&
     o.trip !== null &&
-    typeof o.passenger === 'object' &&
-    o.passenger !== null &&
     typeof o.seats === 'number' &&
     typeof o.status === 'string'
   );
@@ -33,21 +30,21 @@ function isValidBooking(b: unknown): b is Booking {
 
 function loadFromStorage(): { trips: Trip[]; bookings: Booking[] } {
   if (typeof window === 'undefined' || !window.localStorage) {
-    return { trips: [...mockTrips], bookings: [...mockBookings] };
+    return { trips: [], bookings: [] };
   }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { trips: [...mockTrips], bookings: [...mockBookings] };
+    if (!raw) return { trips: [], bookings: [] };
     const parsed = JSON.parse(raw) as unknown;
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return { trips: [...mockTrips], bookings: [...mockBookings] };
+      return { trips: [], bookings: [] };
     }
     const { trips, bookings } = parsed as { trips?: unknown[]; bookings?: unknown[] };
-    const validTrips = Array.isArray(trips) && trips.every(isValidTrip) ? trips : [...mockTrips];
-    const validBookings = Array.isArray(bookings) && bookings.every(isValidBooking) ? bookings : [...mockBookings];
+    const validTrips = Array.isArray(trips) && trips.every(isValidTrip) ? trips : [];
+    const validBookings = Array.isArray(bookings) && bookings.every(isValidBooking) ? bookings : [];
     return { trips: validTrips, bookings: validBookings };
   } catch {
-    return { trips: [...mockTrips], bookings: [...mockBookings] };
+    return { trips: [], bookings: [] };
   }
 }
 

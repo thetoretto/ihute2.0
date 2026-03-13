@@ -1,0 +1,22 @@
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/ihute"
+
+# Auth
+JWT_SECRET="your-jwt-secret-change-in-production"
+
+# Stripe (payments)
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+
+# Ticket delivery (email)
+RESEND_API_KEY="re_..."
+RESEND_FROM="Ihute <noreply@yourdomain.com>"
+
+# PawaPay (mobile money / deposit + payout)
+PAWAPAY_API_KEY=""
+PAWAPAY_WEBHOOK_SECRET=""
+PAWAPAY_REDIRECT_BASE=""
+
+# Server
+PORT=3000
+CORS_ORIGINS="http://localhost:5173,http://localhost:8081"

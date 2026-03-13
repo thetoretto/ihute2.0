@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { mockAdminUsers } from '@shared/mocks';
+import { isApiConfigured } from '../services/api';
+import { loginApi } from '../services/auth';
 import type { AdminUser } from '../types';
 
 interface LoginPageProps {
@@ -25,17 +27,24 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     if (!password.trim()) { setError('Password is required.'); return; }
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 500));
-
-    const user = mockAdminUsers.find((u) => u.email.toLowerCase() === email.trim().toLowerCase()) as AdminUser | undefined;
-    if (!user) {
-      setError('No account found with that email address.');
+    try {
+      if (isApiConfigured()) {
+        const payload = await loginApi(email.trim(), password);
+        onLogin(payload.user);
+      } else {
+        await new Promise((r) => setTimeout(r, 500));
+        const user = mockAdminUsers.find((u) => u.email.toLowerCase() === email.trim().toLowerCase()) as AdminUser | undefined;
+        if (!user) {
+          setError('No account found with that email address.');
+          return;
+        }
+        onLogin(user);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sign in failed.');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setLoading(false);
-    onLogin(user);
   }
 
   return (

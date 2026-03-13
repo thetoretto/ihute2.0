@@ -1,19 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { MapPin, Navigation, Car } from 'lucide-react';
-import { mockHotpoints } from '@shared/mocks';
-import type { DriverInstantQueueEntry } from '@shared/types';
-import { fetchInstantQueue } from '../api';
-
-const cityOptions = mockHotpoints
-  .filter(
-    (point) =>
-      !point.name.startsWith('SP ') &&
-      !point.name.startsWith('Simba') &&
-      !point.name.startsWith('Nyabugogo') &&
-      !point.name.startsWith('Remera') &&
-      !point.name.startsWith('Goma Border'),
-  )
-  .slice(0, 12);
+import type { DriverInstantQueueEntry, Hotpoint } from '@shared/types';
+import { fetchInstantQueue, fetchHotpointsFromApi } from '../api';
 
 interface InstantQueuePageProps {
   onBackHome: () => void;
@@ -26,9 +14,16 @@ function formatRwf(value: number) {
 export default function InstantQueuePage({ onBackHome }: InstantQueuePageProps) {
   const [fromId, setFromId] = useState('');
   const [toId, setToId] = useState('');
+  const [cityOptions, setCityOptions] = useState<Hotpoint[]>([]);
   const [entries, setEntries] = useState<DriverInstantQueueEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchHotpointsFromApi().then((list) => { if (!cancelled) setCityOptions(list.slice(0, 12)); }).catch(() => { if (!cancelled) setCityOptions([]); });
+    return () => { cancelled = true; };
+  }, []);
 
   const loadQueue = useCallback(async () => {
     setLoading(true);

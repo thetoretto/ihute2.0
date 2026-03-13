@@ -7,11 +7,22 @@ import {
   updateUserProfile,
   getUser,
   getProfileComplete,
+  getMe,
   sendOtp as apiSendOtp,
   verifyOtp as apiVerifyOtp,
   createUserAfterOtp,
+  getStoredAuthToken,
+  setStoredAuthToken,
+  clearStoredAuthToken,
+  setOnUnauthorized,
 } from '../services/api';
 import { getMockStore, updateMockStore } from '../services/api';
+
+const USE_REAL_API = process.env.EXPO_PUBLIC_USE_REAL_API !== 'false';
+
+function isAuthResponse(r: unknown): r is { token: string; user: User } {
+  return !!r && typeof r === 'object' && 'token' in r && typeof (r as { token: unknown }).token === 'string' && 'user' in r;
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -57,14 +68,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     const restoreSession = async () => {
       try {
-        const store = await getMockStore();
-        if (store.authUserId) {
-          const existing = await getUser(store.authUserId);
-          if (mounted) setUser(existing);
-          const complete = await getProfileComplete(store.authUserId);
-          if (mounted) setProfileCompleteByUserId((prev) => ({ ...prev, [store.authUserId]: complete }));
-        } else if (store.profileCompleteByUserId && mounted) {
-          setProfileCompleteByUserId(store.profileCompleteByUserId);
+        if (USE_REAL_API) {
+          const token = await getStoredAuthToken();
+          if (token) {
+            try {
+              const me = await getMe();
+              if (mounted) setUser(me);
+              const complete = await getProfileComplete(me.id);
+              if (mounted) setProfileCompleteByUserId((prev) => ({ ...prev, [me.id]: complete }));
+            } catch {
+              if (mounted) setUser(null);
+            }
+          }
+        } else {
+          const store = await getMockStore();
+          if (store.authUserId) {
+            const existing = await getUser(store.authUserId);
+            if (mounted) setUser(existing);
+            const complete = await getProfileComplete(store.authUserId);
+            if (mounted) setProfileCompleteByUserId((prev) => ({ ...prev, [store.authUserId]: complete }));
+          } else if (store.profileCompleteByUserId && mounted) {
+            setProfileCompleteByUserId(store.profileCompleteByUserId);
+          }
         }
       } finally {
         if (mounted) {
@@ -79,12 +104,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    try {
-      const u = await apiLogin(email, password);
-      setUser(u);
-      await updateMockStore({ authUserId: u.id });
-    } catch (e) {
-      throw e;
+    const result = await apiLogin(email, password);
+    if (isAuthResponse(result)) {
+      await setStoredAuthToken(result.token);
+      setUser(result.user);
+    } else {
+      setUser(result);
+      await updateMockStore({ authUserId: result.id });
     }
   }, []);
 
@@ -98,9 +124,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }) => {
       setIsLoading(true);
       try {
-        const u = await apiRegister(data);
-        setUser(u);
-        await updateMockStore({ authUserId: u.id });
+        const result = await apiRegister(data);
+        if (isAuthResponse(result)) {
+          await setStoredAuthToken(result.token);
+          setUser(result.user);
+        } else {
+          setUser(result);
+          await updateMockStore({ authUserId: result.id });
+        }
       } finally {
         setIsLoading(false);
       }
@@ -117,9 +148,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }) => {
       setIsLoading(true);
       try {
-        const u = await apiRegisterMinimal(data);
-        setUser(u);
-        await updateMockStore({ authUserId: u.id });
+        const result = await apiRegisterMinimal(data);
+        if (isAuthResponse(result)) {
+          await setStoredAuthToken(result.token);
+          setUser(result.user);
+        } else {
+          setUser(result);
+          await updateMockStore({ authUserId: result.id });
+        }
       } finally {
         setIsLoading(false);
       }
@@ -137,11 +173,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const ok = await apiVerifyOtp(phoneOrEmail, code);
       if (!ok) throw new Error('Invalid or expired code.');
       const isEmail = phoneOrEmail.trim().includes('@');
-      const u = await createUserAfterOtp(
+      const result = await createUserAfterOtp(
         isEmail ? { email: phoneOrEmail.trim() } : { phone: phoneOrEmail.trim() }
       );
-      setUser(u);
-      await updateMockStore({ authUserId: u.id });
+      if (isAuthResponse(result)) {
+        await setStoredAuthToken(result.token);
+        setUser(result.user);
+      } else {
+        setUser(result);
+        await updateMockStore({ authUserId: result.id });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -173,8 +214,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     setUser(null);
-    void updateMockStore({ authUserId: null });
+    if (USE_REAL_API) void clearStoredAuthToken();
+    else void updateMockStore({ authUserId: null });
   }, []);
+
+  useEffect(() => {
+    if (USE_REAL_API) {
+      setOnUnauthorized(() => logout);
+      return () => setOnUnauthorized(null);
+    }
+  }, [logout]);
 
   const isProfileComplete =
     !!user &&

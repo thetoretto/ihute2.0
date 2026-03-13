@@ -9,10 +9,9 @@ import {
   Info,
   Navigation,
 } from 'lucide-react';
-import { mockHotpoints } from '@shared/mocks';
-import type { Trip } from '@shared/types';
-import { getTripsStore, setTripsStore } from '../store';
-import { fetchTripsFromApi } from '../api';
+import type { Trip, Hotpoint } from '@shared/types';
+import { setTripsStore } from '../store';
+import { fetchTripsFromApi, fetchHotpointsFromApi } from '../api';
 import DateTimePicker from './DateTimePicker';
 
 export interface TripSearchCriteria {
@@ -31,16 +30,7 @@ interface AvailableTripsPageProps {
   onSelectTrip: (tripId: string) => void;
 }
 
-const cityOptions = mockHotpoints
-  .filter(
-    (point) =>
-      !point.name.startsWith('SP ') &&
-      !point.name.startsWith('Simba') &&
-      !point.name.startsWith('Nyabugogo') &&
-      !point.name.startsWith('Remera') &&
-      !point.name.startsWith('Goma Border'),
-  )
-  .slice(0, 12);
+// Hotpoints loaded from API in useEffect
 
 function normalizeTimeLabel(time?: string) {
   if (!time) return '--:--';
@@ -190,9 +180,16 @@ export default function AvailableTripsPage({
   const [typeFilter, setTypeFilter] = useState<TripTypeFilter>(criteria.type ?? 'all');
   const [sortBy, setSortBy] = useState<SortOption>(criteria.sortBy ?? 'earliest');
   const [apiTrips, setApiTrips] = useState<Trip[] | null>(null);
+  const [cityOptions, setCityOptions] = useState<Hotpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
   const [finderOpen, setFinderOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchHotpointsFromApi().then((list) => { if (!cancelled) setCityOptions(list); }).catch(() => { if (!cancelled) setCityOptions([]); });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     setFromId(criteria.fromId);
@@ -229,7 +226,7 @@ export default function AvailableTripsPage({
 
   const trips = useMemo(() => {
     const requestedSeats = Number(travelers) || 1;
-    const baseList = apiTrips !== null ? apiTrips : getTripsStore();
+    const baseList = apiTrips ?? [];
     return baseList
       .filter((trip) => (fromId ? trip.departureHotpoint.id === fromId : true))
       .filter((trip) => (toId ? trip.destinationHotpoint.id === toId : true))

@@ -1,5 +1,0 @@
-# Railway config for ihute API (server).
-# In Railway dashboard, set this service's Root Directory to "server".
-
-[deploy]
-healthcheckPath = "/api/health"

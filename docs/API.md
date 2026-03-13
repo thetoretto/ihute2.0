@@ -6,7 +6,7 @@ When the backend is configured, **mobile**, **admin-web**, and **landing-page** 
 
 | App          | Env var                         | Purpose                                      |
 | ------------ | ------------------------------- | -------------------------------------------- |
-| **server**   | `PORT` (default 3000)           | API server port                               |
+| **backend**  | `PORT` (default 3000)           | API server port                               |
 | **mobile**   | `EXPO_PUBLIC_USE_REAL_API=true` | Enable real API instead of in-app mocks       |
 | **mobile**   | `EXPO_PUBLIC_API_BASE_URL`      | Base URL (e.g. `http://localhost:3000`)      |
 | **admin-web** | `VITE_API_BASE_URL`           | Base URL for hotpoints, trips, bookings, etc. |
@@ -14,7 +14,7 @@ When the backend is configured, **mobile**, **admin-web**, and **landing-page** 
 
 Example for local development (same server for all):
 
-- Server: `node server/index.js` → `http://localhost:3000`
+- Backend: `cd backend && npm run dev` → `http://localhost:3000`
 - Mobile: `EXPO_PUBLIC_USE_REAL_API=true` and `EXPO_PUBLIC_API_BASE_URL=http://localhost:3000`
 - Admin-web: `VITE_API_BASE_URL=http://localhost:3000`
 - Landing-page: `VITE_API_BASE_URL=http://localhost:3000`
@@ -45,7 +45,7 @@ The repo is set up for deployment on [Railway](https://railway.app). Use one API
 1. **Connect the repo**: In Railway, create a new project and deploy from the ihute2.0 GitHub repo.
 
 2. **API service (required)**  
-   - Set **Root Directory** to `server`.  
+   - Set **Root Directory** to `backend`.  
    - Railway runs `npm install` and `npm start`; the API listens on `PORT` (set by Railway).  
    - After deploy, copy the service’s **public URL** (e.g. `https://ihute-api-production-xxxx.up.railway.app`). This is your **API base URL**.
 

@@ -16,8 +16,8 @@ export type {
   AdminSnapshot,
 } from '@shared/types';
 
-/** Admin portal: system (full access) or agency (scoped to agencyId). */
-export type AdminType = 'system' | 'agency';
+/** Admin portal: system (full access), agency (scoped to agencyId), or scanner (report only). */
+export type AdminType = 'system' | 'agency' | 'scanner';
 
 /** User in admin context; extends shared User with admin-only fields. */
 export type AdminUser = import('@shared/types').User & {

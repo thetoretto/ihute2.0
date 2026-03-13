@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
-import { mockHotpoints } from '@shared/mocks';
+import { useEffect, useState } from 'react';
 import DateTimePicker from './DateTimePicker';
 import SearchSelect from './SearchSelect';
 import type { TripSearchCriteria } from './AvailableTripsPage';
+import { fetchHotpointsFromApi } from '../api';
 
 interface HeroProps {
   onSearch: (criteria: TripSearchCriteria) => void;
@@ -13,21 +13,13 @@ export default function Hero({ onSearch }: HeroProps) {
   const [to, setTo] = useState('');
   const [dateOutbound, setDateOutbound] = useState<Date | null>(null);
   const [travelers] = useState(1);
+  const [cities, setCities] = useState<Array<{ id: string; name: string; address?: string }>>([]);
 
-  const cities = useMemo(
-    () =>
-      mockHotpoints
-        .filter(
-          (point) =>
-            !point.name.startsWith('SP ') &&
-            !point.name.startsWith('Simba') &&
-            !point.name.startsWith('Nyabugogo') &&
-            !point.name.startsWith('Remera') &&
-            !point.name.startsWith('Goma Border'),
-        )
-        .slice(0, 12),
-    [],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    fetchHotpointsFromApi().then((list) => { if (!cancelled) setCities(list.slice(0, 12)); }).catch(() => { if (!cancelled) setCities([]); });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <section className="rs-hero" id="hero">

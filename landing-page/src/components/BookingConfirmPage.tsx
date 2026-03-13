@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react';
 import { CheckCircle2, ArrowRight, QrCode, Download, Share2 } from 'lucide-react';
 import { getBookingsStore } from '../store';
+import { getBookingById } from '../api';
+import type { Booking } from '@shared/types';
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: 'Cash on pickup',
@@ -14,7 +17,30 @@ interface BookingConfirmPageProps {
 }
 
 export default function BookingConfirmPage({ bookingId, onGoHome, onSearchAgain }: BookingConfirmPageProps) {
-  const booking = getBookingsStore().find((b) => b.id === bookingId);
+  const fromStore = getBookingsStore().find((b) => b.id === bookingId);
+  const [fetched, setFetched] = useState<Booking | null>(null);
+  const [loading, setLoading] = useState(!fromStore);
+
+  useEffect(() => {
+    if (fromStore) return;
+    let cancelled = false;
+    getBookingById(bookingId).then((b) => { if (!cancelled) setFetched(b ?? null); }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [bookingId, fromStore]);
+
+  const booking = fromStore ?? fetched;
+
+  if (loading) {
+    return (
+      <section className="trips-page trips-page-v2">
+        <div className="lp-container">
+          <div className="bc-card bc-card-standalone">
+            <p>Loading booking…</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!booking) {
     return (

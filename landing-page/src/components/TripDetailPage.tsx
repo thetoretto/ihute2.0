@@ -1,13 +1,20 @@
 import { useState } from 'react';
 import { getTripsStore, getBookingsStore, setBookingsStore, setTripsStore } from '../store';
-import { createBooking } from '../api';
+import { createBooking, createGuestBooking, createPaymentIntent, createDeposit } from '../api';
 import type { PaymentMethod } from '@shared/types';
+import type { GuestDetails } from '../api';
+import CardPaymentForm from './CardPaymentForm';
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+const USE_GUEST_BOOKING = API_BASE.length > 0;
+const STRIPE_PUBLISHABLE = (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '').trim();
 
 interface TripDetailPageProps {
   tripId: string;
   travelers: number;
   onBack: () => void;
   onBooked: (bookingId: string) => void;
+  onPaymentCallback?: (params: { depositId?: string; bookingId: string }) => void;
 }
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
@@ -16,15 +23,19 @@ const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   card: 'Card',
 };
 
-export default function TripDetailPage({ tripId, travelers, onBack, onBooked }: TripDetailPageProps) {
+export default function TripDetailPage({ tripId, travelers, onBack, onBooked, onPaymentCallback }: TripDetailPageProps) {
   const trip = getTripsStore().find((t) => t.id === tripId);
 
   const maxSeats = trip?.seatsAvailable ?? 1;
   const [seats, setSeats] = useState(Math.min(Math.max(1, travelers), maxSeats));
   const [isFullCar, setIsFullCar] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
+  const [guest, setGuest] = useState<GuestDetails>({ name: '', phone: '', email: '', deliveryMethod: 'email' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [step, setStep] = useState<'form' | 'pay-card' | 'redirecting'>('form');
+  const [lastBookingId, setLastBookingId] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   if (!trip) {
     return (
@@ -52,19 +63,61 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked }: 
       setError(`Choose between 1 and ${currentTrip.seatsAvailable} seats.`);
       return;
     }
+    if (USE_GUEST_BOOKING) {
+      if (!guest.name?.trim()) { setError('Please enter your name.'); return; }
+      if (!guest.phone?.trim()) { setError('Please enter your phone number.'); return; }
+      if (!guest.email?.trim()) { setError('Please enter your email.'); return; }
+    }
     setError('');
     setLoading(true);
     try {
-      const booking = await createBooking({
-        tripId: currentTrip.id,
-        seats: effectiveSeats,
-        paymentMethod: paymentMethod as PaymentMethod,
-        isFullCar,
-      });
+      const booking = USE_GUEST_BOOKING
+        ? await createGuestBooking({
+            tripId: currentTrip.id,
+            seats: effectiveSeats,
+            paymentMethod: paymentMethod as PaymentMethod,
+            isFullCar,
+            guest: {
+              name: guest.name.trim(),
+              phone: guest.phone.trim(),
+              email: guest.email.trim(),
+              deliveryMethod: guest.deliveryMethod ?? 'email',
+            },
+          })
+        : await createBooking({
+            tripId: currentTrip.id,
+            seats: effectiveSeats,
+            paymentMethod: paymentMethod as PaymentMethod,
+            isFullCar,
+          });
       setBookingsStore([...getBookingsStore(), booking]);
       const trips = getTripsStore();
       const updatedTrips = trips.map((t) => (t.id === currentTrip.id && booking.trip ? { ...booking.trip } : t));
       setTripsStore(updatedTrips);
+      setLastBookingId(booking.id);
+
+      if (paymentMethod === 'cash') {
+        onBooked(booking.id);
+        return;
+      }
+      if (paymentMethod === 'card') {
+        const { clientSecret: secret } = await createPaymentIntent(booking.id);
+        setClientSecret(secret);
+        setStep('pay-card');
+        return;
+      }
+      if (paymentMethod === 'mobile_money') {
+        setStep('redirecting');
+        const { depositId, redirectUrl } = await createDeposit(booking.id, guest.phone?.trim());
+        if (redirectUrl) {
+          if (onPaymentCallback) onPaymentCallback({ depositId, bookingId: booking.id });
+          window.location.href = redirectUrl;
+          return;
+        }
+        if (onPaymentCallback) onPaymentCallback({ depositId, bookingId: booking.id });
+        window.location.search = `?bookingId=${booking.id}${depositId ? `&depositId=${depositId}` : ''}`;
+        return;
+      }
       onBooked(booking.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Booking failed. Please try again.');
@@ -154,6 +207,25 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked }: 
               <div className="td-full-msg">
                 <span>⚠</span> This trip is fully booked.
               </div>
+            ) : step === 'pay-card' && clientSecret && lastBookingId && STRIPE_PUBLISHABLE ? (
+              <div className="td-card-pay">
+                <button type="button" className="trips-back-btn mb-4" onClick={() => { setStep('form'); setClientSecret(null); setError(''); }}>
+                  ← Back
+                </button>
+                <CardPaymentForm
+                  clientSecret={clientSecret}
+                  bookingId={lastBookingId}
+                  publishableKey={STRIPE_PUBLISHABLE}
+                  onSuccess={(id) => { onBooked(id); setStep('form'); setClientSecret(null); setLastBookingId(null); }}
+                  onError={setError}
+                />
+                {error && <p className="td-error mt-2">{error}</p>}
+              </div>
+            ) : step === 'redirecting' ? (
+              <div className="td-redirecting">
+                <p className="text-gray-600">Redirecting to payment…</p>
+                <div className="mt-3 h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" aria-hidden />
+              </div>
             ) : (
               <>
                 {currentTrip.allowFullCar && (
@@ -177,6 +249,46 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked }: 
                       <button type="button" onClick={() => setSeats((s) => Math.max(1, s - 1))} disabled={seats <= 1}>−</button>
                       <span>{seats}</span>
                       <button type="button" onClick={() => setSeats((s) => Math.min(currentTrip.seatsAvailable, s + 1))} disabled={seats >= currentTrip.seatsAvailable}>+</button>
+                    </div>
+                  </div>
+                )}
+
+                {USE_GUEST_BOOKING && (
+                  <div className="td-guest-section space-y-3 mb-4">
+                    <p className="td-section-label">Your details</p>
+                    <input
+                      type="text"
+                      placeholder="Full name"
+                      value={guest.name}
+                      onChange={(e) => setGuest((g) => ({ ...g, name: e.target.value }))}
+                      className="w-full py-2 px-3 border border-gray-300 rounded-lg"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone number"
+                      value={guest.phone}
+                      onChange={(e) => setGuest((g) => ({ ...g, phone: e.target.value }))}
+                      className="w-full py-2 px-3 border border-gray-300 rounded-lg"
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={guest.email}
+                      onChange={(e) => setGuest((g) => ({ ...g, email: e.target.value }))}
+                      className="w-full py-2 px-3 border border-gray-300 rounded-lg"
+                    />
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Ticket delivery</label>
+                      <select
+                        value={guest.deliveryMethod ?? 'email'}
+                        onChange={(e) => setGuest((g) => ({ ...g, deliveryMethod: e.target.value as GuestDetails['deliveryMethod'] }))}
+                        className="w-full py-2 px-3 border border-gray-300 rounded-lg"
+                      >
+                        <option value="email">Email</option>
+                        <option value="sms">SMS</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="download">Download only</option>
+                      </select>
                     </div>
                   </div>
                 )}

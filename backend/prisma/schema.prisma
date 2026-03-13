@@ -1,0 +1,293 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  SUPER_ADMIN
+  AGENCY_ADMIN
+  SCANNER
+  DRIVER
+  USER
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+model Agency {
+  id          String   @id @default(uuid())
+  name        String
+  contactInfo String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Agency admin and scanners belong to agency
+  users    User[]
+  // Vehicles owned by agency
+  vehicles Vehicle[]
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  phone        String?
+  passwordHash String?    // Null for guest users or OTP-only users if applicable
+  name         String?
+  userType     UserType
+  status       UserStatus @default(APPROVED)
+  
+  // Agency relationship
+  agencyId      String?
+  agency        Agency? @relation(fields: [agencyId], references: [id])
+  agencySubRole String? // "agency_manager", "agency_scanner" etc. if needed for granularity
+
+  // Driver specifics
+  rating        Float   @default(5.0)
+  statusBadge   String? // "Verified", "New Driver", etc.
+  
+  // Relations
+  vehiclesOwned Vehicle[]  @relation("Owner")
+  vehiclesDriven Vehicle[] @relation("Driver")
+  tripsDriven   Trip[]
+  bookings      Booking[]  @relation("Passenger")
+  
+  // Scanner specifics
+  validatedBookings Booking[] @relation("Validator")
+  scanCount        Int       @default(0)
+
+  // Notifications
+  notifications Notification[]
+
+  // Ratings given/received
+  ratingsGiven    DriverRating[] @relation("PassengerRating")
+  ratingsReceived DriverRating[] @relation("DriverRating")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([email])
+  @@index([userType])
+  @@index([agencyId])
+}
+
+model Hotpoint {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  latitude  Float
+  longitude Float
+  country   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tripsFrom Trip[] @relation("Departure")
+  tripsTo   Trip[] @relation("Destination")
+}
+
+model Vehicle {
+  id        String   @id @default(uuid())
+  brand     String
+  model     String
+  capacity  Int
+  plateNumber String
+  status    String   @default("active") // active, maintenance
+  
+  ownerId   String?
+  owner     User?    @relation("Owner", fields: [ownerId], references: [id])
+  
+  driverId  String?
+  driver    User?    @relation("Driver", fields: [driverId], references: [id])
+  
+  agencyId  String?
+  agency    Agency?  @relation(fields: [agencyId], references: [id])
+
+  trips     Trip[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TripType {
+  SCHEDULED
+  INSTANT
+}
+
+enum TripStatus {
+  ACTIVE
+  FULL
+  CANCELLED
+  COMPLETED
+}
+
+model Trip {
+  id                  String     @id @default(uuid())
+  type                TripType   @default(SCHEDULED)
+  status              TripStatus @default(ACTIVE)
+  
+  departureHotpointId String
+  departureHotpoint   Hotpoint   @relation("Departure", fields: [departureHotpointId], references: [id])
+  
+  destinationHotpointId String
+  destinationHotpoint   Hotpoint   @relation("Destination", fields: [destinationHotpointId], references: [id])
+  
+  departureDate       String     // YYYY-MM-DD
+  departureTime       String     // HH:MM
+  arrivalTime         String?    // HH:MM
+  durationMinutes     Int?
+  
+  seatsAvailable      Int
+  pricePerSeat        Float
+  allowFullCar        Boolean    @default(false)
+  
+  paymentMethods      Json       // ["cash", "mobile_money", "card"]
+  
+  driverId            String
+  driver              User       @relation(fields: [driverId], references: [id])
+  
+  vehicleId           String
+  vehicle             Vehicle    @relation(fields: [vehicleId], references: [id])
+  
+  bookings            Booking[]
+  
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  @@index([driverId])
+  @@index([departureDate])
+  @@index([status])
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  status          BookingStatus @default(PENDING_PAYMENT)
+  
+  tripId          String
+  trip            Trip          @relation(fields: [tripId], references: [id])
+  
+  passengerId     String?       // Null for guest
+  passenger       User?         @relation("Passenger", fields: [passengerId], references: [id])
+  
+  // Guest details (if passengerId is null)
+  guestName       String?
+  guestPhone      String?
+  guestEmail      String?
+  
+  seats           Int
+  isFullCar       Boolean       @default(false)
+  
+  paymentMethod   String        // "mobile_money", "card", "cash"
+  paymentStatus   String        // "pending", "paid", "failed"
+  deliveryMethod  String?       // "whatsapp", "sms", "email"
+  
+  ticketId        String?       @unique
+  ticketNumber    String?
+  ticketIssuedAt  DateTime?
+  
+  validatedAt     DateTime?
+  validatedById   String?
+  validatedBy     User?         @relation("Validator", fields: [validatedById], references: [id])
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  payments        Payment[]
+  disputes        Dispute[]
+  ratings         DriverRating[]
+
+  @@index([tripId])
+  @@index([passengerId])
+  @@index([status])
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  
+  provider    String   // "stripe", "pawapay"
+  externalId  String?
+  amount      Float
+  status      String   // "succeeded", "failed", "pending"
+  
+  createdAt   DateTime @default(now())
+}
+
+model Dispute {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  
+  reporterId  String
+  status      String   // "open", "resolved"
+  resolution  String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DriverDriveMode {
+  id             String   @id @default(uuid())
+  driverId       String   @unique
+  vehicleId      String?
+  fromHotpointId String
+  toHotpointId   String
+  seatsAvailable Int
+  pricePerSeat   Float
+  updatedAt      DateTime @updatedAt
+}
+
+model DriverRating {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  
+  driverId    String
+  driver      User     @relation("DriverRating", fields: [driverId], references: [id])
+  
+  passengerId String
+  passenger   User     @relation("PassengerRating", fields: [passengerId], references: [id])
+  
+  score       Int
+  comment     String?
+  
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  type      String   // "booking", "system", etc.
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  data      Json?
+  
+  createdAt DateTime @default(now())
+}
+
+model DriverWithdrawal {
+  id          String   @id @default(uuid())
+  driverId    String
+  amount      Float
+  provider    String   // "pawapay"
+  externalId  String?  // transaction_id from provider
+  status      String   // "pending", "succeeded", "failed"
+  createdAt   DateTime @default(now())
+}

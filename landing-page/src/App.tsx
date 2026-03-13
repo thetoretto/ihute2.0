@@ -9,9 +9,10 @@ import AvailableTripsPage, { type TripSearchCriteria } from './components/Availa
 import TripDetailPage           from './components/TripDetailPage';
 import BookingConfirmPage       from './components/BookingConfirmPage';
 import InstantQueuePage         from './components/InstantQueuePage';
+import PaymentCallbackPage      from './components/PaymentCallbackPage';
 import WhatsAppSupport          from './components/WhatsAppSupport';
 
-type Page = 'landing' | 'trips' | 'trip-detail' | 'booking-confirm' | 'instant-queue';
+type Page = 'landing' | 'trips' | 'trip-detail' | 'booking-confirm' | 'instant-queue' | 'payment-callback';
 
 const DEFAULT_CRITERIA: TripSearchCriteria = { fromId: '', toId: '', date: '', travelers: 1, type: 'all', sortBy: 'earliest' };
 
@@ -20,9 +21,19 @@ export default function App() {
   const [criteria, setCriteria]       = useState<TripSearchCriteria>(DEFAULT_CRITERIA);
   const [selectedTripId, setTripId]   = useState('');
   const [bookingId, setBookingId]     = useState('');
+  const [paymentCallbackDepositId, setPaymentCallbackDepositId] = useState<string | null>(null);
+  const [paymentCallbackBookingId, setPaymentCallbackBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const depositId = params.get('depositId');
+    const callbackBookingId = params.get('bookingId');
+    if (depositId || callbackBookingId) {
+      setPaymentCallbackDepositId(depositId);
+      setPaymentCallbackBookingId(callbackBookingId);
+      setPage('payment-callback');
+      return;
+    }
     const fromId = params.get('from') ?? '';
     const toId   = params.get('to')   ?? '';
     if (fromId && toId) {
@@ -95,7 +106,7 @@ export default function App() {
         onViewAllTrips={handleViewAllTrips}
         onViewInstantQueue={handleViewInstantQueue}
         onBackHome={handleBackHome}
-        isTripsPage={page === 'trips' || page === 'trip-detail' || page === 'booking-confirm'}
+        isTripsPage={page === 'trips' || page === 'trip-detail' || page === 'booking-confirm' || page === 'payment-callback'}
         isInstantQueuePage={page === 'instant-queue'}
       />
       <main className="lp-main" role="main">
@@ -123,6 +134,10 @@ export default function App() {
             travelers={criteria.travelers}
             onBack={handleBackToTrips}
             onBooked={handleBooked}
+            onPaymentCallback={({ bookingId: bid, depositId: did }) => {
+              setPaymentCallbackBookingId(bid);
+              setPaymentCallbackDepositId(did ?? null);
+            }}
           />
         )}
 
@@ -136,6 +151,15 @@ export default function App() {
 
         {page === 'instant-queue' && (
           <InstantQueuePage onBackHome={handleBackHome} />
+        )}
+
+        {page === 'payment-callback' && (
+          <PaymentCallbackPage
+            depositId={paymentCallbackDepositId}
+            bookingId={paymentCallbackBookingId}
+            onSuccess={(id) => { setBookingId(id); setPage('booking-confirm'); window.scrollTo(0, 0); }}
+            onBackHome={handleBackHome}
+          />
         )}
       </main>
       <WhatsAppSupport />

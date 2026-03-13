@@ -1,17 +1,58 @@
 /**
  * Single API facade: when EXPO_PUBLIC_USE_REAL_API is not 'false', the app calls the API server;
  * set EXPO_PUBLIC_USE_REAL_API=false to use in-app mocks (mockApi and mockPersistence).
+ * When using real API, JWT is stored in AsyncStorage and sent as Authorization header; 401 clears token.
  */
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User, Trip, DriverInstantQueueEntry } from '../types';
 
 const USE_REAL_API = process.env.EXPO_PUBLIC_USE_REAL_API !== 'false';
+const AUTH_TOKEN_KEY = 'ihute_auth_token';
 const rawBase = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
 // Android Emulator: localhost is the emulator; use 10.0.2.2 to reach the host. iOS Simulator / web: localhost is correct.
 const API_BASE =
   Platform.OS === 'android' && (rawBase.includes('localhost') || rawBase.includes('127.0.0.1'))
     ? rawBase.replace(/localhost|127\.0\.0\.1/g, '10.0.2.2')
     : rawBase;
+
+export async function getStoredAuthToken(): Promise<string | null> {
+  return AsyncStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export async function setStoredAuthToken(token: string): Promise<void> {
+  await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+export async function clearStoredAuthToken(): Promise<void> {
+  await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+/** When real API returns 401, this is called after clearing token. Set from AuthProvider to logout and show login. */
+let onUnauthorized: (() => void) | null = null;
+export function setOnUnauthorized(cb: (() => void) | null): void {
+  onUnauthorized = cb;
+}
+
+/** Map backend user (userType) to shared User (roles). */
+function mapBackendUserToUser(backend: { id: string; name?: string | null; email: string; phone?: string | null; userType?: string; agencyId?: string | null; statusBadge?: string | null; rating?: number | null }): User {
+  const roles: Array<'passenger' | 'driver' | 'agency'> = [];
+  if (backend.userType === 'DRIVER') roles.push('driver');
+  else if (backend.userType === 'AGENCY_ADMIN' || backend.userType === 'SCANNER' || backend.userType === 'SUPER_ADMIN') roles.push('agency');
+  else roles.push('passenger');
+  const agencySubRole = backend.userType === 'SCANNER' ? 'agency_scanner' : backend.userType === 'AGENCY_ADMIN' ? 'agency_manager' : undefined;
+  return {
+    id: backend.id,
+    name: backend.name ?? backend.email ?? '',
+    email: backend.email,
+    phone: backend.phone ?? '',
+    roles,
+    agencySubRole,
+    agencyId: backend.agencyId ?? undefined,
+    rating: backend.rating ?? undefined,
+    statusBadge: backend.statusBadge ?? undefined,
+  };
+}
 
 async function request<T>(
   method: string,
@@ -20,15 +61,33 @@ async function request<T>(
   headers?: Record<string, string>
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
+  const authHeaders: Record<string, string> = {};
+  if (USE_REAL_API) {
+    const token = await getStoredAuthToken();
+    if (token) authHeaders.Authorization = `Bearer ${token}`;
+  }
   const res = await fetch(url, {
     method,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
+  if (res.status === 401 && USE_REAL_API) {
+    await clearStoredAuthToken();
+    onUnauthorized?.();
+    let message = 'Session expired';
+    try {
+      const json = text ? JSON.parse(text) : {};
+      if (json?.error) message = json.error;
+    } catch {
+      if (text) message = text;
+    }
+    throw new Error(message);
+  }
   if (!res.ok) {
     let message = res.statusText;
     try {
@@ -274,18 +333,36 @@ export async function getBookingRating(bookingId: string) {
   return mockApi.getBookingRating(bookingId);
 }
 
-export async function login(email: string, password: string) {
-  if (USE_REAL_API) return request<Awaited<ReturnType<typeof mockApi.login>>>('POST', '/api/auth/login', { email, password });
+/** GET /api/auth/me - current user from JWT. Use for session restore when token exists. */
+export async function getMe(): Promise<User> {
+  const raw = await request<Record<string, unknown>>('GET', '/api/auth/me');
+  return mapBackendUserToUser(raw as Parameters<typeof mapBackendUserToUser>[0]);
+}
+
+/** When real API, returns { token, user }; when mock, returns User. */
+export async function login(email: string, password: string): Promise<User | { token: string; user: User }> {
+  if (USE_REAL_API) {
+    const raw = await request<{ token: string; user: Record<string, unknown> }>('POST', '/api/auth/login', { email, password });
+    return { token: raw.token, user: mapBackendUserToUser(raw.user as Parameters<typeof mapBackendUserToUser>[0]) };
+  }
   return mockApi.login(email, password);
 }
 
-export async function register(data: Parameters<typeof mockApi.register>[0]) {
-  if (USE_REAL_API) return request<Awaited<ReturnType<typeof mockApi.register>>>('POST', '/api/auth/register', data);
+/** When real API, returns { token, user }; when mock, returns User. */
+export async function register(data: Parameters<typeof mockApi.register>[0]): Promise<User | { token: string; user: User }> {
+  if (USE_REAL_API) {
+    const raw = await request<{ token: string; user: Record<string, unknown> }>('POST', '/api/auth/register', data);
+    return { token: raw.token, user: mapBackendUserToUser(raw.user as Parameters<typeof mapBackendUserToUser>[0]) };
+  }
   return mockApi.register(data);
 }
 
-export async function registerMinimal(data: Parameters<typeof mockApi.registerMinimal>[0]) {
-  if (USE_REAL_API) return request<Awaited<ReturnType<typeof mockApi.registerMinimal>>>('POST', '/api/auth/register-minimal', data);
+/** When real API, returns { token, user }; when mock, returns User. */
+export async function registerMinimal(data: Parameters<typeof mockApi.registerMinimal>[0]): Promise<User | { token: string; user: User }> {
+  if (USE_REAL_API) {
+    const raw = await request<{ token: string; user: Record<string, unknown> }>('POST', '/api/auth/register-minimal', data);
+    return { token: raw.token, user: mapBackendUserToUser(raw.user as Parameters<typeof mapBackendUserToUser>[0]) };
+  }
   return mockApi.registerMinimal(data);
 }
 
@@ -299,8 +376,12 @@ export async function verifyOtp(phoneOrEmail: string, code: string) {
   return mockApi.verifyOtp(phoneOrEmail, code);
 }
 
-export async function createUserAfterOtp(options: Parameters<typeof mockApi.createUserAfterOtp>[0]) {
-  if (USE_REAL_API) return request<Awaited<ReturnType<typeof mockApi.createUserAfterOtp>>>('POST', '/api/auth/otp/create-user', options);
+/** When real API, returns { token, user }; when mock, returns User. */
+export async function createUserAfterOtp(options: Parameters<typeof mockApi.createUserAfterOtp>[0]): Promise<User | { token: string; user: User }> {
+  if (USE_REAL_API) {
+    const raw = await request<{ token: string; user: Record<string, unknown> }>('POST', '/api/auth/otp/create-user', options);
+    return { token: raw.token, user: mapBackendUserToUser(raw.user as Parameters<typeof mapBackendUserToUser>[0]) };
+  }
   return mockApi.createUserAfterOtp(options);
 }
 
@@ -318,10 +399,8 @@ export async function getProfileComplete(userId: string): Promise<boolean> {
 
 export async function getScannerTicketReport(period: 'past' | 'today' | 'upcoming') {
   if (USE_REAL_API) {
-    const store = await mockPersistence.getMockStore();
-    const userId = store.authUserId;
-    if (!userId) return [];
-    return request<Awaited<ReturnType<typeof mockApi.getScannerTicketReport>>>('GET', `/api/scanner/report?userId=${encodeURIComponent(userId)}&period=${period}`);
+    const list = await request<Array<{ id: string; bookingId: string; route: string; passengerName: string | null; status: string; scannedAt: string | null }>>('GET', '/api/scanner/report');
+    return list as Awaited<ReturnType<typeof mockApi.getScannerTicketReport>>;
   }
   return mockApi.getScannerTicketReport(period);
 }
@@ -356,20 +435,16 @@ export async function getUnreadDriverNotificationCount(driverId: string) {
 
 export async function getScannerTicketCount() {
   if (USE_REAL_API) {
-    const store = await mockPersistence.getMockStore();
-    const userId = store.authUserId;
-    if (!userId) return 0;
-    return request<number>('GET', `/api/scanner/count?userId=${encodeURIComponent(userId)}`);
+    const n = await request<number>('GET', '/api/scanner/count');
+    return n;
   }
   return mockPersistence.getScannerTicketCount();
 }
 
 export async function incrementScannerTicketCount() {
   if (USE_REAL_API) {
-    const store = await mockPersistence.getMockStore();
-    const userId = store.authUserId;
-    if (!userId) return 0;
-    return request<number>('POST', '/api/scanner/count/increment', { userId });
+    const n = await request<number>('POST', '/api/scanner/count/increment', {});
+    return n;
   }
   return mockPersistence.incrementScannerTicketCount();
 }
