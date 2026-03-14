@@ -142,7 +142,7 @@ export async function getBookingsApi(params?: { userId?: string }): Promise<Book
   return JSON.parse(text) as Booking[];
 }
 
-// ---------- Vehicles (read from server for admin; server requires userId) ----------
+// ---------- Vehicles (read/create/update from server for admin) ----------
 export async function getVehiclesApi(userId?: string): Promise<Vehicle[]> {
   const base = getApiBase();
   if (!base) return [];
@@ -154,6 +154,49 @@ export async function getVehiclesApi(userId?: string): Promise<Vehicle[]> {
   const text = await res.text();
   if (!text) return [];
   return JSON.parse(text) as Vehicle[];
+}
+
+export interface CreateVehicleBody {
+  brand?: string;
+  make?: string;
+  model: string;
+  capacity?: number;
+  seats?: number;
+  plateNumber?: string;
+  licensePlate?: string;
+  color?: string;
+  driverId?: string;
+  ownerId?: string;
+  agencyId?: string;
+}
+
+export async function createVehicleApi(body: CreateVehicleBody): Promise<Vehicle> {
+  const base = getApiBase();
+  if (!base) throw new Error('API not configured');
+  const res = await fetchWithAuth('/api/vehicles', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(parseError(text, 'Failed to create vehicle'));
+  if (!text) throw new Error('Empty response');
+  return JSON.parse(text) as Vehicle;
+}
+
+export async function updateVehicleApi(
+  id: string,
+  data: Partial<CreateVehicleBody> & { approvalStatus?: 'pending' | 'approved' | 'rejected' }
+): Promise<Vehicle> {
+  const base = getApiBase();
+  if (!base) throw new Error('API not configured');
+  const res = await fetchWithAuth(`/api/vehicles/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(parseError(text, 'Failed to update vehicle'));
+  if (!text) throw new Error('Empty response');
+  return JSON.parse(text) as Vehicle;
 }
 
 // ---------- Users (read from server for admin) ----------

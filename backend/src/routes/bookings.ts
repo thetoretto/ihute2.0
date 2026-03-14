@@ -1,6 +1,6 @@
 import express from 'express';
 import prisma from '../prisma';
-import { requireAuth, AuthRequest } from '../middleware/auth';
+import { requireAuth, optionalAuth, AuthRequest } from '../middleware/auth';
 import { UserType, BookingStatus } from '@prisma/client';
 
 const router = express.Router();
@@ -52,11 +52,17 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-// POST /api/bookings (Public - supports Guest)
-router.post('/', async (req, res) => {
+// POST /api/bookings (Public - supports Guest and registered user via passengerId/passenger)
+router.post('/', optionalAuth, async (req: AuthRequest, res) => {
   try {
-    const { tripId, passengerId, guest, seats, paymentMethod, isFullCar } = req.body;
-    
+    const body = req.body || {};
+    let passengerId = body.passengerId;
+    const passenger = body.passenger;
+    if (!passengerId && passenger && (passenger.id || passenger.userId)) {
+      passengerId = passenger.id ?? passenger.userId;
+    }
+    const { tripId, guest, seats, paymentMethod, isFullCar } = body;
+
     const trip = await prisma.trip.findUnique({ where: { id: tripId } });
     if (!trip) {
       res.status(404).json({ error: 'Trip not found' });
@@ -66,7 +72,7 @@ router.post('/', async (req, res) => {
       res.status(400).json({ error: 'Trip is not available' });
       return;
     }
-    
+
     const requestedSeats = isFullCar ? trip.seatsAvailable : (seats || 1);
     if (requestedSeats > trip.seatsAvailable) {
       res.status(400).json({ error: 'Not enough seats available' });
@@ -77,6 +83,19 @@ router.post('/', async (req, res) => {
     if (!passengerId && !guest) {
       res.status(400).json({ error: 'Passenger or guest details required' });
       return;
+    }
+
+    // If registered user: ensure passenger exists; optional auth check when token present
+    if (passengerId) {
+      const user = await prisma.user.findUnique({ where: { id: passengerId } });
+      if (!user) {
+        res.status(400).json({ error: 'Passenger user not found' });
+        return;
+      }
+      if (req.user && req.user.userId && req.user.userId !== passengerId) {
+        res.status(403).json({ error: 'You can only book for yourself when logged in' });
+        return;
+      }
     }
 
     const bookingId = `b${Date.now()}`;

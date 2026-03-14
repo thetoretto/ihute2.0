@@ -29,6 +29,27 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
   }
 };
 
+/** Sets req.user when Authorization is present; does not reject when absent. Use for public routes that support optional login. */
+export const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    next();
+    return;
+  }
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    next();
+    return;
+  }
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as any;
+    req.user = payload;
+  } catch {
+    // Ignore invalid token for optional auth
+  }
+  next();
+};
+
 export const requireSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
   if (!req.user || req.user.userType !== UserType.SUPER_ADMIN) {
     res.status(403).json({ error: 'Super Admin access required' });

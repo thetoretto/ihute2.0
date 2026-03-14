@@ -93,24 +93,26 @@ model Hotpoint {
 }
 
 model Vehicle {
-  id        String   @id @default(uuid())
-  brand     String
-  model     String
-  capacity  Int
-  plateNumber String
-  status    String   @default("active") // active, maintenance
-  
+  id             String   @id @default(uuid())
+  brand          String
+  model          String
+  capacity       Int
+  plateNumber    String
+  color          String?
+  status         String   @default("active") // active, maintenance
+  approvalStatus String   @default("pending") // pending, approved, rejected
+
   ownerId   String?
   owner     User?    @relation("Owner", fields: [ownerId], references: [id])
-  
+
   driverId  String?
   driver    User?    @relation("Driver", fields: [driverId], references: [id])
-  
+
   agencyId  String?
   agency    Agency?  @relation(fields: [agencyId], references: [id])
 
   trips     Trip[]
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

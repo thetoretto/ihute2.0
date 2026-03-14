@@ -277,8 +277,10 @@ export async function publishTrips(
 
 export async function bookTrip(bookingData: Parameters<typeof mockApi.bookTrip>[0]) {
   requireApi();
+  const passengerId = bookingData.passenger?.id;
   return request<Awaited<ReturnType<typeof mockApi.bookTrip>>>('POST', '/api/bookings', {
     tripId: bookingData.tripId,
+    ...(passengerId ? { passengerId } : {}),
     passenger: bookingData.passenger,
     seats: bookingData.seats,
     paymentMethod: bookingData.paymentMethod,
@@ -289,6 +291,27 @@ export async function bookTrip(bookingData: Parameters<typeof mockApi.bookTrip>[
 export async function getBookingTicket(bookingId: string) {
   requireApi();
   return request<Awaited<ReturnType<typeof mockApi.getBookingTicket>>>('GET', `/api/bookings/${bookingId}/ticket`);
+}
+
+/** Create Stripe payment intent for a booking. Returns clientSecret for Stripe Elements. */
+export async function createPaymentIntent(bookingId: string): Promise<{ clientSecret: string }> {
+  requireApi();
+  return request<{ clientSecret: string }>('POST', '/api/payments/create-intent', { bookingId });
+}
+
+/** Create mobile money deposit; returns depositId and optional redirectUrl. User completes prompt on phone. */
+export async function createDeposit(bookingId: string, phone: string): Promise<{ depositId: string; bookingId: string; redirectUrl?: string }> {
+  requireApi();
+  return request<{ depositId: string; bookingId: string; redirectUrl?: string }>('POST', '/api/payments/create-deposit', { bookingId, phone });
+}
+
+/** Poll payment status (for mobile money flow). */
+export async function getPaymentStatus(params: { depositId?: string; bookingId?: string }): Promise<{ status: 'pending' | 'succeeded' | 'failed'; bookingId?: string }> {
+  requireApi();
+  const q = new URLSearchParams();
+  if (params.depositId) q.set('depositId', params.depositId);
+  if (params.bookingId) q.set('bookingId', params.bookingId);
+  return request<{ status: 'pending' | 'succeeded' | 'failed'; bookingId?: string }>('GET', `/api/payments/status?${q.toString()}`);
 }
 
 export async function validateTicketQr(payload: string, validatorUser?: User | null) {

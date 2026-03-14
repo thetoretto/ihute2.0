@@ -12,7 +12,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PaymentMethodIcons, Screen } from '../../components';
-import { getTrip, getTripsStore, bookTrip } from '../../services/api';
+import { getTrip, getTripsStore, bookTrip, createDeposit, getPaymentStatus, createPaymentIntent } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeColors } from '../../context/ThemeContext';
 import { spacing, typography, radii, buttonHeights, cardShadow, cardShadowStrong, sizes, borderWidths } from '../../utils/theme';
@@ -123,6 +123,10 @@ export default function PassengerBookingScreen() {
     return true;
   };
 
+  const navigateToTicket = (bookingId: string) => {
+    navigation.replace('TicketDetail', { bookingId });
+  };
+
   const handleCompletePayment = async () => {
     if (!trip || !user || paymentMethod == null || (fullCarToggle ? false : selectedSeats.length === 0) || isBooking) return;
     if (!requireProfile()) return;
@@ -137,22 +141,66 @@ export default function PassengerBookingScreen() {
         paymentMethod,
         isFullCar: fullCarToggle || seats >= trip.seatsAvailable,
       });
+
+      if (paymentMethod === 'cash') {
+        Alert.alert(
+          'Booking created',
+          'Pay the driver when you board. The driver will confirm your ticket after collecting cash.',
+          [{ text: 'View ticket', onPress: () => navigateToTicket(booking.id) }]
+        );
+        return;
+      }
+
+      if (paymentMethod === 'card') {
+        try {
+          await createPaymentIntent(booking.id);
+        } catch {
+          // Intent may already exist
+        }
+        Alert.alert(
+          'Booking created',
+          'Complete card payment on our website, or your booking will be confirmed when the driver processes it.',
+          [{ text: 'View ticket', onPress: () => navigateToTicket(booking.id) }]
+        );
+        return;
+      }
+
+      if (paymentMethod === 'mobile_money') {
+        const phone = user.phone?.trim();
+        if (!phone) {
+          Alert.alert('Phone required', 'Add your phone number in profile to use Mobile Money.');
+          return;
+        }
+        const { depositId } = await createDeposit(booking.id, phone);
+        Alert.alert(
+          'Check your phone',
+          'You will receive a prompt on your phone to complete payment. We will confirm when payment is received.',
+          [{ text: 'OK' }]
+        );
+        const poll = async () => {
+          const result = await getPaymentStatus({ depositId, bookingId: booking.id });
+          if (result.status === 'succeeded') {
+            Alert.alert('Payment received', 'Your booking is confirmed.', [
+              { text: 'View ticket', onPress: () => navigateToTicket(booking.id) },
+            ]);
+            return;
+          }
+          if (result.status === 'failed') {
+            Alert.alert('Payment failed', 'Mobile Money payment did not complete. You can try again or choose another payment method.');
+            return;
+          }
+          setTimeout(poll, 2500);
+        };
+        setTimeout(poll, 2500);
+        return;
+      }
+
       Alert.alert(
         'Booking confirmed',
         'Your ticket has been generated.',
         [
-          {
-            text: 'View ticket',
-            onPress: () => {
-              navigation.replace('TicketDetail', { bookingId: booking.id });
-            },
-          },
-          {
-            text: 'My rides',
-            onPress: () => {
-              navigation.getParent()?.navigate?.('PassengerBookings');
-            },
-          },
+          { text: 'View ticket', onPress: () => navigateToTicket(booking.id) },
+          { text: 'My rides', onPress: () => navigation.getParent()?.navigate?.('PassengerBookings') },
         ]
       );
     } catch (e) {

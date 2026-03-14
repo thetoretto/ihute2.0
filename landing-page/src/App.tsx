@@ -1,5 +1,22 @@
 import { useEffect, useState } from 'react';
-import { isApiConfigured } from './api';
+import { isApiConfigured, type LandingUser } from './api';
+
+const LANDING_AUTH_KEY = 'ihute_landing_auth';
+function getStoredLandingAuth(): { user: LandingUser; token: string } | null {
+  try {
+    const raw = sessionStorage.getItem(LANDING_AUTH_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as { user: LandingUser; token: string };
+  } catch {
+    return null;
+  }
+}
+function setStoredLandingAuth(user: LandingUser, token: string) {
+  sessionStorage.setItem(LANDING_AUTH_KEY, JSON.stringify({ user, token }));
+}
+function clearStoredLandingAuth() {
+  sessionStorage.removeItem(LANDING_AUTH_KEY);
+}
 import Navbar                   from './components/Navbar';
 import Hero                     from './components/Hero';
 import HowItWorks               from './components/HowItWorks';
@@ -24,6 +41,7 @@ export default function App() {
   const [bookingId, setBookingId]     = useState('');
   const [paymentCallbackDepositId, setPaymentCallbackDepositId] = useState<string | null>(null);
   const [paymentCallbackBookingId, setPaymentCallbackBookingId] = useState<string | null>(null);
+  const [landingAuth, setLandingAuth] = useState<{ user: LandingUser; token: string } | null>(getStoredLandingAuth);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -152,6 +170,16 @@ export default function App() {
               setPaymentCallbackBookingId(bid);
               setPaymentCallbackDepositId(did ?? null);
             }}
+            landingUser={landingAuth?.user ?? null}
+            landingToken={landingAuth?.token ?? null}
+            onLogin={(user, token) => {
+              setStoredLandingAuth(user, token);
+              setLandingAuth({ user, token });
+            }}
+            onLogout={() => {
+              clearStoredLandingAuth();
+              setLandingAuth(null);
+            }}
           />
         )}
 
@@ -171,7 +199,13 @@ export default function App() {
           <PaymentCallbackPage
             depositId={paymentCallbackDepositId}
             bookingId={paymentCallbackBookingId}
-            onSuccess={(id) => { setBookingId(id); setPage('booking-confirm'); window.scrollTo(0, 0); }}
+            onSuccess={(id) => {
+              setBookingId(id);
+              setPaymentCallbackDepositId(null);
+              setPaymentCallbackBookingId(null);
+              setPage('booking-confirm');
+              window.scrollTo(0, 0);
+            }}
             onBackHome={handleBackHome}
           />
         )}

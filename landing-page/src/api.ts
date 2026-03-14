@@ -23,6 +23,74 @@ export async function fetchHotpointsFromApi(): Promise<Hotpoint[]> {
 
 const BOOKING_PASSENGER_ID = import.meta.env.VITE_BOOKING_PASSENGER_ID ?? 'u_passenger_1';
 
+/** Logged-in user on landing (for "I have an account" booking). */
+export interface LandingUser {
+  id: string;
+  email: string;
+  name?: string | null;
+  phone?: string | null;
+}
+
+export async function loginApi(email: string, password: string): Promise<{ token: string; user: LandingUser }> {
+  const url = `${API_BASE}/api/auth/login`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = res.statusText || 'Login failed';
+    try {
+      const j = text ? JSON.parse(text) : {};
+      if (j?.error) msg = j.error;
+    } catch {
+      if (text) msg = text;
+    }
+    throw new Error(msg);
+  }
+  if (!text) throw new Error('Empty response');
+  const data = JSON.parse(text) as { token: string; user: { id: string; email: string; name?: string | null; phone?: string | null } };
+  return { token: data.token, user: data.user };
+}
+
+/** Create booking as registered user (sends passengerId and Authorization). */
+export async function createRegisteredBooking(
+  params: CreateBookingParams,
+  passengerId: string,
+  token: string
+): Promise<Booking> {
+  const url = `${API_BASE}/api/bookings`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      tripId: params.tripId,
+      passengerId,
+      seats: params.seats,
+      paymentMethod: params.paymentMethod,
+      isFullCar: params.isFullCar ?? false,
+    }),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let message = res.statusText || 'Booking failed';
+    try {
+      const json = text ? JSON.parse(text) : {};
+      if (json?.error) message = json.error;
+    } catch {
+      if (text) message = text;
+    }
+    throw new Error(message);
+  }
+  if (!text) throw new Error('Empty response');
+  return JSON.parse(text) as Booking;
+}
+
 export type SearchTripsSortBy = 'earliest' | 'price' | 'rating';
 
 export interface SearchTripsParams {

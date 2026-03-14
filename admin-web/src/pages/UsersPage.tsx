@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { getUsersAsync, getTripsAsync, getBookingsAsync } from '../services/adminApiData';
-import { getAgenciesApi, createUserApi, type Agency, type CreateUserBody } from '../services/api';
+import { getAgenciesApi, createUserApi, createVehicleApi, type Agency, type CreateUserBody } from '../services/api';
 import { useAdminScope } from '../context/AdminScopeContext';
 import type { UserRole, User } from '../types';
 
@@ -32,6 +32,10 @@ export default function UsersPage() {
     userType: 'USER' as CreateUserBody['userType'],
     agencyId: '',
   });
+  const [addVehicleUserId, setAddVehicleUserId] = useState<string | null>(null);
+  const [addVehicleError, setAddVehicleError] = useState<string | null>(null);
+  const [addVehicleLoading, setAddVehicleLoading] = useState(false);
+  const [addVehicleForm, setAddVehicleForm] = useState({ make: '', model: '', seats: 14, licensePlate: '', color: '' });
 
   const refresh = useCallback(async () => {
     const [u, t, b] = await Promise.all([
@@ -76,10 +80,42 @@ export default function UsersPage() {
     return list;
   }, [filter, agencyFilter, usersToShow]);
 
+  const userMap = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
+
   const agencyName = (agencyId: string | undefined) => {
     if (!agencyId) return '—';
     const a = agencies.find((x) => x.id === agencyId);
     return a?.name ?? agencyId;
+  };
+
+  const handleAddVehicle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addVehicleUserId) return;
+    setAddVehicleError(null);
+    if (!addVehicleForm.make?.trim() || !addVehicleForm.model?.trim() || !addVehicleForm.licensePlate?.trim()) {
+      setAddVehicleError('Make, model, and license plate are required.');
+      return;
+    }
+    setAddVehicleLoading(true);
+    try {
+      await createVehicleApi({
+        driverId: addVehicleUserId,
+        ownerId: addVehicleUserId,
+        make: addVehicleForm.make.trim(),
+        model: addVehicleForm.model.trim(),
+        seats: addVehicleForm.seats,
+        licensePlate: addVehicleForm.licensePlate.trim(),
+        color: addVehicleForm.color.trim() || undefined,
+        agencyId: scope?.agencyId,
+      });
+      setAddVehicleUserId(null);
+      setAddVehicleForm({ make: '', model: '', seats: 14, licensePlate: '', color: '' });
+      await refresh();
+    } catch (err) {
+      setAddVehicleError(err instanceof Error ? err.message : 'Failed to create vehicle');
+    } finally {
+      setAddVehicleLoading(false);
+    }
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -121,6 +157,9 @@ export default function UsersPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <h3 className="text-2xl font-black text-dark">Users</h3>
         <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className="px-4 py-2 rounded-xl text-sm font-bold bg-surface text-dark hover:bg-soft" onClick={() => refresh()}>
+            Refresh
+          </button>
           {(['all', 'passenger', 'driver', 'agency'] as const).map((item) => (
             <button
               key={item}
@@ -157,6 +196,39 @@ export default function UsersPage() {
           )}
         </div>
       </div>
+
+      {addVehicleUserId && (
+        <form onSubmit={handleAddVehicle} className="mb-6 p-4 rounded-xl border border-soft bg-surface/30">
+          <h4 className="font-bold text-dark mb-3">Add vehicle for {userMap.get(addVehicleUserId)?.name ?? addVehicleUserId}</h4>
+          {addVehicleError && <p className="text-danger text-sm mb-2">{addVehicleError}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-bold text-muted mb-1">Make</label>
+              <input type="text" value={addVehicleForm.make} onChange={(e) => setAddVehicleForm((f) => ({ ...f, make: e.target.value }))} className="w-full border border-soft rounded-lg px-3 py-2 text-sm" placeholder="e.g. Toyota" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-muted mb-1">Model</label>
+              <input type="text" value={addVehicleForm.model} onChange={(e) => setAddVehicleForm((f) => ({ ...f, model: e.target.value }))} className="w-full border border-soft rounded-lg px-3 py-2 text-sm" placeholder="e.g. Coaster" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-muted mb-1">Seats</label>
+              <input type="number" min={1} value={addVehicleForm.seats} onChange={(e) => setAddVehicleForm((f) => ({ ...f, seats: parseInt(e.target.value, 10) || 1 }))} className="w-full border border-soft rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-muted mb-1">License plate</label>
+              <input type="text" value={addVehicleForm.licensePlate} onChange={(e) => setAddVehicleForm((f) => ({ ...f, licensePlate: e.target.value }))} className="w-full border border-soft rounded-lg px-3 py-2 text-sm" placeholder="e.g. RAB 123 A" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-muted mb-1">Color (optional)</label>
+              <input type="text" value={addVehicleForm.color} onChange={(e) => setAddVehicleForm((f) => ({ ...f, color: e.target.value }))} className="w-full border border-soft rounded-lg px-3 py-2 text-sm" placeholder="e.g. White" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" disabled={addVehicleLoading} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-dark disabled:opacity-50">{addVehicleLoading ? 'Creating…' : 'Create vehicle'}</button>
+            <button type="button" className="px-4 py-2 rounded-lg text-sm font-bold bg-surface hover:bg-soft" onClick={() => { setAddVehicleUserId(null); setAddVehicleError(null); }}>Cancel</button>
+          </div>
+        </form>
+      )}
 
       {createOpen && isSuperAdmin && (
         <form onSubmit={handleCreateUser} className="mb-8 p-6 bg-surface rounded-xl border border-soft">
@@ -249,6 +321,7 @@ export default function UsersPage() {
               {isSuperAdmin && <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">Agency</th>}
               <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">Roles</th>
               <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">Rating</th>
+              <th className="pb-4 text-xs uppercase font-black text-muted tracking-widest">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-surface">
@@ -271,6 +344,17 @@ export default function UsersPage() {
                   ))}
                 </td>
                 <td className="py-5 text-sm">{user.rating?.toFixed(1) ?? 'N/A'}</td>
+                <td className="py-5">
+                  {(user.roles || []).includes('driver') || (user.roles || []).includes('agency') ? (
+                    <button
+                      type="button"
+                      className="px-2 py-1 rounded-lg text-xs font-bold bg-primary text-dark"
+                      onClick={() => { setAddVehicleUserId(user.id); setAddVehicleError(null); setAddVehicleForm({ make: '', model: '', seats: 14, licensePlate: '', color: '' }); }}
+                    >
+                      Add vehicle
+                    </button>
+                  ) : null}
+                </td>
               </tr>
             ))}
           </tbody>

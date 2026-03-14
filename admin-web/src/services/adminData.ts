@@ -100,17 +100,6 @@ export function getVehicles(scope?: AdminScope): Vehicle[] {
   return v.filter((x) => x.driverId === scope.agencyId || x.ownerId === scope.agencyId);
 }
 
-export function setVehicleApproval(
-  vehicleId: string,
-  approvalStatus: Vehicle['approvalStatus']
-): Vehicle | undefined {
-  const index = adminSnapshot.vehicles.findIndex((v) => v.id === vehicleId);
-  if (index === -1) return undefined;
-  const updated = { ...adminSnapshot.vehicles[index], approvalStatus };
-  adminSnapshot.vehicles[index] = updated;
-  return updated;
-}
-
 export interface BookingWithTicket extends Booking {
   ticketNumber: string;
 }

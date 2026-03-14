@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { getTripsStore, getBookingsStore, setBookingsStore, setTripsStore } from '../store';
-import { createBooking, createGuestBooking, createPaymentIntent, createDeposit } from '../api';
+import { createBooking, createGuestBooking, createRegisteredBooking, createPaymentIntent, createDeposit, loginApi, type GuestDetails, type LandingUser } from '../api';
 import type { PaymentMethod } from '@shared/types';
-import type { GuestDetails } from '../api';
 import CardPaymentForm from './CardPaymentForm';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
@@ -15,6 +14,10 @@ interface TripDetailPageProps {
   onBack: () => void;
   onBooked: (bookingId: string) => void;
   onPaymentCallback?: (params: { depositId?: string; bookingId: string }) => void;
+  landingUser?: LandingUser | null;
+  landingToken?: string | null;
+  onLogin?: (user: LandingUser, token: string) => void;
+  onLogout?: () => void;
 }
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
@@ -23,7 +26,17 @@ const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   card: 'Card',
 };
 
-export default function TripDetailPage({ tripId, travelers, onBack, onBooked, onPaymentCallback }: TripDetailPageProps) {
+export default function TripDetailPage({
+  tripId,
+  travelers,
+  onBack,
+  onBooked,
+  onPaymentCallback,
+  landingUser = null,
+  landingToken = null,
+  onLogin,
+  onLogout,
+}: TripDetailPageProps) {
   const trip = getTripsStore().find((t) => t.id === tripId);
 
   const maxSeats = trip?.seatsAvailable ?? 1;
@@ -36,6 +49,12 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked, on
   const [step, setStep] = useState<'form' | 'pay-card' | 'redirecting'>('form');
   const [lastBookingId, setLastBookingId] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const isRegistered = !!(landingUser && landingToken);
 
   if (!trip) {
     return (
@@ -63,7 +82,7 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked, on
       setError(`Choose between 1 and ${currentTrip.seatsAvailable} seats.`);
       return;
     }
-    if (USE_GUEST_BOOKING) {
+    if (!isRegistered && USE_GUEST_BOOKING) {
       if (!guest.name?.trim()) { setError('Please enter your name.'); return; }
       if (!guest.phone?.trim()) { setError('Please enter your phone number.'); return; }
       if (!guest.email?.trim()) { setError('Please enter your email.'); return; }
@@ -71,25 +90,36 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked, on
     setError('');
     setLoading(true);
     try {
-      const booking = USE_GUEST_BOOKING
-        ? await createGuestBooking({
-            tripId: currentTrip.id,
-            seats: effectiveSeats,
-            paymentMethod: paymentMethod as PaymentMethod,
-            isFullCar,
-            guest: {
-              name: guest.name.trim(),
-              phone: guest.phone.trim(),
-              email: guest.email.trim(),
-              deliveryMethod: guest.deliveryMethod ?? 'email',
+      const booking = isRegistered && landingUser && landingToken
+        ? await createRegisteredBooking(
+            {
+              tripId: currentTrip.id,
+              seats: effectiveSeats,
+              paymentMethod: paymentMethod as PaymentMethod,
+              isFullCar,
             },
-          })
-        : await createBooking({
-            tripId: currentTrip.id,
-            seats: effectiveSeats,
-            paymentMethod: paymentMethod as PaymentMethod,
-            isFullCar,
-          });
+            landingUser.id,
+            landingToken
+          )
+        : USE_GUEST_BOOKING
+          ? await createGuestBooking({
+              tripId: currentTrip.id,
+              seats: effectiveSeats,
+              paymentMethod: paymentMethod as PaymentMethod,
+              isFullCar,
+              guest: {
+                name: guest.name.trim(),
+                phone: guest.phone.trim(),
+                email: guest.email.trim(),
+                deliveryMethod: guest.deliveryMethod ?? 'email',
+              },
+            })
+          : await createBooking({
+              tripId: currentTrip.id,
+              seats: effectiveSeats,
+              paymentMethod: paymentMethod as PaymentMethod,
+              isFullCar,
+            });
       setBookingsStore([...getBookingsStore(), booking]);
       const trips = getTripsStore();
       const updatedTrips = trips.map((t) => (t.id === currentTrip.id && booking.trip ? { ...booking.trip } : t));
@@ -108,7 +138,8 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked, on
       }
       if (paymentMethod === 'mobile_money') {
         setStep('redirecting');
-        const { depositId, redirectUrl } = await createDeposit(booking.id, guest.phone?.trim());
+        const phoneForDeposit = isRegistered ? (landingUser?.phone ?? '') : guest.phone?.trim();
+        const { depositId, redirectUrl } = await createDeposit(booking.id, phoneForDeposit);
         if (redirectUrl) {
           if (onPaymentCallback) onPaymentCallback({ depositId, bookingId: booking.id });
           window.location.href = redirectUrl;
@@ -253,7 +284,21 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked, on
                   </div>
                 )}
 
-                {USE_GUEST_BOOKING && (
+                {isRegistered ? (
+                  <div className="td-guest-section mb-4 p-3 bg-gray-50 rounded-lg">
+                    <p className="td-section-label mb-1">Booking as</p>
+                    <p className="font-medium text-dark">{landingUser?.email}</p>
+                    {onLogout && (
+                      <button
+                        type="button"
+                        className="text-sm text-primary underline mt-1"
+                        onClick={onLogout}
+                      >
+                        Not you? Log out
+                      </button>
+                    )}
+                  </div>
+                ) : USE_GUEST_BOOKING ? (
                   <div className="td-guest-section space-y-3 mb-4">
                     <p className="td-section-label">Your details</p>
                     <input
@@ -290,8 +335,71 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked, on
                         <option value="download">Download only</option>
                       </select>
                     </div>
+                    {onLogin && (
+                      <div className="pt-2 border-t border-gray-200">
+                        {!showLogin ? (
+                          <button
+                            type="button"
+                            className="text-sm text-primary underline"
+                            onClick={() => { setShowLogin(true); setLoginError(''); }}
+                          >
+                            I have an account
+                          </button>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-gray-600">Log in to book with your account</p>
+                            <input
+                              type="email"
+                              placeholder="Email"
+                              value={loginEmail}
+                              onChange={(e) => setLoginEmail(e.target.value)}
+                              className="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm"
+                            />
+                            <input
+                              type="password"
+                              placeholder="Password"
+                              value={loginPassword}
+                              onChange={(e) => setLoginPassword(e.target.value)}
+                              className="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm"
+                            />
+                            {loginError && <p className="text-sm text-red-600">{loginError}</p>}
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                className="px-3 py-1.5 rounded-lg text-sm font-bold bg-primary text-dark disabled:opacity-50"
+                                disabled={loginLoading}
+                                onClick={async () => {
+                                  setLoginError('');
+                                  if (!loginEmail.trim() || !loginPassword) {
+                                    setLoginError('Email and password required');
+                                    return;
+                                  }
+                                  setLoginLoading(true);
+                                  try {
+                                    const { user, token } = await loginApi(loginEmail, loginPassword);
+                                    onLogin(user, token);
+                                    setShowLogin(false);
+                                    setLoginEmail('');
+                                    setLoginPassword('');
+                                  } catch (e) {
+                                    setLoginError(e instanceof Error ? e.message : 'Login failed');
+                                  } finally {
+                                    setLoginLoading(false);
+                                  }
+                                }}
+                              >
+                                {loginLoading ? 'Logging in…' : 'Log in'}
+                              </button>
+                              <button type="button" className="px-3 py-1.5 rounded-lg text-sm bg-gray-200" onClick={() => { setShowLogin(false); setLoginError(''); }}>
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
+                ) : null}
 
                 <div className="td-pay-section">
                   <p className="td-section-label">Payment method</p>
@@ -309,6 +417,15 @@ export default function TripDetailPage({ tripId, travelers, onBack, onBooked, on
                       </label>
                     ))}
                   </div>
+                  {paymentMethod === 'mobile_money' && (
+                    <p className="text-xs text-gray-500 mt-1">Enter your mobile number above; you will receive a prompt on your phone to complete payment.</p>
+                  )}
+                  {paymentMethod === 'card' && (
+                    <p className="text-xs text-gray-500 mt-1">You will enter card details on the next step; payment is secure via Stripe.</p>
+                  )}
+                  {paymentMethod === 'cash' && (
+                    <p className="text-xs text-gray-500 mt-1">Pay the driver when you board; the driver will confirm your ticket after collecting cash.</p>
+                  )}
                 </div>
 
                 <div className="td-price-box">

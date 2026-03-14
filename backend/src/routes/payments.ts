@@ -241,6 +241,7 @@ router.post('/create-deposit', async (req: Request, res: Response) => {
   });
   res.json({
     depositId,
+    bookingId,
     redirectUrl: process.env.PAWAPAY_REDIRECT_BASE
       ? `${process.env.PAWAPAY_REDIRECT_BASE}?depositId=${depositId}`
       : undefined,
