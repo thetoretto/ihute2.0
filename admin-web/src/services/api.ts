@@ -157,6 +157,39 @@ export async function getVehiclesApi(userId?: string): Promise<Vehicle[]> {
 }
 
 // ---------- Users (read from server for admin) ----------
+/** Backend user shape (userType, optional agencyId) */
+interface BackendUserRow {
+  id: string;
+  email: string;
+  phone?: string | null;
+  name?: string | null;
+  userType: string;
+  agencyId?: string | null;
+  agencySubRole?: string | null;
+  rating?: number;
+  statusBadge?: string | null;
+}
+
+/** Map backend userType to frontend roles for admin UI */
+function normalizeBackendUser(row: BackendUserRow): User {
+  const role =
+    row.userType === 'USER' ? 'passenger'
+    : row.userType === 'DRIVER' ? 'driver'
+    : (row.userType === 'AGENCY_ADMIN' || row.userType === 'SCANNER') ? 'agency'
+    : 'agency'; // SUPER_ADMIN display as agency for nav/display
+  return {
+    id: row.id,
+    name: row.name ?? row.email ?? 'Unknown',
+    email: row.email,
+    phone: row.phone ?? '',
+    roles: [role],
+    agencyId: row.agencyId ?? undefined,
+    agencySubRole: (row.agencySubRole as User['agencySubRole']) ?? undefined,
+    rating: row.rating,
+    statusBadge: row.statusBadge ?? undefined,
+  };
+}
+
 export async function getUsersApi(params?: { role?: string; agencyId?: string }): Promise<User[]> {
   const base = getApiBase();
   if (!base) return [];
@@ -168,7 +201,31 @@ export async function getUsersApi(params?: { role?: string; agencyId?: string })
   if (!res.ok) throw new Error(res.statusText || 'Failed to fetch users');
   const text = await res.text();
   if (!text) return [];
-  return JSON.parse(text) as User[];
+  const rows = JSON.parse(text) as BackendUserRow[];
+  return rows.map(normalizeBackendUser);
+}
+
+export interface CreateUserBody {
+  email: string;
+  password: string;
+  name?: string;
+  phone?: string;
+  userType: 'SUPER_ADMIN' | 'AGENCY_ADMIN' | 'SCANNER' | 'DRIVER' | 'USER';
+  agencyId?: string;
+}
+
+export async function createUserApi(body: CreateUserBody): Promise<User> {
+  const base = getApiBase();
+  if (!base) throw new Error('API not configured');
+  const res = await fetchWithAuth('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(parseError(text, 'Failed to create user'));
+  if (!text) throw new Error('Empty response');
+  const row = JSON.parse(text) as BackendUserRow;
+  return normalizeBackendUser(row);
 }
 
 // ---------- Agencies (super admin CRUD + assign admin/scanner) ----------

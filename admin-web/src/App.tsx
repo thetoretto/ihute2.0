@@ -37,7 +37,21 @@ import ScannerReportPage from './pages/ScannerReportPage';
 import LoginPage from './pages/LoginPage';
 import { AdminScopeProvider } from './context/AdminScopeContext';
 import { getStoredAuth, clearStoredAuth } from './services/auth';
+import { isApiConfigured } from './services/api';
 import type { AdminUser } from './types';
+
+function ConfigRequiredScreen() {
+  return (
+    <div className="min-h-screen bg-surface flex items-center justify-center p-6">
+      <div className="bg-white border border-soft rounded-2xl p-10 w-full max-w-md shadow-soft text-center">
+        <h1 className="text-xl font-black text-dark m-0 mb-3">Configuration required</h1>
+        <p className="text-sm text-muted m-0">
+          Set <code className="bg-surface px-1 rounded">VITE_API_BASE_URL</code> in <code className="bg-surface px-1 rounded">.env</code> to your backend URL (e.g. <code className="bg-surface px-1 rounded">http://localhost:3000</code>) and restart the dev server.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const ROUTE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
@@ -280,6 +294,9 @@ export default function App() {
     setAuthedUser(null);
   }, []);
 
+  if (!isApiConfigured()) {
+    return <ConfigRequiredScreen />;
+  }
   if (!authedUser) {
     return <LoginPage onLogin={setAuthedUser} />;
   }

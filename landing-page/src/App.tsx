@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isApiConfigured } from './api';
 import Navbar                   from './components/Navbar';
 import Hero                     from './components/Hero';
 import HowItWorks               from './components/HowItWorks';
@@ -98,6 +99,19 @@ export default function App() {
   function handleViewInstantQueue() {
     setPage('instant-queue');
     window.scrollTo(0, 0);
+  }
+
+  if (!isApiConfigured()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gray-100">
+        <div className="bg-white rounded-2xl p-8 max-w-md shadow-sm border border-gray-200 text-center">
+          <h1 className="text-xl font-bold text-gray-900 m-0 mb-3">Backend not configured</h1>
+          <p className="text-sm text-gray-600 m-0">
+            Set <code className="bg-gray-100 px-1 rounded">VITE_API_BASE_URL</code> in <code className="bg-gray-100 px-1 rounded">.env</code> (e.g. <code className="bg-gray-100 px-1 rounded">http://localhost:3000</code>) and restart the dev server.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

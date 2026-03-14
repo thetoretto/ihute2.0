@@ -16,14 +16,12 @@ import {
   getEarningsByRoute,
 } from '../services/adminMetrics';
 import { getDisputes as getDisputesApi, isApiConfigured } from '../services/api';
-import { getTrips, getBookings, getDisputes as getDisputesLocal } from '../services/adminData';
 import {
   getTripsAsync,
   getBookingsAsync,
   getUsersAsync,
 } from '../services/adminApiData';
 import { useAdminScope } from '../context/AdminScopeContext';
-import { adminSnapshot } from '../data/snapshot';
 import BarChartTrend from '../components/BarChartTrend';
 import DonutChartBreakdown from '../components/DonutChartBreakdown';
 import type { TrendDataPoint } from '../components/BarChartTrend';
@@ -46,27 +44,24 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(isApiConfigured());
 
   const refresh = useCallback(async () => {
-    if (isApiConfigured()) {
-      setLoading(true);
-      try {
-        const [t, b, u, d] = await Promise.all([
-          getTripsAsync(scope),
-          getBookingsAsync(scope),
-          getUsersAsync(scope),
-          getDisputesApi(scope),
-        ]);
-        setTrips(t);
-        setBookings(b);
-        setUsers(u);
-        setDisputes(d);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setTrips(getTrips(scope));
-      setBookings(getBookings(scope));
-      setUsers(adminSnapshot.users);
-      setDisputes(getDisputesLocal(scope));
+    if (!isApiConfigured()) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const [t, b, u, d] = await Promise.all([
+        getTripsAsync(scope),
+        getBookingsAsync(scope),
+        getUsersAsync(scope),
+        getDisputesApi(scope),
+      ]);
+      setTrips(t);
+      setBookings(b);
+      setUsers(u);
+      setDisputes(d);
+    } finally {
+      setLoading(false);
     }
   }, [scope]);
 
@@ -86,7 +81,7 @@ export default function DashboardPage() {
     () => getEarningsByRoute(scope, bookings.length ? { bookings } : undefined),
     [scope, bookings]
   );
-  const usersForDisplay = users.length > 0 ? users : adminSnapshot.users;
+  const usersForDisplay = users;
 
   const trendData: TrendDataPoint[] = useMemo(
     () => byPeriod.slice(-12),

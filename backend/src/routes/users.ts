@@ -1,7 +1,8 @@
 import express from 'express';
 import prisma from '../prisma';
-import { requireAuth, AuthRequest } from '../middleware/auth';
-import { UserType } from '@prisma/client';
+import { requireAuth, requireSuperAdmin, AuthRequest } from '../middleware/auth';
+import { UserType, UserStatus } from '@prisma/client';
+import { hashPassword } from '../utils/auth';
 
 const router = express.Router();
 
@@ -43,6 +44,68 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+/** POST /api/users – create any user (super admin only) */
+router.post('/', requireAuth, requireSuperAdmin, async (req: AuthRequest, res) => {
+  try {
+    const { email, password, name, phone, userType: userTypeStr, agencyId } = req.body;
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      res.status(400).json({ error: 'Email is required' });
+      return;
+    }
+    if (!password || typeof password !== 'string' || !password.trim()) {
+      res.status(400).json({ error: 'Password is required' });
+      return;
+    }
+    const rawType = String(userTypeStr || 'USER').toUpperCase();
+    const validTypes = ['SUPER_ADMIN', 'AGENCY_ADMIN', 'SCANNER', 'DRIVER', 'USER'];
+    if (!validTypes.includes(rawType)) {
+      res.status(400).json({ error: 'Invalid userType. Must be one of: SUPER_ADMIN, AGENCY_ADMIN, SCANNER, DRIVER, USER' });
+      return;
+    }
+    const userType = rawType as UserType;
+    const needsAgency = [UserType.AGENCY_ADMIN, UserType.SCANNER, UserType.DRIVER].includes(userType);
+    if (needsAgency && !agencyId) {
+      res.status(400).json({ error: 'agencyId is required for Driver, Agency admin, and Scanner' });
+      return;
+    }
+    if (needsAgency && agencyId) {
+      const agency = await prisma.agency.findUnique({ where: { id: String(agencyId) } });
+      if (!agency) {
+        res.status(400).json({ error: 'Agency not found' });
+        return;
+      }
+    }
+    const emailNorm = email.trim().toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email: emailNorm } });
+    if (existing) {
+      res.status(400).json({ error: 'Email already exists' });
+      return;
+    }
+    const passwordHash = await hashPassword(password);
+    const agencySubRole =
+      userType === UserType.AGENCY_ADMIN ? 'agency_manager'
+      : userType === UserType.SCANNER ? 'agency_scanner'
+      : null;
+    const user = await prisma.user.create({
+      data: {
+        email: emailNorm,
+        name: name?.trim() || null,
+        phone: phone?.trim() || null,
+        passwordHash,
+        userType,
+        status: UserStatus.APPROVED,
+        agencyId: needsAgency ? String(agencyId) : null,
+        agencySubRole,
+      },
+    });
+    const { passwordHash: _, ...rest } = user;
+    res.status(201).json(rest);
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({ error: 'Failed to create user' });
   }
 });
 

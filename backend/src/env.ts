@@ -1,22 +1,30 @@
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/ihute"
+import 'dotenv/config';
 
-# Auth
-JWT_SECRET="your-jwt-secret-change-in-production"
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/e2426e2f-6eb8-4ea6-91af-e79e0dbac3a5', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Debug-Session-Id': '609d34',
+  },
+  body: JSON.stringify({
+    sessionId: '609d34',
+    runId: 'backend-env-init',
+    hypothesisId: 'H1',
+    location: 'backend/src/env.ts:1',
+    message: 'Backend env.ts loaded',
+    data: {
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+    },
+    timestamp: Date.now(),
+  }),
+}).catch(() => {});
+// #endregion agent log
 
-# Stripe (payments)
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
+if (!process.env.DATABASE_URL) {
+  console.error(
+    'DATABASE_URL is not set. Copy backend/.env.example to backend/.env and configure your database connection string.'
+  );
+  process.exit(1);
+}
 
-# Ticket delivery (email)
-RESEND_API_KEY="re_..."
-RESEND_FROM="Ihute <noreply@yourdomain.com>"
-
-# PawaPay (mobile money / deposit + payout)
-PAWAPAY_API_KEY=""
-PAWAPAY_WEBHOOK_SECRET=""
-PAWAPAY_REDIRECT_BASE=""
-
-# Server
-PORT=3000
-CORS_ORIGINS="http://localhost:5173,http://localhost:8081"

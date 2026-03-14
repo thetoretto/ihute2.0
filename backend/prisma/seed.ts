@@ -9,7 +9,7 @@ async function main() {
   const adminPass = await hashPassword('admin123');
   await prisma.user.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: { passwordHash: adminPass, status: UserStatus.APPROVED },
     create: {
       email: adminEmail,
       name: 'Super Admin',
@@ -53,6 +53,21 @@ async function main() {
       status: UserStatus.APPROVED,
       agencyId: agency.id,
       statusBadge: 'Verified',
+    }
+  });
+
+  // Passenger (USER) – for testing login and bookings from landing/mobile
+  const passengerEmail = 'passenger@ihute.com';
+  const passengerPass = await hashPassword('passenger123');
+  await prisma.user.upsert({
+    where: { email: passengerEmail },
+    update: { passwordHash: passengerPass, status: UserStatus.APPROVED },
+    create: {
+      email: passengerEmail,
+      name: 'Test Passenger',
+      passwordHash: passengerPass,
+      userType: UserType.USER,
+      status: UserStatus.APPROVED,
     }
   });
 

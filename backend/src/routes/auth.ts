@@ -98,12 +98,15 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await hashPassword(password);
     
-    // Map role string to UserType
+    // Map role string to UserType. Super admin cannot be created via public register.
     let userType: UserType = UserType.USER;
     if (role === 'driver') userType = UserType.DRIVER;
     if (role === 'agency') userType = UserType.AGENCY_ADMIN;
     if (role === 'scanner') userType = UserType.SCANNER;
-    if (role === 'admin') userType = UserType.SUPER_ADMIN; // Should be restricted in prod
+    if (role === 'admin') {
+      res.status(403).json({ error: 'Super admin accounts can only be created by an existing super admin.' });
+      return;
+    }
 
     // Status logic
     let status: UserStatus = UserStatus.APPROVED;

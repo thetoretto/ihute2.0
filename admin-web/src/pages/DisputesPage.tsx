@@ -1,42 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getDisputes as getDisputesLocal, getBookings, resolveDispute as resolveDisputeLocal, setDisputeStatus as setDisputeStatusLocal } from '../services/adminData';
-import { getDisputes as getDisputesApi, patchDispute as patchDisputeApi, isApiConfigured } from '../services/api';
+import { getDisputes as getDisputesApi, patchDispute as patchDisputeApi } from '../services/api';
 import { getBookingsAsync, getUsersAsync } from '../services/adminApiData';
-import { adminSnapshot } from '../data/snapshot';
 import { useAdminScope } from '../context/AdminScopeContext';
 import type { Dispute, Booking, User } from '../types';
 
 export default function DisputesPage() {
   const scope = useAdminScope();
-  const useApi = isApiConfigured();
-  const [disputes, setDisputes] = useState<Dispute[]>(() => (useApi ? [] : getDisputesLocal(scope)));
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(useApi);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Dispute['status'] | 'all'>('all');
   const [detail, setDetail] = useState<Dispute | null>(null);
   const [resolution, setResolution] = useState('');
   const [resolvedBy, setResolvedBy] = useState('admin');
 
   const refresh = useCallback(async () => {
-    if (useApi) {
-      setLoading(true);
-      try {
-        const [list, b, u] = await Promise.all([
-          getDisputesApi(scope),
-          getBookingsAsync(scope),
-          getUsersAsync(scope),
-        ]);
-        setDisputes(list);
-        setBookings(b);
-        setUsers(u);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setDisputes([...getDisputesLocal(scope)]);
+    setLoading(true);
+    try {
+      const [list, b, u] = await Promise.all([
+        getDisputesApi(scope),
+        getBookingsAsync(scope),
+        getUsersAsync(scope),
+      ]);
+      setDisputes(list);
+      setBookings(b);
+      setUsers(u);
+    } finally {
+      setLoading(false);
     }
-  }, [scope, useApi]);
+  }, [scope]);
 
   useEffect(() => {
     void refresh();
@@ -44,12 +37,8 @@ export default function DisputesPage() {
 
   const filtered = filter === 'all' ? disputes : disputes.filter((d) => d.status === filter);
 
-  const bookingsForRoute = useApi ? bookings : getBookings(scope);
-  const getReporterName = (id: string) =>
-    useApi
-      ? (users.find((u) => u.id === id)?.name ?? id)
-      : (adminSnapshot.users.find((u) => u.id === id)?.name ?? id);
-  const getBooking = (bookingId: string) => bookingsForRoute.find((b) => b.id === bookingId);
+  const getReporterName = (id: string) => users.find((u) => u.id === id)?.name ?? id;
+  const getBooking = (bookingId: string) => bookings.find((b) => b.id === bookingId);
   const getRoute = (d: Dispute) => {
     const b = getBooking(d.bookingId);
     if (!b) return d.bookingId;
@@ -58,34 +47,22 @@ export default function DisputesPage() {
 
   const handleResolve = async () => {
     if (!detail || !resolution.trim()) return;
-    if (useApi) {
-      try {
-        await patchDisputeApi(detail.id, { status: 'resolved', resolution: resolution.trim(), resolvedBy });
-        setDetail(null);
-        setResolution('');
-        await refresh();
-      } catch (err) {
-        console.error(err);
-      }
-    } else {
-      resolveDisputeLocal(detail.id, resolution.trim(), resolvedBy);
+    try {
+      await patchDisputeApi(detail.id, { status: 'resolved', resolution: resolution.trim(), resolvedBy });
       setDetail(null);
       setResolution('');
-      refresh();
+      await refresh();
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const handleSetStatus = async (id: string, status: Dispute['status']) => {
-    if (useApi) {
-      try {
-        await patchDisputeApi(id, { status });
-        await refresh();
-      } catch (err) {
-        console.error(err);
-      }
-    } else {
-      setDisputeStatusLocal(id, status);
-      refresh();
+    try {
+      await patchDisputeApi(id, { status });
+      await refresh();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -110,7 +87,6 @@ export default function DisputesPage() {
         </div>
       </div>
       <p className="text-muted text-sm mb-6">Resolve payment, cancellation, and other disputes.</p>
-      {useApi && <p className="text-muted text-xs mb-4">Using server API (VITE_API_BASE_URL).</p>}
       <div className="w-full overflow-x-auto">
         <table className="w-full text-left">
           <thead>

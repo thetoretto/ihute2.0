@@ -1,19 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { adminSnapshot } from '../data/snapshot';
+import { getUsersAsync } from '../services/adminApiData';
 import { useAdminScope } from '../context/AdminScopeContext';
+import type { User } from '../types';
 
 export default function ScannerOperatorsPage() {
   const scope = useAdminScope();
+  const [users, setUsers] = useState<User[]>([]);
+
+  const refresh = useCallback(async () => {
+    const list = await getUsersAsync(scope);
+    setUsers(list);
+  }, [scope]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const scannerOperators = React.useMemo(() => {
-    const users = adminSnapshot.users as Array<{ id: string; name: string; email: string; phone: string; agencySubRole?: string; agencyId?: string }>;
     return users.filter(
       (u) =>
-        u.agencySubRole === 'agency_scanner' &&
+        (u as User & { agencySubRole?: string }).agencySubRole === 'agency_scanner' &&
         (scope?.agencyId ? u.agencyId === scope.agencyId : true)
     );
-  }, [scope]);
+  }, [users, scope]);
 
   const th = 'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
   if (!scope?.agencyId) {

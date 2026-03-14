@@ -17,7 +17,6 @@ import {
 } from '../services/api';
 import { getUsersApi } from '../services/api';
 import { useAdminScope } from '../context/AdminScopeContext';
-import { adminSnapshot } from '../data/snapshot';
 import type { Trip, Vehicle, Booking, User } from '../types';
 
 export default function AgencyManagementPage() {
@@ -78,11 +77,6 @@ export default function AgencyManagementPage() {
       getUsersApi(undefined).then(setAllUsers).catch(() => setAllUsers([]));
     }
   }, [assignAgencyId]);
-
-  const allAgenciesFromUsers = useMemo(
-    () => (users.length > 0 ? users : adminSnapshot.users).filter((u) => (u.roles || []).includes('agency')),
-    [users]
-  );
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,55 +291,51 @@ export default function AgencyManagementPage() {
             </div>
           )}
         </div>
-        <p className="text-muted text-sm">
+        <p className="text-muted text-sm mb-8">
           <Link to="/users" className="font-bold text-dark hover:underline">View all users</Link> to create or manage accounts.
         </p>
+
+        {agencies.length > 0 && (
+          <div className="mt-10 pt-8 border-t border-soft">
+            <h4 className="text-lg font-black text-dark mb-4">Agencies and their users</h4>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {agencies.map((agency) => (
+                <div key={agency.id} className="bg-surface rounded-xl p-5 border border-soft">
+                  <p className="font-bold text-dark mb-1">{agency.name}</p>
+                  <p className="text-sm text-muted mb-3">{agency.contactInfo ?? '—'}</p>
+                  <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-2">
+                    Users ({agency.users?.length ?? 0})
+                  </p>
+                  {(!agency.users || agency.users.length === 0) ? (
+                    <p className="text-sm text-muted">No users assigned.</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {agency.users.map((u) => (
+                        <li key={u.id} className="text-sm text-dark/90 flex items-center gap-2">
+                          <span className="font-medium">{u.name ?? u.email}</span>
+                          <span className="text-muted text-xs">({u.userType})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  // Super admin without API: fallback to users list (agency role)
+  // Super admin without API: require configuration
   if (!scope?.agencyId) {
-    const th = 'pb-4 text-xs uppercase font-black text-muted tracking-widest text-left';
     return (
       <div className="bg-white rounded-xl p-8 shadow-sm border border-soft">
         <h3 className="text-2xl font-black text-dark mb-2">Agencies</h3>
         <p className="text-muted text-sm mb-6">
-          All agencies on the platform. Set VITE_API_BASE_URL to manage agencies (create, edit, assign admins).
+          Configure VITE_API_BASE_URL in your .env and restart the app to create and manage agencies.
         </p>
-        <div className="w-full overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-surface">
-                <th className={th}>Name</th>
-                <th className={th}>Email</th>
-                <th className={th}>Phone</th>
-                <th className={th}>Role</th>
-                <th className={th}>Rating</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface">
-              {allAgenciesFromUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-muted">No agencies yet.</td>
-                </tr>
-              ) : (
-                allAgenciesFromUsers.map((agency) => (
-                  <tr key={agency.id} className="group hover:bg-surface/50 transition-colors">
-                    <td className="py-5 font-bold text-sm">{agency.name}</td>
-                    <td className="py-5 text-sm text-dark/80">{agency.email}</td>
-                    <td className="py-5 text-sm text-dark/80">{agency.phone}</td>
-                    <td className="py-5">
-                      <span className="inline-block px-2 py-0.5 rounded-lg text-sm font-bold bg-soft text-dark">Agency</span>
-                    </td>
-                    <td className="py-5 text-sm">{agency.rating?.toFixed(1) ?? 'N/A'}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <p className="text-muted text-sm mt-6">
+        <p className="text-muted text-sm">
           <Link to="/users" className="font-bold text-dark hover:underline">View all users</Link>
         </p>
       </div>

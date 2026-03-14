@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { mockAdminUsers } from '@shared/mocks';
-import { isApiConfigured } from '../services/api';
 import { loginApi } from '../services/auth';
+import { isApiConfigured } from '../services/api';
 import type { AdminUser } from '../types';
 
 interface LoginPageProps {
   onLogin: (user: AdminUser) => void;
 }
 
-const TEST_CREDS = [
-  { email: 'system_admin@ihute.com', label: 'System admin' },
-  { email: 'agency_admin@ihute.com', label: 'Agency admin' },
+const LOCAL_CREDS = [
+  { email: 'admin@ihute.com', password: 'admin123', label: 'Super Admin' },
+  { email: 'agency@ihute.com', password: 'agency123', label: 'Agency Admin' },
+  { email: 'driver@ihute.com', password: 'driver123', label: 'Driver' },
 ];
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
@@ -28,18 +28,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
     setLoading(true);
     try {
-      if (isApiConfigured()) {
-        const payload = await loginApi(email.trim(), password);
-        onLogin(payload.user);
-      } else {
-        await new Promise((r) => setTimeout(r, 500));
-        const user = mockAdminUsers.find((u) => u.email.toLowerCase() === email.trim().toLowerCase()) as AdminUser | undefined;
-        if (!user) {
-          setError('No account found with that email address.');
-          return;
-        }
-        onLogin(user);
-      }
+      const payload = await loginApi(email.trim(), password);
+      onLogin(payload.user);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign in failed.');
     } finally {
@@ -55,6 +45,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         </div>
         <h1 className="text-2xl font-black text-dark m-0 mb-1">Admin Portal</h1>
         <p className="text-sm text-muted m-0 mb-7">Sign in to manage ihute operations. Ride smart, ride safe.</p>
+
+        {!isApiConfigured() && (
+          <p className="text-danger text-sm mb-4 p-3 bg-danger-100 border border-danger/25 rounded-lg">
+            Configure VITE_API_BASE_URL in your .env and restart the app to sign in.
+          </p>
+        )}
 
         <form className="flex flex-col gap-4 mb-6" onSubmit={handleSubmit} noValidate>
           <div className="flex flex-col gap-1.5">
@@ -76,7 +72,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             <input
               id="login-password"
               type="password"
-              placeholder="Enter any password (mock)"
+              placeholder="Password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
               autoComplete="current-password"
@@ -92,7 +88,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isApiConfigured()}
             className="w-full h-12 border border-primary/50 bg-primary text-dark font-semibold rounded-xl cursor-pointer transition-all mt-1 disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-primary/90"
           >
             {loading ? 'Signing in…' : 'Sign in'}
@@ -100,13 +96,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         </form>
 
         <div className="border-t border-soft pt-5">
-          <p className="text-sm font-semibold text-muted uppercase tracking-widest m-0 mb-2.5">Test accounts</p>
-          {TEST_CREDS.map((cred) => (
+          <p className="text-sm font-semibold text-muted uppercase tracking-widest m-0 mb-2.5">Local accounts (from seed)</p>
+          {LOCAL_CREDS.map((cred) => (
             <button
               key={cred.email}
               type="button"
               className="w-full flex items-center min-h-10 text-left bg-white border border-soft text-muted py-0 px-3 rounded-xl cursor-pointer mb-1.5 last:mb-0 transition-all hover:border-primary hover:text-dark hover:bg-primary"
-              onClick={() => { setEmail(cred.email); setPassword('demo'); setError(''); }}
+              onClick={() => { setEmail(cred.email); setPassword(cred.password); setError(''); }}
             >
               {cred.label} — {cred.email}
             </button>
